@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
+
+class SignUpScreen extends StatelessWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const Color primaryGreen = Color(0xFF537E5D);
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+
+    return Scaffold(
+      backgroundColor: AppColors.mainAppColor, // Deep green background as per image
+      body: Stack(
+        children: [
+
+          Positioned(
+            top: screenHeight * 0.08,
+            left: -screenWidth * 0.01,
+            right: -screenWidth * 0.01,
+            child: Opacity(
+              opacity: 0.9, // হালকা সাদাটে ভাব আনার জন্য
+              child: Image.asset(
+                'assets/images/vector_logo.png',
+                height: screenHeight * 0.5,
+                color: Colors.white, // হোয়াইট ইফেক্ট দেওয়ার জন্য
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+
+          // ২. মাঝখানের হোয়াইট ফর্ম কার্ড
+          Center(
+            child: Container(
+              width: screenWidth * 0.88,
+              margin: const EdgeInsets.symmetric(vertical: 40),
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  )
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ব্র্যান্ড লোগো (ছোট সাইজ)
+                    Image.asset(
+                      'assets/images/splash_log.png',
+                      height: 50,
+                    ),
+                    const SizedBox(height: 15),
+
+                    // টাইটেল
+                    const Text(
+                      "Step Into Success Mode",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'serif',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // সাব-টাইটেল
+                    const Text(
+                      "Create your account and start transforming your sales and marketing strategy now.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+                    ),
+                    const SizedBox(height: 25),
+
+                    // নাম ফিল্ড (Row-তে First & Last Name)
+                    Row(
+                      children: [
+                        Expanded(child: _buildSmallField("First Name")),
+                        const SizedBox(width: 10),
+                        Expanded(child: _buildSmallField("Last Name")),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+
+                    // ইমেইল ফিল্ড
+                    _buildFullField("Enter your email"),
+                    const SizedBox(height: 15),
+
+                    // পাসওয়ার্ড ফিল্ড
+                    _buildFullField("Create your password", isPassword: true),
+                    const SizedBox(height: 15),
+
+                    // কনফার্ম পাসওয়ার্ড ফিল্ড
+                    _buildFullField("Confirm your password", isPassword: true),
+
+                    const SizedBox(height: 30),
+
+                    // সাইন আপ বাটন
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.mainAppColor,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () {
+      Get.to(() =>  SendVerifyCodeScreen());
+                      },
+                      child: const Text(
+                        "Sign Up",
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // লগইন লিংক
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already have an account? ", style: TextStyle(fontSize: 11, color: Colors.black54)),
+                        GestureDetector(
+                          // onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            "Sign In here",
+                            style: TextStyle(fontSize: 11, color: primaryGreen, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ছোট ফিল্ড (First/Last Name এর জন্য)
+  Widget _buildSmallField(String hint) {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 12, color: Colors.black26),
+        filled: true,
+        fillColor: const Color(0xFFFBFBFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color:  Color(0xFFE3E6F0)),
+        ),
+      ),
+    );
+  }
+
+  // ফুল উইডথ ফিল্ড (ইমেইল/পাসওয়ার্ড এর জন্য)
+  Widget _buildFullField(String hint, {bool isPassword = false}) {
+    return TextField(
+      obscureText: isPassword,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
+        suffixIcon: isPassword ? const Icon(Icons.visibility_outlined, size: 18, color: Colors.black38) : null,
+        filled: true,
+        fillColor: const Color(0xFFFBFBFC),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+        ),
+      ),
+    );
+  }
+}
