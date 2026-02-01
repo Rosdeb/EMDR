@@ -16,7 +16,7 @@ class SendVerifyCodeScreen extends StatelessWidget {
       backgroundColor: AppColors.mainAppColor,
       body: Stack(
         children: [
-          // ১. ব্যাকগ্রাউন্ড ভেক্টর (আগের পেজের সাথে মিল রেখে)
+
           Positioned(
             top: screenHeight * 0.08,
             left: -screenWidth * 0.01,
@@ -32,7 +32,7 @@ class SendVerifyCodeScreen extends StatelessWidget {
             ),
           ),
 
-          // ২. ভেরিফাই কোড কার্ড
+
           Center(
             child: Container(
               width: screenWidth * 0.88,
@@ -51,25 +51,25 @@ class SendVerifyCodeScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // ব্র্যান্ড লোগো
+
                   Image.asset(
                     'assets/images/splash_log.png',
                     height: 50,
                   ),
                   const SizedBox(height: 20),
 
-                  // টাইটেল
+
                   const Text(
                     "Verify Your Account",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      fontFamily: 'serif',
+                      fontFamily: 'Inter',
                     ),
                   ),
                   const SizedBox(height: 12),
 
-                  // সাব-টাইটেল
+
                   const Text(
                     "Please enter your email address to receive a verification code.",
                     textAlign: TextAlign.center,
@@ -81,12 +81,12 @@ class SendVerifyCodeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
 
-                  // ইমেইল ইনপুট ফিল্ড
+
                   _buildFullField("Enter your email address"),
 
                   const SizedBox(height: 30),
 
-                  // সেন্ড কোড বাটন
+
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.mainAppColor,
@@ -111,7 +111,7 @@ class SendVerifyCodeScreen extends StatelessWidget {
 
                   const SizedBox(height: 20),
 
-                  // ব্যাক টু সাইন ইন
+
                   GestureDetector(
                     // onTab: () => Navigator.pop(context),
                     child: const Row(
@@ -139,7 +139,7 @@ class SendVerifyCodeScreen extends StatelessWidget {
     );
   }
 
-  // ইমেইল ইনপুট ফিল্ড মেথড
+
   Widget _buildFullField(String hint) {
     return TextField(
       decoration: InputDecoration(

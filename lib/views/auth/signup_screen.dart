@@ -13,7 +13,7 @@ class SignUpScreen extends StatelessWidget {
     final double screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: AppColors.mainAppColor, // Deep green background as per image
+      backgroundColor: AppColors.mainAppColor,
       body: Stack(
         children: [
 
@@ -22,17 +22,17 @@ class SignUpScreen extends StatelessWidget {
             left: -screenWidth * 0.01,
             right: -screenWidth * 0.01,
             child: Opacity(
-              opacity: 0.9, // হালকা সাদাটে ভাব আনার জন্য
+              opacity: 0.9,
               child: Image.asset(
                 'assets/images/vector_logo.png',
                 height: screenHeight * 0.5,
-                color: Colors.white, // হোয়াইট ইফেক্ট দেওয়ার জন্য
+                color: Colors.white,
                 fit: BoxFit.contain,
               ),
             ),
           ),
 
-          // ২. মাঝখানের হোয়াইট ফর্ম কার্ড
+
           Center(
             child: Container(
               width: screenWidth * 0.88,
@@ -53,14 +53,14 @@ class SignUpScreen extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ব্র্যান্ড লোগো (ছোট সাইজ)
+
                     Image.asset(
                       'assets/images/splash_log.png',
                       height: 50,
                     ),
                     const SizedBox(height: 15),
 
-                    // টাইটেল
+
                     const Text(
                       "Step Into Success Mode",
                       style: TextStyle(
@@ -71,7 +71,6 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
 
-                    // সাব-টাইটেল
                     const Text(
                       "Create your account and start transforming your sales and marketing strategy now.",
                       textAlign: TextAlign.center,
@@ -79,7 +78,6 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 25),
 
-                    // নাম ফিল্ড (Row-তে First & Last Name)
                     Row(
                       children: [
                         Expanded(child: _buildSmallField("First Name")),
@@ -89,20 +87,20 @@ class SignUpScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 15),
 
-                    // ইমেইল ফিল্ড
+
                     _buildFullField("Enter your email"),
                     const SizedBox(height: 15),
 
-                    // পাসওয়ার্ড ফিল্ড
+
                     _buildFullField("Create your password", isPassword: true),
                     const SizedBox(height: 15),
 
-                    // কনফার্ম পাসওয়ার্ড ফিল্ড
+
                     _buildFullField("Confirm your password", isPassword: true),
 
                     const SizedBox(height: 30),
 
-                    // সাইন আপ বাটন
+
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.mainAppColor,
@@ -123,7 +121,7 @@ class SignUpScreen extends StatelessWidget {
 
                     const SizedBox(height: 20),
 
-                    // লগইন লিংক
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -168,7 +166,7 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  // ফুল উইডথ ফিল্ড (ইমেইল/পাসওয়ার্ড এর জন্য)
+
   Widget _buildFullField(String hint, {bool isPassword = false}) {
     return TextField(
       obscureText: isPassword,

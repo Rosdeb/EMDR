@@ -1,196 +1,273 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:jonssony/utils/AppIcons/app_icons.dart';
+import 'package:jonssony/utils/app_colors.dart';
+import 'MyCalmSpace.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF537E5D);
+
+    const double appBarImageHeight = 170;
+    const double overlapAmount = 1;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // ১. মেইন ব্যাকগ্রাউন্ড ইমেজ
-          Positioned.fill(
+
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: appBarImageHeight,
             child: Image.asset(
-              'assets/images/home_bg1.jpg',
-              fit: BoxFit.cover,
+              'assets/images/my_emdr.png',
+              fit: BoxFit.fill,
             ),
           ),
 
-          // ২. কন্টেন্ট এরিয়া
-          SafeArea(
-            child: Column(
-              children: [
-                // কাস্টম অ্যাপবার উইথ ব্যাকগ্রাউন্ড ইমেজ
-                _buildCustomAppBar(),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Quick Access",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.black87,
+          Column(
+            children: [
+
+              _buildAppBarContent(context),
+
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+
+                    Positioned.fill(
+                      top: -overlapAmount,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 15,
+                              offset: Offset(0, -5),
+                            )
+                          ],
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/home_bg1.jpg'),
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        const SizedBox(height: 15),
+                      ),
+                    ),
 
-                        // ৩. কুইক অ্যাক্সেস কার্ডস (Glassmorphism)
-                        Row(
+
+                    Positioned.fill(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(child: _buildGlassCard("Calm Space", "Find peace now", Icons.grid_view_rounded)),
-                            const SizedBox(width: 15),
-                            Expanded(child: _buildGlassCard("My Progress", "Track journey", Icons.show_chart_rounded)),
+                            const SizedBox(height: 35),
+                            const Text(
+                              "Quick Access",
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2E3E32),
+                                fontFamily: 'Serif',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildQuickAccessCard(
+                                    "Calm Space",
+                                    "Find peace now",
+                                    AppIcons.calm,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => const MyCalmSpace()),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 15),
+                                Expanded(child: _buildQuickAccessCard("My Progress", "Track journey", AppIcons.progress)),
+                              ],
+                            ),
+
+                            const SizedBox(height: 25),
+
+
+                            _buildJourneyCard("Anxiety Management Journey", "20 sessions", "95/100", AppColors.mainAppColor),
+                            _buildJourneyCard("Mindfulness Practice", "15 sessions", "80/100", AppColors.mainAppColor),
+                            _buildJourneyCard("Focus Training", "10 sessions", "60/100", AppColors.mainAppColor),
+
+                            const SizedBox(height: 150),
                           ],
                         ),
-
-                        const SizedBox(height: 25),
-
-                        // ৪. লিস্ট আইটেমস (Glassmorphism)
-                        _buildJourneyCard("Anxiety Management Journey", "95/100", primaryGreen),
-                        _buildJourneyCard("Anxiety Management Journey", "95/100", primaryGreen),
-                        _buildJourneyCard("Anxiety Management Journey", "95/100", primaryGreen),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
-          // ৫. ফ্লোটিং বটম নেভিগেশন (Glassmorphism)
-          _buildFloatingBottomNav(primaryGreen),
+
+          _buildFloatingBottomNav(AppColors.mainAppColor),
         ],
       ),
     );
   }
 
-  // কাস্টম অ্যাপবার মেথড
-  Widget _buildCustomAppBar() {
-    return Container(
-      height: 80,
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: const BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/my_emdr.png'),
-          fit: BoxFit.cover,
-        ),
+
+  Widget _buildAppBarContent(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 5,
+        left: 20,
+        right: 20,
+        bottom: 15,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const CircleAvatar(
-                radius: 22,
-                backgroundImage: AssetImage('assets/images/emdr_sun.jpg'), // প্রোফাইল/লোগো
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF81C784), width: 2),
+                ),
+                child: const CircleAvatar(
+                  radius: 25,
+                  backgroundImage: AssetImage('assets/images/home_profile.png'),
+                ),
               ),
               const SizedBox(width: 12),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+              const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text("Good morning,", style: TextStyle(fontSize: 12, color: Colors.black54)),
-                  Text("Shuvo Paul", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text("Good morning,", style: TextStyle(fontSize: 13, color: Colors.black87)),
+                  Text("Shuvo Paul", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32), fontFamily: 'Serif')),
                 ],
               ),
             ],
           ),
-          const CircleAvatar(
-            backgroundColor: Color(0x33000000),
-            child: Icon(Icons.notifications_none_rounded, color: Colors.brown),
-          )
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFAD8C63),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 1.5),
+              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
+            ),
+            child: SvgPicture.asset(AppIcons.notification, height: 20, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+          ),
         ],
       ),
     );
   }
 
-  // Glassmorphism কার্ড বিল্ডার
-  Widget _buildGlassCard(String title, String subtitle, IconData icon) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 28, color: Colors.black87),
-              const SizedBox(height: 12),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-            ],
+
+  Widget _buildQuickAccessCard(String title, String subtitle, String iconPath, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SvgPicture.asset(iconPath, height: 28),
+                const SizedBox(height: 15),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Serif')),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // বড় জার্নি কার্ড (Glassmorphism)
-  Widget _buildJourneyCard(String title, String progress, Color color) {
+
+  Widget _buildJourneyCard(String title, String subTitle, String progress, Color color) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
+      margin: const EdgeInsets.only(bottom: 20),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(35),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.35),
-              borderRadius: BorderRadius.circular(25),
+              borderRadius: BorderRadius.circular(35),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
             child: Column(
               children: [
                 Row(
                   children: [
-                    Image.asset('assets/images/emdr_sun.jpg', height: 40, width: 40),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        const Text("Something short here", style: TextStyle(fontSize: 11, color: Colors.black54)),
-                      ],
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundImage: AssetImage('assets/images/emdr_sun.jpg'),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'Serif')),
+                          Text(subTitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                LinearProgressIndicator(
-                  value: 0.95,
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  color: color,
+                const SizedBox(height: 20),
+                ClipRRect(
                   borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: 0.95,
+                    minHeight: 7,
+                    backgroundColor: Colors.white.withOpacity(0.3),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(progress, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    Text(progress, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
                     Row(
-                      children: const [
-                        Icon(Icons.calendar_today, size: 14, color: Colors.black45),
-                        SizedBox(width: 4),
-                        Text("Text", style: TextStyle(fontSize: 12)),
-                        SizedBox(width: 12),
-                        Icon(Icons.access_time, size: 14, color: Colors.black45),
-                        SizedBox(width: 4),
-                        Text("Text", style: TextStyle(fontSize: 12)),
+                      children: [
+                        _iconLabel(Icons.calendar_today_outlined, "Daily"),
+                        const SizedBox(width: 15),
+                        _iconLabel(Icons.access_time_rounded, "10m"),
                       ],
                     )
                   ],
@@ -203,66 +280,81 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ফ্লোটিং বটম নেভিগেশন বার
+  Widget _iconLabel(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: const Color(0xFF537E5D)),
+        const SizedBox(width: 5),
+        Text(label, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+      ],
+    );
+  }
+
+
   Widget _buildFloatingBottomNav(Color primaryColor) {
     return Positioned(
-      bottom: 20,
-      left: 20,
-      right: 20,
+      bottom: 25,
+      left: 15,
+      right: 15,
       child: Row(
         children: [
           Expanded(
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(40),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  height: 60,
+                  height: 75,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.4),
-                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.white.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(40),
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      _navItem(Icons.home_rounded, "Home", true, primaryColor),
-                      _navItem(Icons.explore_outlined, "", false, primaryColor),
-                      _navItem(Icons.shopping_basket_outlined, "", false, primaryColor),
-                      _navItem(Icons.person_outline_rounded, "", false, primaryColor),
+                      _navItem(AppIcons.home, "Home", true, const Color(0xFF537E5D)),
+                      _navItem(AppIcons.progress_nav, "", false, primaryColor),
+                      _navItem(AppIcons.library, "", false, primaryColor),
+                      _navItem(AppIcons.profile, "", false, primaryColor),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 15),
+          const SizedBox(width: 12),
           Container(
-            height: 60,
-            width: 60,
-            decoration: BoxDecoration(
-              color: primaryColor,
+            height: 70,
+            width: 70,
+            decoration: const BoxDecoration(
+              color: Color(0xFF537E5D),
               shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))],
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 30),
+            child: const Icon(Icons.add, color: Colors.white, size: 35),
           ),
         ],
       ),
     );
   }
 
-  Widget _navItem(IconData icon, String label, bool isActive, Color activeColor) {
+  Widget _navItem(String iconPath, String label, bool isActive, Color activeColor) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: isActive ? BoxDecoration(
-        color: activeColor.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
+        color: activeColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(30),
       ) : null,
       child: Row(
         children: [
-          Icon(icon, color: isActive ? activeColor : Colors.black54),
-          if (isActive) const SizedBox(width: 4),
-          if (isActive) Text(label, style: TextStyle(color: activeColor, fontWeight: FontWeight.bold)),
+          SvgPicture.asset(
+            iconPath,
+            height: 24,
+            colorFilter: ColorFilter.mode(isActive ? activeColor : Colors.black45, BlendMode.srcIn),
+          ),
+          if (isActive) const SizedBox(width: 6),
+          if (isActive) Text(label, style: TextStyle(color: activeColor, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
     );
