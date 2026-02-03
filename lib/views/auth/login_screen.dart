@@ -87,7 +87,7 @@ class LoginScreen extends StatelessWidget {
 
                   _textField(
                     icon: Icons.email_outlined,
-                    hint: "tam@ui8.net",
+                    hint: "Enter Your Email",
                   ),
 
                   const SizedBox(height: 16),
@@ -95,7 +95,7 @@ class LoginScreen extends StatelessWidget {
 
                   _textField(
                     icon: Icons.lock_outline,
-                    hint: "••••••••••••••••",
+                    hint: "Enter Your Password",
                     isObscure: true,
                   ),
 

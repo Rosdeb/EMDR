@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/widets/navbar.dart';
 import 'MyCalmSpace.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -126,12 +127,32 @@ class HomeScreen extends StatelessWidget {
           ),
 
 
-          _buildFloatingBottomNav(AppColors.mainAppColor),
+          // Custom NavBar
+          CustomNavBar(
+            currentIndex: 0,
+            onTap: (index) => _handleNavigation(context, index),
+            primaryColor: AppColors.mainAppColor,
+          ),
         ],
       ),
     );
   }
 
+  void _handleNavigation(BuildContext context, int index) {
+    if (index == 0) return; // Already on Home page
+    
+    switch (index) {
+      case 1:
+        Navigator.pushNamed(context, '/progress');
+        break;
+      case 2:
+        Navigator.pushNamed(context, '/library');
+        break;
+      case 3:
+        Navigator.pushNamed(context, '/profile');
+        break;
+    }
+  }
 
   Widget _buildAppBarContent(BuildContext context) {
     return Padding(
@@ -183,7 +204,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-
   Widget _buildQuickAccessCard(String title, String subtitle, String iconPath, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
@@ -212,7 +232,6 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildJourneyCard(String title, String subTitle, String progress, Color color) {
     return Container(
@@ -287,76 +306,6 @@ class HomeScreen extends StatelessWidget {
         const SizedBox(width: 5),
         Text(label, style: const TextStyle(fontSize: 13, color: Colors.black87)),
       ],
-    );
-  }
-
-
-  Widget _buildFloatingBottomNav(Color primaryColor) {
-    return Positioned(
-      bottom: 25,
-      left: 15,
-      right: 15,
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  height: 75,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _navItem(AppIcons.home, "Home", true, const Color(0xFF537E5D)),
-                      _navItem(AppIcons.progress_nav, "", false, primaryColor),
-                      _navItem(AppIcons.library, "", false, primaryColor),
-                      _navItem(AppIcons.profile, "", false, primaryColor),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            height: 70,
-            width: 70,
-            decoration: const BoxDecoration(
-              color: Color(0xFF537E5D),
-              shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 5))],
-            ),
-            child: const Icon(Icons.add, color: Colors.white, size: 35),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(String iconPath, String label, bool isActive, Color activeColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: isActive ? BoxDecoration(
-        color: activeColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(30),
-      ) : null,
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            iconPath,
-            height: 24,
-            colorFilter: ColorFilter.mode(isActive ? activeColor : Colors.black45, BlendMode.srcIn),
-          ),
-          if (isActive) const SizedBox(width: 6),
-          if (isActive) Text(label, style: TextStyle(color: activeColor, fontWeight: FontWeight.bold, fontSize: 13)),
-        ],
-      ),
     );
   }
 }

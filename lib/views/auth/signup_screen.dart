@@ -8,7 +8,7 @@ class SignUpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF537E5D);
+    const Color primaryGreen = AppColors.mainAppColor;
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
 
@@ -145,7 +145,7 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  // ছোট ফিল্ড (First/Last Name এর জন্য)
+
   Widget _buildSmallField(String hint) {
     return TextField(
       decoration: InputDecoration(
@@ -156,11 +156,11 @@ class SignUpScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+          borderSide: BorderSide(color: AppColors.mainAppColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color:  Color(0xFFE3E6F0)),
+          borderSide: BorderSide(color:  AppColors.mainAppColor),
         ),
       ),
     );
@@ -179,11 +179,11 @@ class SignUpScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+          borderSide: BorderSide(color: AppColors.mainAppColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: Color(0xFFE3E6F0)),
+          borderSide: BorderSide(color: AppColors.mainAppColor),
         ),
       ),
     );

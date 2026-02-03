@@ -4,6 +4,9 @@ import '../views/splash_screen.dart';
 import '../views/auth/welcome_screen.dart';
 import '../views/auth/login_screen.dart';
 import '../views/auth/signup_screen.dart';
+import '../views/Library/library_page.dart';
+import '../views/progress/progress_page.dart';
+import '../views/profile/profile_page.dart';
 
 class RouteHelper {
   static const String splash = '/';
@@ -11,6 +14,9 @@ class RouteHelper {
   static const String login = '/login';
   static const String signup = '/signup';
   static const String home = '/home_screen';
+  static const String library = '/library';
+  static const String progress = '/progress';
+  static const String profile = '/profile';
 
   static List<GetPage> routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -18,5 +24,8 @@ class RouteHelper {
     GetPage(name: login, page: () => const LoginScreen()),
     GetPage(name: signup, page: () => const SignUpScreen()),
     GetPage(name: home, page: () => const HomeScreen()),
+    GetPage(name: library, page: () => const LibraryPage()),
+    GetPage(name: progress, page: () => const ProgressPage()),
+    GetPage(name: profile, page: () => const ProfilePage()),
   ];
 }

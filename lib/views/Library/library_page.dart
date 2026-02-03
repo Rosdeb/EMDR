@@ -1,0 +1,231 @@
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:jonssony/utils/AppIcons/app_icons.dart';
+import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/widets/navbar.dart';
+
+class LibraryPage extends StatelessWidget {
+  const LibraryPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const double appBarImageHeight = 170;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+
+          Positioned(
+            top: 0, left: 0, right: 0, height: appBarImageHeight,
+            child: Image.asset(
+              'assets/images/my_emdr.png',
+              fit: BoxFit.fill,
+            ),
+          ),
+
+          Column(
+            children: [
+              _buildAppBarContent(context),
+
+              Expanded(
+                child: Stack(
+                  children: [
+
+                    Positioned.fill(
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(30),
+                            topRight: Radius.circular(30),
+                          ),
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/bg_library.jpg'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    Positioned.fill(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 30),
+
+
+                            _buildResourceCard(
+                              "Calm Place Exercise",
+                              "Access your saved safe place audio visualization.",
+                              Icons.anchor,
+                              const Color(0xFFC4FCEF),
+                              const Color(0xFF537E5D),
+                            ),
+
+                            _buildResourceCard(
+                              "Bilateral Settings",
+                              "Customize your visual and audio stimulation preferences.",
+                              Icons.settings_outlined,
+                              const Color(0xFFF3F3F3),
+                              Colors.black54,
+                            ),
+
+                            _buildResourceCard(
+                              "My Story",
+                              "Access your saved safe place audio visualization.",
+                              Icons.book_outlined,
+                              const Color(0xFFFFF7CF),
+                              const Color(0xFFAD8C63),
+                            ),
+
+                            const SizedBox(height: 150),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+
+          CustomNavBar(
+            currentIndex: 2,
+            onTap: (index) => _handleNavigation(context, index),
+            primaryColor: AppColors.mainAppColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildAppBarContent(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 10,
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const Text(
+            "My Resources",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3E32),
+              fontFamily: 'Serif',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResourceCard(
+      String title,
+      String desc,
+      IconData icon,
+      Color boxColor,
+      Color iconColor
+      ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.4),
+              borderRadius: BorderRadius.circular(25),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: boxColor,
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(icon, color: iconColor, size: 28),
+                    ),
+
+                    const Icon(Icons.play_circle_outline, color: Colors.black87, size: 28),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Serif',
+                    color: Color(0xFF2E3E32),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  desc,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                GestureDetector(
+                  onTap: () {},
+                  child: const Text(
+                    "Listen Now",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF537E5D),
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleNavigation(BuildContext context, int index) {
+    if (index == 2) return; // Already on Library page
+    
+    switch (index) {
+      case 0:
+        // Go to Home - clear all and go to home
+        Navigator.pushNamedAndRemoveUntil(context, '/home_screen', (route) => false);
+        break;
+      case 1:
+        // Navigate to Progress - replace current page
+        Navigator.pushReplacementNamed(context, '/progress');
+        break;
+      case 3:
+        // Navigate to Profile - replace current page
+        Navigator.pushReplacementNamed(context, '/profile');
+        break;
+    }
+  }
+}
