@@ -1,7 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
+import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/views/home/SessionFourPage.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -73,22 +76,27 @@ class CustomNavBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Container(
-            height: 70,
-            width: 70,
-            decoration: const BoxDecoration(
-              color: Color(0xFF537E5D),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 10,
-                  offset: Offset(0, 5),
-                )
-              ],
+          GestureDetector(
+            onTap: () {
+              Get.to(() => const SessionFourPage());
+            },
+            child: Container(
+              height: 70,
+              width: 70,
+              decoration: const BoxDecoration(
+                color: Color(0xFF537E5D),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  )
+                ],
+              ),
+              child: const Icon(Icons.add, color: Colors.white, size: 35),
             ),
-            child: const Icon(Icons.add, color: Colors.white, size: 35),
-          ),
+          )
         ],
       ),
     );
@@ -108,7 +116,7 @@ class CustomNavBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isActive
             ? BoxDecoration(
-                color: activeColor.withOpacity(0.15),
+                color: AppColors.mainAppColor, // Solid BG
                 borderRadius: BorderRadius.circular(30),
               )
             : null,
@@ -118,7 +126,7 @@ class CustomNavBar extends StatelessWidget {
               iconPath,
               height: 24,
               colorFilter: ColorFilter.mode(
-                isActive ? activeColor : Colors.black45,
+                isActive ? Colors.white : Colors.black45, // White when active
                 BlendMode.srcIn,
               ),
             ),
@@ -126,8 +134,8 @@ class CustomNavBar extends StatelessWidget {
             if (isActive)
               Text(
                 label,
-                style: TextStyle(
-                  color: activeColor,
+                style: const TextStyle(
+                  color: Colors.white, // White text
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),

@@ -56,13 +56,8 @@ class _ProgressPageState extends State<ProgressPage> {
                       child: Column(
                         children: [
                           const SizedBox(height: 30),
-
-
                           _buildPillToggle(),
-
                           const SizedBox(height: 30),
-
-
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
                             child: isResultsTab ? _buildResultsList() : _buildTestsList(),
@@ -78,7 +73,6 @@ class _ProgressPageState extends State<ProgressPage> {
             ],
           ),
 
-
           CustomNavBar(
             currentIndex: 1,
             onTap: (index) => _handleNavigation(context, index),
@@ -88,7 +82,6 @@ class _ProgressPageState extends State<ProgressPage> {
       ),
     );
   }
-
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(

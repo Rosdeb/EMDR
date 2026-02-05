@@ -76,7 +76,7 @@ class LibraryPage extends StatelessWidget {
                             _buildResourceCard(
                               "My Story",
                               "Access your saved safe place audio visualization.",
-                              Icons.book_outlined,
+                              Icons.menu_book_outlined,
                               const Color(0xFFFFF7CF),
                               const Color(0xFFAD8C63),
                             ),
@@ -183,7 +183,9 @@ class LibraryPage extends StatelessWidget {
                 Text(
                   desc,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontFamily: 'Serif',
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                     color: Colors.black87,
                     height: 1.4,
                   ),
@@ -193,10 +195,13 @@ class LibraryPage extends StatelessWidget {
                 GestureDetector(
                   onTap: () {},
                   child: const Text(
+
                     "Listen Now",
                     style: TextStyle(
+                      fontFamily: 'Serif',
                       fontSize: 14,
-                      color: Color(0xFF537E5D),
+                      color: AppColors.mainAppColor,
+                      decorationColor: AppColors.mainAppColor,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.underline,
                     ),

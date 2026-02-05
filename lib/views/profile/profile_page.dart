@@ -1,6 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/views/profile/ProfileDetailScreen.dart';
+import 'package:jonssony/views/profile/SettingsScreen.dart';
+import 'package:jonssony/views/profile/Subscription.dart';
+import 'package:jonssony/views/profile/permission.dart';
 import 'package:jonssony/widets/navbar.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -29,7 +35,6 @@ class ProfilePage extends StatelessWidget {
               Expanded(
                 child: Stack(
                   children: [
-
                     Positioned.fill(
                       child: Container(
                         decoration: const BoxDecoration(
@@ -52,19 +57,14 @@ class ProfilePage extends StatelessWidget {
                         child: Column(
                           children: [
                             const SizedBox(height: 30),
-
-
                             _buildMainProfileCard(),
-
                             const SizedBox(height: 25),
-
-
                             _buildSettingsGroup([
                               _settingsTile(Icons.person_outline, "Profile", () {
-                                // Get.to(() => YourProfileEditScreen());
+                                Get.to(() => ProfileDetailScreen());
                               }),
                               _settingsTile(Icons.assignment_outlined, "Subscription Offer", () {
-                                // Get.to(() => SubscriptionScreen());
+                                Get.to(() => SubscriptionScreen());
                               }),
                             ]),
 
@@ -73,10 +73,10 @@ class ProfilePage extends StatelessWidget {
 
                             _buildSettingsGroup([
                               _settingsTile(Icons.check_circle_outline, "Permission", () {
-                                // Get.to(() => PermissionScreen());
+                                Get.to(() => PermissionScreen());
                               }),
                               _settingsTile(Icons.settings_outlined, "Settings", () {
-                                // Get.to(() => SettingsScreen());
+                                Get.to(() => SettingsScreen());
                               }),
                             ]),
 
