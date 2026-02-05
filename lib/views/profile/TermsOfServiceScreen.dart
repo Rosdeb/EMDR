@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../widets/Custom_BackgroundDesign.dart';
+import '../../widets/Custom_BackgroundDesign.dart';
 import '../../widets/custom_appbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class TermsOfServiceScreen extends StatelessWidget {
   const TermsOfServiceScreen({super.key});
@@ -38,75 +40,55 @@ class TermsOfServiceScreen extends StatelessWidget {
                             child: const Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF2E3E32),
-                                    height: 1.5,
-                                  ),
-                                ),
-                                SizedBox(height: 20),
-                                Text(
-                                  "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF2E3E32),
-                                    height: 1.5,
-                                  ),
+                                  fontSize: 14,
+                                  color: Color(0xFF2E3E32),
+
                                 ),
                                 SizedBox(height: 25),
 
                                 // Section 1
-                                Text(
+                                AppText(
                                   "Our Mission",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32)),
+                                  fontSize: 14, color: Color(0xFF2E3E32),
                                 ),
 
                                 SizedBox(height: 25),
 
                                 // Section 2
-                                Text(
+                                AppText(
                                   "Our Vision",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32)),
+                                  fontSize: 14, color: Color(0xFF2E3E32),
                                 ),
 
                                 SizedBox(height: 25),
 
                                 // Section 3
-                                Text(
+                                AppText(
                                   "Why Choose Us",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin quam. Etiam ultrices. Suspendisse in justo eu magna luctus suscipit. Sed lectus.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32)),
+                                  fontSize: 14, color: Color(0xFF2E3E32),
                                 ),
                               ],
                             ),

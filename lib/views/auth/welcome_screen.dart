@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/utils/app_text.dart';
 import '../../healper/route.dart';
 
 class AuthWelcomeScreen extends StatelessWidget {
@@ -26,17 +27,16 @@ class AuthWelcomeScreen extends StatelessWidget {
                 colors: [
                   AppColors.mainAppColor,
                   AppColors.mainAppColor,
-                  Colors.white.withOpacity(0.8), // মাঝখানে হালকা ফেড
-                  Colors.white,           // নিচে একদম সাদা
+                  Colors.white.withOpacity(0.8),
+                  Colors.white,
                 ],
-                // ০.৪ থেকে ০.৭০ এর মধ্যে কালারটি স্মুথলি চেঞ্জ হবে
-                // যা আপনার চাওয়া "padding" বা "match" ইফেক্ট তৈরি করবে
+
                 stops: const [0.0, 0.5, 0.75, 0.85],
               ),
             ),
           ),
 
-          // ২. ব্যাকগ্রাউন্ড গ্রিন ভেক্টর/শেপ
+
           Positioned(
             top: -80,
             left: 0,
@@ -51,7 +51,6 @@ class AuthWelcomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ৩. মেয়ের ইমেজ (ShaderMask)
           Positioned(
             top: 0,
             left: 0,
@@ -66,7 +65,6 @@ class AuthWelcomeScreen extends StatelessWidget {
                     Colors.black,
                     Colors.transparent,
                   ],
-                  // ইমেজের ফেড পজিশন ব্যাকগ্রাউন্ডের সাথে মেলানো হয়েছে
                   stops: [0.0, 0.55, 0.9],
                 ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
               },
@@ -80,7 +78,6 @@ class AuthWelcomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ৪. বটম হোয়াইট কার্ড
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -101,25 +98,19 @@ class AuthWelcomeScreen extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  const AppText(
                     "Let's get started!",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A1A),
-                      letterSpacing: -0.5,
-                    ),
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  const AppText(
                     "Select to login with your account or create one",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
+                    fontSize: 15,
+                    color: Colors.black54,
                   ),
                   const SizedBox(height: 35),
 
@@ -145,7 +136,7 @@ class AuthWelcomeScreen extends StatelessWidget {
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: const TextStyle(color: Colors.black45, fontSize: 12, height: 1.5),
+                      style: const TextStyle(color: Colors.black45, fontSize: 12, height: 1.5, fontFamily: "Serif"),
                       children: [
                         const TextSpan(text: "By tapping continue with Apple, Facebook, Google, you agree with our "),
                         TextSpan(
@@ -154,6 +145,7 @@ class AuthWelcomeScreen extends StatelessWidget {
                             color: primaryGreen,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
+                            fontFamily: "Serif",
                           ),
                         ),
                         const TextSpan(text: " and "),
@@ -163,6 +155,7 @@ class AuthWelcomeScreen extends StatelessWidget {
                             color: primaryGreen,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
+                            fontFamily: "Serif",
                           ),
                         ),
                       ],
@@ -192,9 +185,10 @@ class AuthWelcomeScreen extends StatelessWidget {
           ),
         ),
         onPressed: tap,
-        child: Text(
+        child: AppText(
           text,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

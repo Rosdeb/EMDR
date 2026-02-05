@@ -8,13 +8,14 @@ import 'package:jonssony/views/profile/SettingsScreen.dart';
 import 'package:jonssony/views/profile/Subscription.dart';
 import 'package:jonssony/views/profile/permission.dart';
 import 'package:jonssony/widets/navbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const double appBarImageHeight = 170;
+    const double appBarImageHeight = 150;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -32,6 +33,7 @@ class ProfilePage extends StatelessWidget {
           Column(
             children: [
               _buildAppBar(context),
+              SizedBox(height: 20),
               Expanded(
                 child: Stack(
                   children: [
@@ -92,11 +94,6 @@ class ProfilePage extends StatelessWidget {
           ),
 
 
-          CustomNavBar(
-            currentIndex: 3,
-            onTap: (index) => _handleNavigation(context, index),
-            primaryColor: AppColors.mainAppColor,
-          ),
         ],
       ),
     );
@@ -108,18 +105,12 @@ class ProfilePage extends StatelessWidget {
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 10),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Text(
+          const SizedBox(width: 15),
+          const AppText(
             "Profile",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3E32),
-              fontFamily: 'Serif',
-            ),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
           ),
         ],
       ),
@@ -150,13 +141,16 @@ class ProfilePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       "Anaya Sharma",
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2E3E32),
                     ),
-                    Text(
+                    AppText(
                       "Member since Nov 2025",
-                      style: TextStyle(fontSize: 13, color: Colors.black54),
+                      fontSize: 13,
+                      color: Colors.black54,
                     ),
                   ],
                 ),
@@ -215,9 +209,10 @@ class ProfilePage extends StatelessWidget {
             Icon(icon, color: Colors.black87, size: 24),
             const SizedBox(width: 15),
             Expanded(
-              child: Text(
+              child: AppText(
                 title,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.black54),
@@ -227,22 +222,5 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  void _handleNavigation(BuildContext context, int index) {
-    if (index == 3) return; // Already on Profile page
 
-    switch (index) {
-      case 0:
-        // Go to Home - clear all and go to home
-        Navigator.pushNamedAndRemoveUntil(context, '/home_screen', (route) => false);
-        break;
-      case 1:
-        // Navigate to Progress - replace current page
-        Navigator.pushReplacementNamed(context, '/progress');
-        break;
-      case 2:
-        // Navigate to Library - replace current page
-        Navigator.pushReplacementNamed(context, '/library');
-        break;
-    }
-  }
 }

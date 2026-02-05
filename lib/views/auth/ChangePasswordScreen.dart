@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/auth/login_screen.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
   const ChangePasswordScreen({super.key});
@@ -60,21 +61,20 @@ class ChangePasswordScreen extends StatelessWidget {
                     const SizedBox(height: 15),
 
                     // টাইটেল
-                    const Text(
+                    const AppText(
                       "Set New Password",
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'serif',
-                      ),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                     const SizedBox(height: 10),
 
                     // সাব-টাইটেল
-                    const Text(
+                    const AppText(
                       "Your new password must be different from previously used passwords.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+                      fontSize: 12,
+                      color: Colors.black54,
+
                     ),
                     const SizedBox(height: 25),
 
@@ -100,13 +100,11 @@ class ChangePasswordScreen extends StatelessWidget {
                       onPressed: () {
                         Get.to(() =>  LoginScreen());
                       },
-                      child: const Text(
+                      child: const AppText(
                         "Update Password",
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16
-                        ),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
 
@@ -117,13 +115,11 @@ class ChangePasswordScreen extends StatelessWidget {
                   onTap: () => Navigator.pop(context),
 
 
-                child: const Text(
+                child: const AppText(
                         "Back to Sign In",
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: primaryGreen,
-                            fontWeight: FontWeight.bold
-                        ),
+                        fontSize: 12,
+                        color: primaryGreen,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],

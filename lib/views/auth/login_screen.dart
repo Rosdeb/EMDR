@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/healper/route.dart';
+import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/home/home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -60,26 +61,21 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 10),
 
 
-                  const Text(
+                  const AppText(
                     "Sign in",
-                    style: TextStyle(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF0F1912),
-                      fontFamily: 'Serif',
-                    ),
+                    fontSize: 42,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF0F1912),
                   ),
 
 
                   SizedBox(height: screenHeight * 0.035),
 
-                  const Text(
+                  const AppText(
                     "Sign in with email address",
-                    style: TextStyle(
-                      color: Color(0xFF0F1912),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    color: Color(0xFF0F1912),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
 
                   const SizedBox(height: 15),
@@ -106,13 +102,11 @@ class LoginScreen extends StatelessWidget {
                       onPressed: () {
                         Get.toNamed(RouteHelper.signup);
                       },
-                      child: const Text(
+                      child: const AppText(
                         "Forgot Password?",
-                        style: TextStyle(
-                          color: forgotPassColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        color: forgotPassColor,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -129,14 +123,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    onPressed: () => Get.to(() => const HomeScreen()),
-                    child: const Text(
+                    onPressed: () => Get.offAllNamed(RouteHelper.main),
+                    child: const AppText(
                       "Sign In",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -149,14 +141,15 @@ class LoginScreen extends StatelessWidget {
                         Get.toNamed(RouteHelper.signup);
                       },
                       child: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(color: Colors.black54, fontSize: 14),
+                        text: TextSpan(
+                          style: const TextStyle(color: Colors.black54, fontSize: 14, fontFamily: 'Serif'),
                           children: [
-                            TextSpan(text: "Dont have an account? "),
+                            const TextSpan(text: "Dont have an account? "),
                             TextSpan(
                               text: "Sign up",
                               style: TextStyle(
-                                color: Color(0xFF0F1912),
+                                color: const Color(0xFF0F1912),
+                                fontFamily: 'Serif',
                                 fontWeight: FontWeight.bold,
                               ),
                             ),

@@ -6,6 +6,7 @@ import 'package:chewie/chewie.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class VideoCalmPage extends StatefulWidget {
   const VideoCalmPage({super.key});
@@ -36,7 +37,12 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
     _initializePlayer();
     _loadSavedData();
   }
-
+  @override
+  void dispose() {
+    _videoPlayerController.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
   Future<void> _initializePlayer() async {
     _videoPlayerController = VideoPlayerController.asset('assets/video/calm_exercise.mp4');
     await _videoPlayerController.initialize();
@@ -63,7 +69,6 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // টপ সাইনবোবোর্ড ইমেজ
           Positioned(top: 0, left: 0, right: 0, height: 180,
             child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
@@ -73,7 +78,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
               Expanded(
                 child: Stack(
                   children: [
-                    // মেইন ল্যান্ডস্কেপ ব্যাকগ্রাউন্ড
+
                     Positioned.fill(
                       child: Container(
                         decoration: const BoxDecoration(
@@ -82,24 +87,27 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
                         ),
                       ),
                     ),
-                    SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 50),
-
-                          // ১. ভিডিও কার্ড (আলাদা কন্টেইনার)
-                          _buildVideoCard(),
-
-                          const SizedBox(height: 20),
-
-                          // ২. জার্নি গাইড কার্ড (আলাদা হোয়াইট কার্ড)
-                          _buildJourneyGuideCard(),
-
-                          const SizedBox(height: 150),
-                        ],
-                      ),
+                    Column(
+                      children: [
+                        const SizedBox(height: 30),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildVideoCard(),
+                        ),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 20),
+                                _buildJourneyGuideCard(),
+                                const SizedBox(height: 150),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -154,17 +162,19 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Your Journey Guide", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Serif')),
+          const AppText("Your Journey Guide", fontSize: 18, fontWeight: FontWeight.bold),
           const SizedBox(height: 10),
-          const Text("When I was little (Childhood)", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-          const Text(
+          const AppText("When I was little (Childhood)", fontSize: 15, fontWeight: FontWeight.w600),
+          const AppText(
             "This may or may not be relevant to what you would like to work on so skip it if not.",
-            style: TextStyle(fontSize: 12, color: Colors.black45),
+            fontSize: 12,
+            color: Colors.black45,
           ),
           const SizedBox(height: 15),
-          const Text(
+          const AppText(
             "Float back in time and see if you remember feeling this way from your situation as a child or any other time?",
-            style: TextStyle(fontSize: 13, color: Colors.black87),
+            fontSize: 13,
+            color: Colors.black87,
           ),
           const SizedBox(height: 15),
 
@@ -184,7 +194,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
                 bool isSelected = _selectedIndices.contains(index);
                 return CheckboxListTile(
                   value: isSelected,
-                  title: Text(_options[index], style: const TextStyle(fontSize: 14)),
+                  title: AppText(_options[index], fontSize: 14),
                   activeColor: const Color(0xFF537E5D),
                   onChanged: (val) => setState(() => val! ? _selectedIndices.add(index) : _selectedIndices.remove(index)),
                   controlAffinity: ListTileControlAffinity.leading,
@@ -195,7 +205,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
           ),
           const SizedBox(height: 20),
 
-          // বাটন সেকশন
+
           Row(
             children: [
               Expanded(
@@ -208,7 +218,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
                     minimumSize: const Size(0, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text("Save & Continue", style: TextStyle(color: Colors.white)),
+                  child: const AppText("Save & Continue", color: Colors.white,fontSize: 14, fontWeight: FontWeight.w500,),
                 ),
               ),
               const SizedBox(width: 10),
@@ -219,7 +229,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
                     minimumSize: const Size(0, 50),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text("Skip for now", style: TextStyle(color: Colors.black54)),
+                  child: const AppText("Skip for now", color: Colors.black54,fontSize: 14, fontWeight: FontWeight.w500,),
                 ),
               ),
             ],
@@ -234,7 +244,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, left: 10, bottom: 10),
       child: Row(children: [
         IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        const Text("Session 1", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Serif')),
+        const AppText("Session 1", fontSize: 20, fontWeight: FontWeight.bold),
       ]),
     );
   }

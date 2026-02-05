@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
 import '../../widets/Custom_BackgroundDesign.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -55,24 +56,19 @@ class HelpScreen extends StatelessWidget {
                                       child: ExpansionTile(
                                         iconColor: const Color(0xFF2E3E32),
                                         collapsedIconColor: Colors.black54,
-                                        title: Text(
+                                        title: AppText(
                                           "${index + 1}. $question",
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: Color(0xFF2E3E32),
-                                          ),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF2E3E32),
                                         ),
                                         children: const [
                                           Padding(
                                             padding: EdgeInsets.fromLTRB(20, 0, 20, 15),
-                                            child: Text(
+                                            child: AppText(
                                               "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.black87,
-                                                height: 1.4,
-                                              ),
+                                              fontSize: 14,
+                                              color: Colors.black87,
                                             ),
                                           )
                                         ],

@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class AudioCalmPage extends StatefulWidget {
   const AudioCalmPage({super.key});
@@ -96,14 +97,11 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
 
-                                    const Text(
+                                    const AppText(
                                       "Describe this place",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E3E32),
-                                        fontFamily: 'Serif',
-                                      ),
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2E3E32),
                                     ),
                                     const SizedBox(height: 15),
                                     _buildAudioPlayerCard(),
@@ -177,9 +175,10 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        const AppText(
                           "Calm_place.mp3",
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
                         ),
                         const SizedBox(height: 8),
 
@@ -202,8 +201,8 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(_formatDuration(position), style: const TextStyle(fontSize: 10, color: Colors.black54)),
-                                    Text(_formatDuration(duration), style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                                    AppText(_formatDuration(position), fontSize: 10, color: Colors.black54),
+                                    AppText(_formatDuration(duration), fontSize: 10, color: Colors.black54),
                                   ],
                                 ),
                               ],
@@ -216,14 +215,10 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text(
+              const AppText(
                 "The air is crisp and I can hear the wind in the trees. It smells like pine and damp earth.",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                  fontStyle: FontStyle.italic,
-                  height: 1.5,
-                ),
+                fontSize: 14,
+                color: Colors.black87,
               ),
             ],
           ),
@@ -246,7 +241,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
       child: Row(
         children: [
           IconButton(icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)), onPressed: () => Navigator.pop(context)),
-          const Text("My Calm Space", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32), fontFamily: 'Serif')),
+          const AppText("My Calm Space", fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
         ],
       ),
     );
@@ -324,7 +319,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
         children: [
           SvgPicture.asset(iconPath, height: 24, colorFilter: ColorFilter.mode(isActive ? activeColor : Colors.black45, BlendMode.srcIn)),
           if (isActive) const SizedBox(width: 6),
-          if (isActive) Text(label, style: TextStyle(color: activeColor, fontWeight: FontWeight.bold, fontSize: 13)),
+          if (isActive) AppText(label, color: activeColor, fontWeight: FontWeight.bold, fontSize: 13),
         ],
       ),
     );

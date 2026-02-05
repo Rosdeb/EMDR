@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/profile/EditProfile.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class ProfileDetailScreen extends StatelessWidget {
   const ProfileDetailScreen({super.key});
@@ -71,14 +72,11 @@ class ProfileDetailScreen extends StatelessWidget {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text(
+                                      const AppText(
                                         "Personal Details",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Serif',
-                                          color: Color(0xFF2E3E32),
-                                        ),
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF2E3E32),
                                       ),
                                       const SizedBox(height: 25),
                                       _buildInfoRow(Icons.person_outline, "User Name", "Anaya Sharma"),
@@ -108,9 +106,10 @@ class ProfileDetailScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                 ),
-                                child: const Text(
+                                child: const AppText(
                                   "Edit Profile",
-                                  style: TextStyle(color: Colors.white, fontSize: 16),
+                                  color: Colors.white,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
@@ -143,14 +142,11 @@ class ProfileDetailScreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
             onPressed: () => Navigator.pop(context),
           ),
-          const Text(
+          const AppText(
             "Profile Details",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3E32),
-              fontFamily: 'Serif',
-            ),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
           ),
         ],
       ),
@@ -165,8 +161,8 @@ class ProfileDetailScreen extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF2E3E32))),
+            AppText(label, fontSize: 12, color: Colors.black54),
+            AppText(value, fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF2E3E32)),
           ],
         ),
       ],

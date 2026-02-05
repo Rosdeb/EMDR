@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
 
 class SignUpScreen extends StatelessWidget {
@@ -61,20 +62,18 @@ class SignUpScreen extends StatelessWidget {
                     const SizedBox(height: 15),
 
 
-                    const Text(
+                    const AppText(
                       "Step Into Success Mode",
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'serif',
-                      ),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
                     ),
                     const SizedBox(height: 10),
 
-                    const Text(
+                    const AppText(
                       "Create your account and start transforming your sales and marketing strategy now.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.4),
+                      fontSize: 12,
+                      color: Colors.black54,
                     ),
                     const SizedBox(height: 25),
 
@@ -113,9 +112,10 @@ class SignUpScreen extends StatelessWidget {
                       onPressed: () {
       Get.to(() =>  SendVerifyCodeScreen());
                       },
-                      child: const Text(
+                      child: const AppText(
                         "Sign Up",
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
@@ -125,12 +125,14 @@ class SignUpScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Already have an account? ", style: TextStyle(fontSize: 11, color: Colors.black54)),
+                        const AppText("Already have an account? ", fontSize: 11, color: Colors.black54),
                         GestureDetector(
                           // onPressed: () => Navigator.pop(context),
-                          child: const Text(
+                          child: const AppText(
                             "Sign In here",
-                            style: TextStyle(fontSize: 11, color: primaryGreen, fontWeight: FontWeight.bold),
+                            fontSize: 11,
+                            color: primaryGreen,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ],

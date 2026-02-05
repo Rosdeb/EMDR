@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class SettingChangePasswordScreen extends StatelessWidget {
   const SettingChangePasswordScreen({super.key});
@@ -70,9 +71,10 @@ class SettingChangePasswordScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(15),
                             ),
                           ),
-                          child: const Text(
+                          child: const AppText(
                             "Update password",
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                            color: Colors.white,
+                            fontSize: 16,
                           ),
                         ),
                       ),
@@ -90,13 +92,11 @@ class SettingChangePasswordScreen extends StatelessWidget {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, left: 5),
-      child: Text(
+      child: AppText(
         text,
-        style: const TextStyle(
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF2E3E32),
-          fontSize: 14,
-        ),
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF2E3E32),
+        fontSize: 14,
       ),
     );
   }

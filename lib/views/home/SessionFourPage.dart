@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class SessionFourPage extends StatelessWidget {
   const SessionFourPage({super.key});
@@ -87,9 +88,10 @@ class SessionFourPage extends StatelessWidget {
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(color: Colors.white.withOpacity(0.3)),
               ),
-              child: Text(
+              child: AppText(
                 text,
-                style: const TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
+                fontSize: 14,
+                color: Colors.black87,
               ),
             ),
           ),
@@ -119,9 +121,11 @@ class SessionFourPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              AppText(
                 question,
-                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
               ),
               const SizedBox(height: 20),
               Container(
@@ -149,7 +153,7 @@ class SessionFourPage extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text("Save & Continue", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const AppText("Save & Continue", color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -168,9 +172,11 @@ class SessionFourPage extends StatelessWidget {
             icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
             onPressed: () => Get.back(),
           ),
-          const Text(
+          const AppText(
             "Session 4",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32), fontFamily: 'Serif'),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
           ),
         ],
       ),

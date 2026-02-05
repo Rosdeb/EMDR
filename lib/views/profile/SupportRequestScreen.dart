@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../widets/Custom_BackgroundDesign.dart';
+import '../../widets/Custom_BackgroundDesign.dart';
 import '../../widets/custom_appbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class SupportRequestScreen extends StatelessWidget {
   const SupportRequestScreen({super.key});
@@ -24,10 +26,10 @@ class SupportRequestScreen extends StatelessWidget {
                       SizedBox(height: 50),
                       Image.asset('assets/images/splash_log.png', height: 120),
                       const SizedBox(height: 20),
-                      const Text(
+                      const AppText(
                         "If you face any kind of problem with our service feel free to contact us.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontWeight: FontWeight.w500),
+                        fontWeight: FontWeight.w500,
                       ),
                       const SizedBox(height: 30),
                       _buildGlassField("ABCDE"),
@@ -43,7 +45,7 @@ class SupportRequestScreen extends StatelessWidget {
                             backgroundColor: const Color(0xFF4F7957),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                           ),
-                          child: const Text("Send to admin", style: TextStyle(color: Colors.white)),
+                          child: const AppText("Send to admin", color: Colors.white),
                         ),
                       ),
                     ],

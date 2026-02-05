@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class SendVerifyCodeScreen extends StatelessWidget {
   const SendVerifyCodeScreen({super.key});
@@ -59,25 +60,19 @@ class SendVerifyCodeScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
 
-                  const Text(
+                  const AppText(
                     "Verify Your Account",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Inter',
-                    ),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
                   const SizedBox(height: 12),
 
 
-                  const Text(
+                  const AppText(
                     "Please enter your email address to receive a verification code.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
+                    fontSize: 13,
+                    color: Colors.black54,
                   ),
                   const SizedBox(height: 30),
 
@@ -99,13 +94,11 @@ class SendVerifyCodeScreen extends StatelessWidget {
                     onPressed: () {
                       Get.to(() =>  ChangePasswordScreen());
                     },
-                    child: const Text(
+                    child: const AppText(
                       "Send Verify Code",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
 
@@ -119,13 +112,11 @@ class SendVerifyCodeScreen extends StatelessWidget {
                       children: [
                         Icon(Icons.arrow_back, size: 16, color: primaryGreen),
                         SizedBox(width: 5),
-                        Text(
+                        const AppText(
                           "Back to Sign In",
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: primaryGreen,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          fontSize: 13,
+                          color: primaryGreen,
+                          fontWeight: FontWeight.bold,
                         ),
                       ],
                     ),

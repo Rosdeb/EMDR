@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 Widget Custom_AppBar(BuildContext context, String title) {
   return Padding(
@@ -17,14 +18,12 @@ Widget Custom_AppBar(BuildContext context, String title) {
         ),
 
         // Dynamic Title
-        Text(
+        // Dynamic Title
+        AppText(
           title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2E3E32),
-            fontFamily: 'Serif',
-          ),
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: const Color(0xFF2E3E32),
         ),
       ],
     ),

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class AboutUsScreen extends StatelessWidget {
   final String title;
@@ -35,13 +36,13 @@ class AboutUsScreen extends StatelessWidget {
                         child: const Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", style: TextStyle(fontSize: 14,   fontFamily: 'Serif',height: 1.5)),
+                            AppText("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", fontSize: 14),
                             SizedBox(height: 20),
-                            Text("Our Mission", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", style: TextStyle(fontSize: 14,  fontFamily: 'Serif')),
+                            AppText("Our Mission", fontSize: 18, fontWeight: FontWeight.bold),
+                            AppText("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", fontSize: 14),
                             SizedBox(height: 20),
-                            Text("Our Vision", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            Text("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", style: TextStyle(fontFamily: 'Serif',fontSize: 14)),
+                            AppText("Our Vision", fontSize: 18, fontWeight: FontWeight.bold),
+                            AppText("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis.", fontSize: 14),
                           ],
                         ),
                       ),

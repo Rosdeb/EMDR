@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class PermissionScreen extends StatefulWidget {
   const PermissionScreen({super.key});
@@ -124,7 +125,7 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
       child: Row(
         children: [
           IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
-          const Text("Permission", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, fontFamily: 'Serif')),
+          const AppText("Permission", fontSize: 20, fontWeight: FontWeight.bold),
         ],
       ),
     );
@@ -146,7 +147,7 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
             children: [
               Icon(icon, color: const Color(0xFF2E3E32), size: 28),
               const SizedBox(width: 15),
-              Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500))),
+              Expanded(child: AppText(title, fontSize: 16, fontWeight: FontWeight.w500)),
               Switch(
                 value: value,
                 onChanged: (val) => onTap(),

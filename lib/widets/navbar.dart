@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/home/SessionFourPage.dart';
 
 class CustomNavBar extends StatelessWidget {
@@ -132,13 +133,11 @@ class CustomNavBar extends StatelessWidget {
             ),
             if (isActive) const SizedBox(width: 6),
             if (isActive)
-              Text(
+              AppText(
                 label,
-                style: const TextStyle(
-                  color: Colors.white, // White text
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
-                ),
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
           ],
         ),

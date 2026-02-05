@@ -1,16 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
-import 'package:jonssony/widets/navbar.dart';
+import 'package:jonssony/utils/app_text.dart';
+
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    const double appBarImageHeight = 170;
+    const double appBarImageHeight = 150;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -28,6 +27,7 @@ class LibraryPage extends StatelessWidget {
           Column(
             children: [
               _buildAppBarContent(context),
+              SizedBox(height: 20),
 
               Expanded(
                 child: Stack(
@@ -93,11 +93,6 @@ class LibraryPage extends StatelessWidget {
           ),
 
 
-          CustomNavBar(
-            currentIndex: 2,
-            onTap: (index) => _handleNavigation(context, index),
-            primaryColor: AppColors.mainAppColor,
-          ),
         ],
       ),
     );
@@ -112,18 +107,12 @@ class LibraryPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          const Text(
+          const SizedBox(width: 15),
+          const AppText(
             "My Resources",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3E32),
-              fontFamily: 'Serif',
-            ),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
           ),
         ],
       ),
@@ -170,41 +159,30 @@ class LibraryPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 18),
-                Text(
+                AppText(
                   title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Serif',
-                    color: Color(0xFF2E3E32),
-                  ),
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF2E3E32),
                 ),
                 const SizedBox(height: 10),
-                Text(
+                AppText(
                   desc,
-                  style: const TextStyle(
-                    fontFamily: 'Serif',
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                    height: 1.4,
-                  ),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
                 ),
                 const SizedBox(height: 20),
 
                 GestureDetector(
                   onTap: () {},
-                  child: const Text(
-
+                  child: const AppText(
                     "Listen Now",
-                    style: TextStyle(
-                      fontFamily: 'Serif',
-                      fontSize: 14,
-                      color: AppColors.mainAppColor,
-                      decorationColor: AppColors.mainAppColor,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                    ),
+                    fontSize: 14,
+                    color: AppColors.mainAppColor,
+                    decorationColor: AppColors.mainAppColor,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
                   ),
                 ),
               ],
@@ -215,22 +193,5 @@ class LibraryPage extends StatelessWidget {
     );
   }
 
-  void _handleNavigation(BuildContext context, int index) {
-    if (index == 2) return; // Already on Library page
-    
-    switch (index) {
-      case 0:
-        // Go to Home - clear all and go to home
-        Navigator.pushNamedAndRemoveUntil(context, '/home_screen', (route) => false);
-        break;
-      case 1:
-        // Navigate to Progress - replace current page
-        Navigator.pushReplacementNamed(context, '/progress');
-        break;
-      case 3:
-        // Navigate to Profile - replace current page
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-    }
-  }
+
 }

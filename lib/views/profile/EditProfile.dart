@@ -1,5 +1,7 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -114,13 +116,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Text(
+                                child: const AppText(
                                   "Save",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -152,14 +152,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
             onPressed: () => Navigator.pop(context),
           ),
-          const Text(
+          const AppText(
             "Edit Profile",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3E32),
-              fontFamily: 'Serif',
-            ),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
           ),
         ],
       ),
@@ -169,14 +166,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Text(
+      child: AppText(
         text,
-        style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF2E3E32),
-          fontFamily: 'Serif',
-        ),
+        fontSize: 15,
+        fontWeight: FontWeight.bold,
+        color: const Color(0xFF2E3E32),
       ),
     );
   }

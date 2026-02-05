@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/profile/AboutUsScreen.dart';
 import 'package:jonssony/views/profile/ChangePasswordScreen.dart';
@@ -10,6 +11,7 @@ import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
 
 import 'package:jonssony/views/profile/SupportRequestScreen.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -55,13 +57,11 @@ class SettingsScreen extends StatelessWidget {
                                 return Column(
                                   children: [
                                     ListTile(
-                                      title: Text(
+                                      title: AppText(
                                         item["title"],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w500,
-                                          fontSize: 16,
-                                          color: Color(0xFF2E3E32),
-                                        ),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 16,
+                                        color: Color(0xFF2E3E32),
                                       ),
                                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                                       onTap: () {
@@ -97,8 +97,13 @@ class SettingsScreen extends StatelessWidget {
                     onPressed: () {
                       // Delete account logic ba dialog
                     },
-                    icon: const Icon(Icons.delete_outline, color: Colors.white),
-                    label: const Text("Delete Account", style: TextStyle(color: Colors.white)),
+                    icon: SvgPicture.asset(
+                      'assets/icons/delete.svg',
+                      color: Colors.white,
+                      height: 24,
+                      width: 24,
+                    ),
+                    label: const AppText("Delete Account", color: Colors.white),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4F7957),
                         elevation: 0,

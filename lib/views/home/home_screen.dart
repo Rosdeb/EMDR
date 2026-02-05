@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/widets/navbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 import 'MyCalmSpace.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -30,7 +31,6 @@ class HomeScreen extends StatelessWidget {
               fit: BoxFit.fill,
             ),
           ),
-
 
           Column(
             children: [
@@ -75,14 +75,11 @@ class HomeScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: 35),
-                            const Text(
+                            const AppText(
                               "Quick Access",
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF2E3E32),
-                                fontFamily: 'Serif',
-                              ),
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2E3E32),
                             ),
                             const SizedBox(height: 20),
 
@@ -126,40 +123,19 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
 
-
-          // Custom NavBar
-          CustomNavBar(
-            currentIndex: 0,
-            onTap: (index) => _handleNavigation(context, index),
-            primaryColor: AppColors.mainAppColor,
-          ),
         ],
       ),
     );
   }
 
-  void _handleNavigation(BuildContext context, int index) {
-    if (index == 0) return; // Already on Home page
-    
-    switch (index) {
-      case 1:
-        Navigator.pushNamed(context, '/progress');
-        break;
-      case 2:
-        Navigator.pushNamed(context, '/library');
-        break;
-      case 3:
-        Navigator.pushNamed(context, '/profile');
-        break;
-    }
-  }
+
 
   Widget _buildAppBarContent(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 5,
         left: 20,
-        right: 20,
+        right: 10,
         bottom: 15,
       ),
       child: Row(
@@ -174,7 +150,7 @@ class HomeScreen extends StatelessWidget {
                   border: Border.all(color: const Color(0xFF81C784), width: 2),
                 ),
                 child: const CircleAvatar(
-                  radius: 25,
+                  radius: 20,
                   backgroundImage: AssetImage('assets/images/home_profile.png'),
                 ),
               ),
@@ -183,8 +159,8 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text("Good morning,", style: TextStyle(fontSize: 13, color: Colors.black87)),
-                  Text("Shuvo Paul", style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32), fontFamily: 'Serif')),
+                  AppText("Good morning,", fontSize: 13, color: Colors.black87),
+                  AppText("Shuvo Paul", fontSize: 19, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
                 ],
               ),
             ],
@@ -223,8 +199,8 @@ class HomeScreen extends StatelessWidget {
               children: [
                 SvgPicture.asset(iconPath, height: 28),
                 const SizedBox(height: 15),
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Serif')),
-                Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                AppText(title, fontWeight: FontWeight.bold, fontSize: 16),
+                AppText(subtitle, fontSize: 12, color: Colors.black54),
               ],
             ),
           ),
@@ -260,8 +236,8 @@ class HomeScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'Serif')),
-                          Text(subTitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                          AppText(title, fontWeight: FontWeight.bold, fontSize: 15),
+                          AppText(subTitle, fontSize: 12, color: Colors.black54),
                         ],
                       ),
                     ),
@@ -281,7 +257,7 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(progress, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    AppText(progress, fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                     Row(
                       children: [
                         _iconLabel(Icons.calendar_today_outlined, "Daily"),
@@ -304,7 +280,7 @@ class HomeScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: const Color(0xFF537E5D)),
         const SizedBox(width: 5),
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+        AppText(label, fontSize: 13, color: Colors.black87),
       ],
     );
   }

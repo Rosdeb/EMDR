@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
+import 'package:jonssony/utils/app_text.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
   const PrivacyPolicyScreen({super.key});
@@ -40,76 +41,63 @@ class PrivacyPolicyScreen extends StatelessWidget {
                             child: const Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
+                                AppText(
                                   "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF2E3E32),
-                                    height: 1.5,
-                                  ),
+                                  fontSize: 14,
+                                  color: Color(0xFF2E3E32),
+
                                 ),
                                 SizedBox(height: 25),
 
                                 // Section 1
-                                Text(
+                                AppText(
                                   "Data Collection",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32), height: 1.4),
+                                  fontSize: 14, color: Color(0xFF2E3E32),
                                 ),
 
                                 SizedBox(height: 25),
 
                                 // Section 2
-                                Text(
+                                AppText(
                                   "How We Use Information",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Sunt in culpa qui officia deserunt mollit anim id est laborum. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur sodales ligula in libero.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32), height: 1.4),
+                                  fontSize: 14, color: Color(0xFF2E3E32),
                                 ),
 
                                 SizedBox(height: 25),
 
                                 // Section 3
-                                Text(
+                                AppText(
                                   "Security",
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E3E32),
-                                    fontFamily: 'Serif',
-                                  ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2E3E32),
                                 ),
                                 SizedBox(height: 10),
-                                Text(
+                                AppText(
                                   "Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Lorem ipsum dolor sit amet.",
-                                  style: TextStyle(fontSize: 14, color: Color(0xFF2E3E32), height: 1.4),
+                                  fontSize: 14, color: Color(0xFF2E3E32), 
                                 ),
 
                                 SizedBox(height: 20),
-                                Text(
+                                AppText(
                                   "Last updated: October 2023",
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.black54,
-                                  ),
+                                  fontSize: 12,
+                                  // fontStyle: FontStyle.italic,
+                                  color: Colors.black54,
                                 ),
                               ],
                             ),

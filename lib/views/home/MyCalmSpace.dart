@@ -5,6 +5,7 @@ import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/views/home/VideoCalmPage.dart';
+import 'package:jonssony/utils/app_text.dart';
 import 'AudioCalmPage.dart';
 
 class MyCalmSpace extends StatelessWidget {
@@ -161,14 +162,11 @@ class MyCalmSpace extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Text(
+              const AppText(
                 "My Calm Space",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E3E32),
-                  fontFamily: 'Inter',
-                ),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E3E32),
               ),
             ],
           ),
@@ -200,16 +198,19 @@ class MyCalmSpace extends StatelessWidget {
                     backgroundImage: AssetImage('assets/images/emdr_sun.jpg'),
                   ),
                   const SizedBox(width: 8),
-                  Text(
+                  AppText(
                     "Thoughts",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black.withOpacity(0.7)),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black.withOpacity(0.7),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              const Text(
+              const AppText(
                 "Creating distance from our thoughts helps us see them clearly.",
-                style: TextStyle(fontSize: 13, color: Colors.black54, height: 1.4),
+                fontSize: 13,
+                color: Colors.black54,
               ),
               if (child != null) ...[
                 const SizedBox(height: 20),
@@ -252,14 +253,16 @@ class MyCalmSpace extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      AppText(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'Serif'),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      AppText(
                         type,
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                        fontSize: 12,
+                        color: Colors.black54,
                       ),
                     ],
                   ),

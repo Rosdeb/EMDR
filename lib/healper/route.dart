@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:jonssony/views/home/home_screen.dart';
+import 'package:jonssony/views/main_screen.dart';
 import '../views/splash_screen.dart';
 import '../views/auth/welcome_screen.dart';
 import '../views/auth/login_screen.dart';
@@ -17,6 +18,7 @@ class RouteHelper {
   static const String library = '/library';
   static const String progress = '/progress';
   static const String profile = '/profile';
+  static const String main = '/main';
 
   static List<GetPage> routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -27,5 +29,6 @@ class RouteHelper {
     GetPage(name: library, page: () => const LibraryPage()),
     GetPage(name: progress, page: () => const ProgressPage()),
     GetPage(name: profile, page: () => const ProfilePage()),
+    GetPage(name: main, page: () => const MainScreen()),
   ];
 }
