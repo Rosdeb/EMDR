@@ -8,7 +8,7 @@ class SessionFourPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double appBarImageHeight = 170;
+    const double appBarImageHeight = 150;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -70,8 +70,6 @@ class SessionFourPage extends StatelessWidget {
       ),
     );
   }
-
-  // ক্লিকযোগ্য কার্ড যা পপ-আপ ওপেন করবে
   Widget _buildClickableCard(BuildContext context, String text) {
     return GestureDetector(
       onTap: () => _showAnswerPopup(context, text),
@@ -100,7 +98,6 @@ class SessionFourPage extends StatelessWidget {
     );
   }
 
-  // ৪. পপ-আপ পেজ (Modal Bottom Sheet)
   void _showAnswerPopup(BuildContext context, String question) {
     showModalBottomSheet(
       context: context,
@@ -143,7 +140,6 @@ class SessionFourPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              // সেভ বাটন
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(

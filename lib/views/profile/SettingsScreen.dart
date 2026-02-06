@@ -34,7 +34,7 @@ class SettingsScreen extends StatelessWidget {
           Column(
             children: [
               Custom_AppBar(context, "Settings"),
-
+SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),

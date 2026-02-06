@@ -18,7 +18,7 @@ Widget BackgroundDesign() {
 
       Positioned.fill(
         child: Container(
-          margin: const EdgeInsets.only(top: 150),
+          margin: const EdgeInsets.only(top: 100),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.only(

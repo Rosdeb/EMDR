@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/profile/PrivacyPolicyScreen.dart';
+import 'package:jonssony/views/profile/TermsOfServiceScreen.dart';
 import '../../healper/route.dart';
 
 class AuthWelcomeScreen extends StatelessWidget {
@@ -83,7 +86,7 @@ class AuthWelcomeScreen extends StatelessWidget {
             child: Container(
               width: double.infinity,
               margin: const EdgeInsets.fromLTRB(15, 0, 15, 25),
-              padding: const EdgeInsets.fromLTRB(24, 35, 24, 25),
+              padding: const EdgeInsets.fromLTRB(24, 25, 24, 25),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),
@@ -100,19 +103,19 @@ class AuthWelcomeScreen extends StatelessWidget {
                 children: [
                   const AppText(
                     "Let's get started!",
-                    textAlign: TextAlign.center,
-                    fontSize: 28,
+                    textAlign: TextAlign.start,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A1A),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   const AppText(
                     "Select to login with your account or create one",
                     textAlign: TextAlign.center,
-                    fontSize: 15,
+                    fontSize: 14,
                     color: Colors.black54,
                   ),
-                  const SizedBox(height: 35),
+                  const SizedBox(height: 20),
 
                   _buildButton(
                     "Sign Up",
@@ -147,6 +150,9 @@ class AuthWelcomeScreen extends StatelessWidget {
                             decoration: TextDecoration.underline,
                             fontFamily: "Serif",
                           ),
+                          recognizer: TapGestureRecognizer()..onTap = () {
+                            Get.to(() => const TermsOfServiceScreen());
+                          },
                         ),
                         const TextSpan(text: " and "),
                         TextSpan(
@@ -157,6 +163,9 @@ class AuthWelcomeScreen extends StatelessWidget {
                             decoration: TextDecoration.underline,
                             fontFamily: "Serif",
                           ),
+                          recognizer: TapGestureRecognizer()..onTap = () {
+                            Get.to(() => const PrivacyPolicyScreen());
+                          },
                         ),
                       ],
                     ),
@@ -189,6 +198,7 @@ class AuthWelcomeScreen extends StatelessWidget {
           text,
           fontSize: 16,
           fontWeight: FontWeight.bold,
+          color: txt,
         ),
       ),
     );

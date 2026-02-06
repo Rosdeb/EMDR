@@ -2,12 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_navigation/src/extension_navigation.dart';
-import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/profile/ProfileDetailScreen.dart';
 import 'package:jonssony/views/profile/SettingsScreen.dart';
 import 'package:jonssony/views/profile/Subscription.dart';
 import 'package:jonssony/views/profile/permission.dart';
-import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class ProfilePage extends StatelessWidget {
