@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
+import 'package:jonssony/views/auth/SignUp_Verification.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -110,7 +111,7 @@ class SignUpScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-      Get.to(() =>  SendVerifyCodeScreen());
+      Get.to(() => SignUpVerification());
                       },
                       child: const AppText(
                         "Sign Up",
@@ -158,11 +159,15 @@ class SignUpScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.mainAppColor),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color:  AppColors.mainAppColor),
+          borderSide: BorderSide(color:  AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(color: AppColors.mainAppColor),
         ),
       ),
     );
@@ -181,11 +186,15 @@ class SignUpScreen extends StatelessWidget {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.mainAppColor),
+          borderSide: BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.mainAppColor),
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: const BorderSide(color: AppColors.mainAppColor),
         ),
       ),
     );

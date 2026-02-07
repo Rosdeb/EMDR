@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/healper/route.dart';
+import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/home/home_screen.dart';
 
@@ -100,7 +101,7 @@ class LoginScreen extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        Get.toNamed(RouteHelper.signup);
+                        Get.toNamed(RouteHelper.forget);
                       },
                       child: const AppText(
                         "Forgot Password?",
@@ -169,20 +170,26 @@ class LoginScreen extends StatelessWidget {
   }
 
   Widget _textField({required IconData icon, required String hint, bool isObscure = false}) {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBFBFC),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Color(0xFFE3E6F0)),
-      ),
-      child: TextField(
-        obscureText: isObscure,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-          prefixIcon: Icon(icon, color: Colors.grey.shade600, size: 22),
-          contentPadding: const EdgeInsets.symmetric(vertical: 20),
-          border: InputBorder.none,
+    return TextField(
+      obscureText: isObscure,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
+        prefixIcon: Icon(icon, color: Colors.grey.shade600, size: 22),
+        contentPadding: const EdgeInsets.symmetric(vertical: 20),
+        filled: true,
+        fillColor: const Color(0xFFFBFBFC),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide(color: AppColors.mainAppColor),
         ),
       ),
     );

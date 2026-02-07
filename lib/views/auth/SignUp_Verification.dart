@@ -3,16 +3,16 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
+import 'package:jonssony/views/home/home_screen.dart';
 
-class Verification extends StatefulWidget {
-  const Verification({super.key});
+class SignUpVerification extends StatefulWidget {
+  const SignUpVerification({super.key});
 
   @override
-  State<Verification> createState() => _VerificationState();
+  State<SignUpVerification> createState() => _SignUpVerificationState();
 }
 
-class _VerificationState extends State<Verification> {
+class _SignUpVerificationState extends State<SignUpVerification> {
   // 1. Controllers and FocusNodes for the 6 digits
   final List<TextEditingController> _controllers = List.generate(6, (index) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
@@ -143,9 +143,9 @@ class _VerificationState extends State<Verification> {
                       },
                       child: const AppText(
                         'Paste Code',
-                         fontSize: 14,
-                         color: primaryGreen,
-                         fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: primaryGreen,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
@@ -162,7 +162,9 @@ class _VerificationState extends State<Verification> {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        Get.to(() => ChangePasswordScreen());
+
+                          Get.to(() => HomeScreen());
+
                         String otp = _controllers.map((c) => c.text).join();
                         print("Entered OTP: $otp");
                       },
@@ -194,23 +196,23 @@ class _VerificationState extends State<Verification> {
                     ),
 
                     const SizedBox(height: 15),
-                    
-                     GestureDetector(
+
+                    GestureDetector(
                       onTap: () => Get.back(),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.arrow_back, size: 16, color: primaryGreen),
-                            SizedBox(width: 5),
-                            AppText(
-                              "Back to Sign In",
-                              fontSize: 13,
-                              color: primaryGreen,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ],
-                        ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_back, size: 16, color: primaryGreen),
+                          SizedBox(width: 5),
+                          AppText(
+                            "Back to Sign In",
+                            fontSize: 13,
+                            color: primaryGreen,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
