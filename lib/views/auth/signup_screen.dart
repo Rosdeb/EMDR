@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
@@ -111,7 +112,7 @@ class SignUpScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-      Get.to(() => SignUpVerification());
+                        Get.toNamed(RouteHelper.singup_verification);
                       },
                       child: const AppText(
                         "Sign Up",
@@ -128,7 +129,9 @@ class SignUpScreen extends StatelessWidget {
                       children: [
                         const AppText("Already have an account? ", fontSize: 11, color: Colors.black54),
                         GestureDetector(
-                          // onPressed: () => Navigator.pop(context),
+                          onTap: () {
+                            Get.toNamed(RouteHelper.login);
+                          },
                           child: const AppText(
                             "Sign In here",
                             fontSize: 11,

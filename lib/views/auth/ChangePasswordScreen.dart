@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/auth/login_screen.dart';
 import 'package:jonssony/utils/app_text.dart';
@@ -98,7 +99,7 @@ class ChangePasswordScreen extends StatelessWidget {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        Get.to(() =>  LoginScreen());
+                        Get.offAllNamed(RouteHelper.login);
                       },
                       child: const AppText(
                         "Update Password",
@@ -112,7 +113,7 @@ class ChangePasswordScreen extends StatelessWidget {
 
                     // ব্যাক টু লগইন
                 GestureDetector(
-                  onTap: () => Navigator.pop(context),
+                  onTap: () => Get.back(),
 
 
                 child: const AppText(

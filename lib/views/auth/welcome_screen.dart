@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Required for SVG
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
@@ -12,14 +13,13 @@ class AuthWelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const Color primaryGreen = Color(0xFF52734D);
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
+          // Background Gradient
           Container(
             width: double.infinity,
             height: double.infinity,
@@ -33,13 +33,12 @@ class AuthWelcomeScreen extends StatelessWidget {
                   Colors.white.withOpacity(0.8),
                   Colors.white,
                 ],
-
                 stops: const [0.0, 0.5, 0.75, 0.85],
               ),
             ),
           ),
 
-
+          // Vector Logo Background
           Positioned(
             top: -80,
             left: 0,
@@ -54,39 +53,13 @@ class AuthWelcomeScreen extends StatelessWidget {
             ),
           ),
 
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: ShaderMask(
-              shaderCallback: (rect) {
-                return const LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black,
-                    Colors.black,
-                    Colors.transparent,
-                  ],
-                  stops: [0.0, 0.55, 0.9],
-                ).createShader(Rect.fromLTRB(0, 0, rect.width, rect.height));
-              },
-              blendMode: BlendMode.dstIn,
-              child: Image.asset(
-                'assets/images/bg_girl.png',
-                height: screenHeight * 0.70,
-                fit: BoxFit.cover,
-                alignment: Alignment.topCenter,
-              ),
-            ),
-          ),
-
+          // White Login Card
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
               width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(15, 0, 15, 25),
-              padding: const EdgeInsets.fromLTRB(24, 25, 24, 25),
+              margin: const EdgeInsets.fromLTRB(15, 0, 15, 35),
+              padding: const EdgeInsets.fromLTRB(24, 40, 24, 30),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(40),
@@ -103,7 +76,6 @@ class AuthWelcomeScreen extends StatelessWidget {
                 children: [
                   const AppText(
                     "Let's get started!",
-                    textAlign: TextAlign.start,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A1A),
@@ -115,17 +87,19 @@ class AuthWelcomeScreen extends StatelessWidget {
                     fontSize: 14,
                     color: Colors.black54,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 25),
 
+                  // Sign Up Button
                   _buildButton(
                     "Sign Up",
-                    primaryGreen,
+                    AppColors.mainAppColor,
                     Colors.white,
                         () => Get.toNamed(RouteHelper.signup),
                   ),
 
                   const SizedBox(height: 15),
 
+                  // Sign In Button
                   _buildButton(
                     "Sign In",
                     Colors.white,
@@ -134,18 +108,44 @@ class AuthWelcomeScreen extends StatelessWidget {
                     isBorder: true,
                   ),
 
+                  const SizedBox(height: 20),
+
+                  // "Or continue with" text
+                  const AppText(
+                    "Or continue with",
+                    fontSize: 14,
+                    color: Colors.black45,
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Google Button with SVG
+                  _buildSocialButton(
+                    "Google",
+                    'assets/icons/google.svg', // Verify your path here
+                        () {
+                      // Handle Google Login logic
+                    },
+                  ),
+
                   const SizedBox(height: 25),
 
+                  // Terms and Conditions Text
                   RichText(
                     textAlign: TextAlign.center,
                     text: TextSpan(
-                      style: const TextStyle(color: Colors.black45, fontSize: 12, height: 1.5, fontFamily: "Serif"),
+                      style: const TextStyle(
+                          color: Colors.black45,
+                          fontSize: 12,
+                          height: 1.5,
+                          fontFamily: "Serif"
+                      ),
                       children: [
-                        const TextSpan(text: "By tapping continue with Apple, Facebook, Google, you agree with our "),
+                        const TextSpan(text: "By tapping continue with Google, you agree with our "),
                         TextSpan(
                           text: "Terms Conditions",
                           style: TextStyle(
-                            color: primaryGreen,
+                            color: AppColors.mainAppColor,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                             fontFamily: "Serif",
@@ -158,7 +158,7 @@ class AuthWelcomeScreen extends StatelessWidget {
                         TextSpan(
                           text: "Privacy Policy",
                           style: TextStyle(
-                            color: primaryGreen,
+                            color: AppColors.mainAppColor,
                             fontWeight: FontWeight.w600,
                             decoration: TextDecoration.underline,
                             fontFamily: "Serif",
@@ -179,6 +179,43 @@ class AuthWelcomeScreen extends StatelessWidget {
     );
   }
 
+  // Helper for the Google Button
+  Widget _buildSocialButton(String text, String iconPath, VoidCallback tap) {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: Colors.grey.shade200, width: 1.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          backgroundColor: const Color(0xFFFAFAFA),
+          elevation: 0,
+        ),
+        onPressed: tap,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconPath,
+              height: 24,
+              width: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              text,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Helper for primary buttons
   Widget _buildButton(String text, Color bg, Color txt, VoidCallback tap, {bool isBorder = false}) {
     return SizedBox(
       width: double.infinity,

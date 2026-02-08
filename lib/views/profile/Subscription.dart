@@ -1,7 +1,9 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/profile/subcription/assignment.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -139,7 +141,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         child: ElevatedButton(
                           onPressed: _selectedIndex != null 
                               ? () {
-                                  // Action
+                            Get.to(() => FullAssessmentFlow());
                                 } 
                               : null,
                           style: ElevatedButton.styleFrom(

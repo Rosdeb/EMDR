@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import 'package:jonssony/views/auth/Forget_Password.dart';
 import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
+import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
 import 'package:jonssony/views/auth/SignUp_Verification.dart';
 import 'package:jonssony/views/home/home_screen.dart';
 import 'package:jonssony/views/main_screen.dart';
@@ -24,6 +25,7 @@ class RouteHelper {
   static const String library = '/library';
   static const String progress = '/progress';
   static const String profile = '/profile';
+  static const String changePassword = '/change_password';
   static const String main = '/main';
 
   static List<GetPage> routes = [
@@ -33,6 +35,7 @@ class RouteHelper {
     GetPage(name: signup, page: () => const SignUpScreen()),
     GetPage(name: forget, page: () => const ForgetScreen()),
     GetPage(name: verify, page: () => Verification()),
+    GetPage(name: changePassword, page: () => const ChangePasswordScreen()),
     GetPage(name: singup_verification, page: () => SignUpVerification()),
     GetPage(name: home, page: () => const HomeScreen()),
     GetPage(name: library, page: () => const LibraryPage()),

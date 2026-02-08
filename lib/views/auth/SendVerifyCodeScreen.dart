@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
@@ -162,7 +163,7 @@ class _VerificationState extends State<Verification> {
                         elevation: 0,
                       ),
                       onPressed: () {
-                        Get.to(() => ChangePasswordScreen());
+                        Get.toNamed(RouteHelper.changePassword);
                         String otp = _controllers.map((c) => c.text).join();
                         print("Entered OTP: $otp");
                       },

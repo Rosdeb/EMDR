@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
+import 'package:jonssony/views/auth/login_screen.dart';
 
 class ForgetScreen extends StatelessWidget {
   const ForgetScreen({super.key});
@@ -67,8 +69,6 @@ class ForgetScreen extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                   const SizedBox(height: 12),
-
-
                   const AppText(
                     "Don’t worry! Enter your registered email.",
                     textAlign: TextAlign.center,
@@ -93,7 +93,7 @@ class ForgetScreen extends StatelessWidget {
                       elevation: 0,
                     ),
                     onPressed: () {
-                      Get.to(() =>  Verification());
+                      Get.toNamed(RouteHelper.verify);
                     },
                     child: const AppText(
                       "Send Reset Code",
@@ -107,6 +107,7 @@ class ForgetScreen extends StatelessWidget {
 
 
                   GestureDetector(
+                    onTap: () =>  Get.to(() => LoginScreen()),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

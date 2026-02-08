@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/auth/login_screen.dart';
 import 'package:jonssony/views/home/home_screen.dart';
+
+import '../../healper/route.dart';
 
 class SignUpVerification extends StatefulWidget {
   const SignUpVerification({super.key});
@@ -163,7 +166,7 @@ class _SignUpVerificationState extends State<SignUpVerification> {
                       ),
                       onPressed: () {
 
-                          Get.to(() => HomeScreen());
+                          Get.offAllNamed(RouteHelper.main);
 
                         String otp = _controllers.map((c) => c.text).join();
                         print("Entered OTP: $otp");
@@ -198,7 +201,7 @@ class _SignUpVerificationState extends State<SignUpVerification> {
                     const SizedBox(height: 15),
 
                     GestureDetector(
-                      onTap: () => Get.back(),
+                      onTap: () =>  Get.to(() => LoginScreen()),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
