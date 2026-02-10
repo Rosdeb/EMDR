@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
+
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
@@ -16,6 +17,12 @@ class AudioCalmPage extends StatefulWidget {
 class _AudioCalmPageState extends State<AudioCalmPage> {
   late AudioPlayer _audioPlayer;
 
+  String currentAudio = "calm place.wav";
+  final List<String> audioList = [
+    "calm place.wav",
+    "puppies_v1.mp3",
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -23,13 +30,11 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
     _initAudio();
   }
 
-
   Future<void> _initAudio() async {
     try {
-
-      await _audioPlayer.setAsset('assets/audio/calm_place.mp3');
+      await _audioPlayer.setAsset('assets/audio/$currentAudio');
     } catch (e) {
-      debugPrint("Error loading audio: $e");
+      debugPrint("Audio load error: $e");
     }
   }
 
@@ -42,76 +47,98 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
   @override
   Widget build(BuildContext context) {
     const double appBarImageHeight = 180;
-    const double overlapAmount = 5;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
+          /// Top Image
+          SizedBox(
             height: appBarImageHeight,
+            width: double.infinity,
             child: Image.asset(
               'assets/images/my_emdr.png',
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
             ),
           ),
+
+          /// Main Layout
           Column(
             children: [
               _buildAppBar(context),
+
               Expanded(
                 child: Stack(
-                  clipBehavior: Clip.none,
                   children: [
-                    Positioned.fill(
-                      top: -overlapAmount,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(35),
-                            topRight: Radius.circular(35),
-                          ),
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/home_bg1.jpg'),
-                            fit: BoxFit.cover,
-                          ),
+                    /// Background
+                    Container(
+                      decoration: const BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage('assets/images/home_bg1.jpg'),
+                          fit: BoxFit.cover,
+                        ),
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(35),
+                          topRight: Radius.circular(35),
                         ),
                       ),
                     ),
-                    Positioned.fill(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 90),
-                            _buildGlassContainer(
-                              height: 420,
-                              child: Padding(
-                                padding: const EdgeInsets.all(20.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
 
-                                    const AppText(
-                                      "Describe this place",
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2E3E32),
+                    /// Scroll Content
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        children: [
+                          const SizedBox(height: 90),
+
+                          _buildGlassContainer(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildAudioPlayerContent(),
+                                  const SizedBox(height: 25),
+
+                                  const AppText(
+                                    "Describe this place",
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E3E32),
+                                  ),
+                                  const SizedBox(height: 15),
+
+                                  Container(
+                                    height: 120,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.5),
+                                      borderRadius: BorderRadius.circular(15),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.3),
+                                      ),
                                     ),
-                                    const SizedBox(height: 15),
-                                    _buildAudioPlayerCard(),
-                                  ],
-                                ),
+                                    child: const TextField(
+                                      maxLines: 4,
+                                      decoration: InputDecoration(
+                                        hintText:
+                                        "Why does this place make you feel safe? E.g., 'The air is crisp...'",
+                                        border: InputBorder.none,
+                                        hintStyle: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 150),
-                          ],
-                        ),
+                          ),
+
+                          const SizedBox(height: 150),
+                        ],
                       ),
                     ),
                   ],
@@ -119,146 +146,221 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
               ),
             ],
           ),
-          _buildFloatingBottomNav(AppColors.mainAppColor),
         ],
       ),
     );
   }
 
-  Widget _buildAudioPlayerCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(25),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
-            borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
+  // ---------------------------------------------------------------------------
+  // AUDIO PLAYER CONTENT
+  // ---------------------------------------------------------------------------
+
+  Widget _buildAudioPlayerContent() {
+    return Row(
+      children: [
+        /// Play / Pause
+        StreamBuilder<PlayerState>(
+          stream: _audioPlayer.playerStateStream,
+          builder: (context, snapshot) {
+            final playing = snapshot.data?.playing ?? false;
+            return GestureDetector(
+              onTap: () {
+                playing ? _audioPlayer.pause() : _audioPlayer.play();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF537E5D),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  playing
+                      ? Icons.pause_rounded
+                      : Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 36,
+                ),
+              ),
+            );
+          },
+        ),
+
+        const SizedBox(width: 15),
+
+        /// Title + Progress
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-
-                  StreamBuilder<PlayerState>(
-                    stream: _audioPlayer.playerStateStream,
-                    builder: (context, snapshot) {
-                      final playerState = snapshot.data;
-                      final playing = playerState?.playing ?? false;
-                      return GestureDetector(
-                        onTap: () {
-                          if (playing) {
-                            _audioPlayer.pause();
-                          } else {
-                            _audioPlayer.play();
-                          }
-                        },
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF537E5D),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 40,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const AppText(
-                          "Calm_place.mp3",
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                        const SizedBox(height: 8),
-
-                        StreamBuilder<Duration>(
-                          stream: _audioPlayer.positionStream,
-                          builder: (context, snapshot) {
-                            final position = snapshot.data ?? Duration.zero;
-                            final duration = _audioPlayer.duration ?? Duration.zero;
-                            return Column(
-                              children: [
-                                LinearProgressIndicator(
-                                  value: duration.inMilliseconds > 0
-                                      ? position.inMilliseconds / duration.inMilliseconds
-                                      : 0,
-                                  backgroundColor: Colors.black12,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF537E5D)),
-                                  minHeight: 6,
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    AppText(_formatDuration(position), fontSize: 10, color: Colors.black54),
-                                    AppText(_formatDuration(duration), fontSize: 10, color: Colors.black54),
-                                  ],
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              AppText(
+                currentAudio,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 20),
-              const AppText(
-                "The air is crisp and I can hear the wind in the trees. It smells like pine and damp earth.",
-                fontSize: 14,
-                color: Colors.black87,
+              const SizedBox(height: 8),
+              StreamBuilder<Duration>(
+                stream: _audioPlayer.positionStream,
+                builder: (context, snapshot) {
+                  final position = snapshot.data ?? Duration.zero;
+                  final duration = _audioPlayer.duration ?? Duration.zero;
+
+                  return Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: duration.inMilliseconds > 0
+                            ? position.inMilliseconds /
+                            duration.inMilliseconds
+                            : 0,
+                        backgroundColor: Colors.black12,
+                        valueColor:
+                        const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF537E5D),
+                        ),
+                        minHeight: 6,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                        children: [
+                          AppText(
+                            _formatDuration(position),
+                            fontSize: 10,
+                            color: Colors.black54,
+                          ),
+                          AppText(
+                            _formatDuration(duration),
+                            fontSize: 10,
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
         ),
-      ),
+
+        const SizedBox(width: 10),
+
+        /// Replace Button
+        ElevatedButton(
+          onPressed: () => _showAudioSelectionModal(context),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF537E5D),
+            minimumSize: const Size(60, 30),
+            padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          child: const AppText(
+            "Replace",
+            fontSize: 11,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, "0");
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    return "$twoDigitMinutes:$twoDigitSeconds";
+  // ---------------------------------------------------------------------------
+  // AUDIO SELECTION MODAL
+  // ---------------------------------------------------------------------------
+
+  void _showAudioSelectionModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius:
+            BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: audioList.map((audio) {
+              final isSelected = currentAudio == audio;
+              return ListTile(
+                leading: Icon(
+                  Icons.music_note,
+                  color: isSelected
+                      ? const Color(0xFF537E5D)
+                      : Colors.grey,
+                ),
+                title: AppText(
+                  audio,
+                  fontWeight:
+                  isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                trailing: isSelected
+                    ? const Icon(Icons.check_circle,
+                    color: Color(0xFF537E5D))
+                    : null,
+                onTap: () async {
+                  setState(() => currentAudio = audio);
+                  await _audioPlayer.stop();
+                  await _audioPlayer
+                      .setAsset('assets/audio/$audio');
+                  await _audioPlayer.play();
+                  Navigator.pop(context);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
   }
 
+  // ---------------------------------------------------------------------------
+  // UI HELPERS
+  // ---------------------------------------------------------------------------
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, left: 10, bottom: 10),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 10,
+        bottom: 10,
+      ),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)), onPressed: () => Navigator.pop(context)),
-          const AppText("My Calm Space", fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
+          IconButton(
+            icon: const Icon(Icons.arrow_back,
+                color: Color(0xFF2E3E32)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          const AppText(
+            "My Calm Space",
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E3E32),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildGlassContainer({double? height, required Widget child}) {
+  Widget _buildGlassContainer({required Widget child}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          height: height,
           width: double.infinity,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.3),
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
+            border:
+            Border.all(color: Colors.white.withOpacity(0.2)),
             image: const DecorationImage(
               image: AssetImage('assets/images/home_bg2.jpg'),
               fit: BoxFit.cover,
@@ -270,58 +372,6 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
     );
   }
 
-  Widget _buildFloatingBottomNav(Color primaryColor) {
-    return Positioned(
-      bottom: 25, left: 15, right: 15,
-      child: Row(
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(40),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  height: 75,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _navItem(AppIcons.home, "Home", true, const Color(0xFF537E5D)),
-                      _navItem(AppIcons.progress_nav, "", false, primaryColor),
-                      _navItem(AppIcons.library, "", false, primaryColor),
-                      _navItem(AppIcons.profile, "", false, primaryColor),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            height: 70, width: 70,
-            decoration: const BoxDecoration(color: Color(0xFF537E5D), shape: BoxShape.circle),
-            child: const Icon(Icons.add, color: Colors.white, size: 35),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _navItem(String iconPath, String label, bool isActive, Color activeColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: isActive ? BoxDecoration(color: activeColor.withOpacity(0.15), borderRadius: BorderRadius.circular(30)) : null,
-      child: Row(
-        children: [
-          SvgPicture.asset(iconPath, height: 24, colorFilter: ColorFilter.mode(isActive ? activeColor : Colors.black45, BlendMode.srcIn)),
-          if (isActive) const SizedBox(width: 6),
-          if (isActive) AppText(label, color: activeColor, fontWeight: FontWeight.bold, fontSize: 13),
-        ],
-      ),
-    );
-  }
+  String _formatDuration(Duration d) =>
+      "${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:${d.inSeconds.remainder(60).toString().padLeft(2, '0')}";
 }

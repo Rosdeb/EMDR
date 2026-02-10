@@ -58,7 +58,7 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
                       decoration: InputDecoration(
                         hintText: "Enter your name",
                         border: InputBorder.none,
-                        suffixIcon: Icon(Icons.keyboard_arrow_down),
+                        // suffixIcon: Icon(Icons.keyboard_arrow_down),
                       ),
                     ),
                   ),

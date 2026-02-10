@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-
+import 'package:jonssony/views/Library/bilateral_settings.dart';
+import 'package:jonssony/views/Library/clam_space_ex.dart';
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
@@ -15,24 +17,25 @@ class LibraryPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
-            top: 0, left: 0, right: 0, height: appBarImageHeight,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: appBarImageHeight,
             child: Image.asset(
               'assets/images/my_emdr.png',
-              fit: BoxFit.fill,
+              fit: BoxFit.cover,
             ),
           ),
 
           Column(
             children: [
-              _buildAppBarContent(context),
-              SizedBox(height: 20),
+              _buildAppBar(context),
+              const SizedBox(height: 20),
 
               Expanded(
                 child: Stack(
                   children: [
-
                     Positioned.fill(
                       child: Container(
                         decoration: const BoxDecoration(
@@ -48,6 +51,7 @@ class LibraryPage extends StatelessWidget {
                       ),
                     ),
 
+                    /// SCROLL
                     Positioned.fill(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
@@ -56,29 +60,38 @@ class LibraryPage extends StatelessWidget {
                           children: [
                             const SizedBox(height: 30),
 
-
-                            _buildResourceCard(
-                              "Calm Place Exercise",
+                            _resourceCard(
+                              title: "Calm Place Exercise",
+                              desc:
                               "Access your saved safe place audio visualization.",
-                              Icons.anchor,
-                              const Color(0xFFC4FCEF),
-                              const Color(0xFF537E5D),
+                              icon: Icons.anchor,
+                              boxColor: const Color(0xFFC4FCEF),
+                              iconColor: const Color(0xFF537E5D),
+                              onTap: () {
+                                Get.to(() => MyCalmSpaceExercise ());
+                              },
                             ),
 
-                            _buildResourceCard(
-                              "Bilateral Settings",
+                            _resourceCard(
+                              title: "Bilateral Settings",
+                              desc:
                               "Customize your visual and audio stimulation preferences.",
-                              Icons.settings_outlined,
-                              const Color(0xFFF3F3F3),
-                              Colors.black54,
+                              icon: Icons.settings_outlined,
+                              boxColor: const Color(0xFFF3F3F3),
+                              iconColor: Colors.black54,
+                              onTap: () {
+                                Get.to(() => BilateralSimulationPage(environmentImage: '', visualObject: '', speedInSeconds: 0, audioAsset: '',));
+                              },
                             ),
 
-                            _buildResourceCard(
-                              "My Story",
+                            _resourceCard(
+                              title: "My Story",
+                              desc:
                               "Access your saved safe place audio visualization.",
-                              Icons.menu_book_outlined,
-                              const Color(0xFFFFF7CF),
-                              const Color(0xFFAD8C63),
+                              icon: Icons.menu_book_outlined,
+                              boxColor: const Color(0xFFFFF7CF),
+                              iconColor: const Color(0xFFAD8C63),
+                              onTap: () {},
                             ),
 
                             const SizedBox(height: 150),
@@ -91,23 +104,49 @@ class LibraryPage extends StatelessWidget {
               ),
             ],
           ),
-
-
         ],
       ),
     );
   }
-
-
-  Widget _buildAppBarContent(BuildContext context) {
+                       //// Appbar ///
+  Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 10,
-        left: 10,
+        top: MediaQuery.of(context).padding.top + 12,
+        left: 16,
+        right: 16,
       ),
       child: Row(
         children: [
-          const SizedBox(width: 15),
+
+          // /// 🔙 BLUR BACK BUTTON
+          // ClipRRect(
+          //   borderRadius: BorderRadius.circular(14),
+          //   child: BackdropFilter(
+          //     filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          //     child: InkWell(
+          //       onTap: () => Get.back(),
+          //       child: Container(
+          //         padding: const EdgeInsets.all(10),
+          //         decoration: BoxDecoration(
+          //           color: Colors.white.withOpacity(0.35),
+          //           borderRadius: BorderRadius.circular(14),
+          //           border: Border.all(
+          //             color: Colors.white.withOpacity(0.3),
+          //           ),
+          //         ),
+          //         child: const Icon(
+          //           Icons.arrow_back_ios_new,
+          //           size: 18,
+          //           color: Color(0xFF2E3E32),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // ),
+
+          const SizedBox(width: 14),
+
           const AppText(
             "My Resources",
             fontSize: 20,
@@ -119,13 +158,18 @@ class LibraryPage extends StatelessWidget {
     );
   }
 
-  Widget _buildResourceCard(
-      String title,
-      String desc,
-      IconData icon,
-      Color boxColor,
-      Color iconColor
-      ) {
+  // ---------------------------------------------------------------------------
+  // RESOURCE CARD
+  // ---------------------------------------------------------------------------
+
+  Widget _resourceCard({
+    required String title,
+    required String desc,
+    required IconData icon,
+    required Color boxColor,
+    required Color iconColor,
+    required VoidCallback onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: ClipRRect(
@@ -145,7 +189,6 @@ class LibraryPage extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -154,35 +197,43 @@ class LibraryPage extends StatelessWidget {
                       ),
                       child: Icon(icon, color: iconColor, size: 28),
                     ),
-
-                    const Icon(Icons.play_circle_outline, color: Colors.black87, size: 28),
+                    const Icon(
+                      Icons.play_circle_outline,
+                      size: 28,
+                      color: Colors.black87,
+                    ),
                   ],
                 ),
+
                 const SizedBox(height: 18),
+
                 AppText(
                   title,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: const Color(0xFF2E3E32),
                 ),
+
                 const SizedBox(height: 10),
+
                 AppText(
                   desc,
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Colors.black87,
                 ),
+
                 const SizedBox(height: 20),
 
                 GestureDetector(
-                  onTap: () {},
+                  onTap: onTap,
                   child: const AppText(
                     "Listen Now",
                     fontSize: 14,
                     color: AppColors.mainAppColor,
-                    decorationColor: AppColors.mainAppColor,
                     fontWeight: FontWeight.bold,
                     decoration: TextDecoration.underline,
+                    decorationColor: AppColors.mainAppColor,
                   ),
                 ),
               ],
@@ -192,6 +243,4 @@ class LibraryPage extends StatelessWidget {
       ),
     );
   }
-
-
 }

@@ -4,5 +4,8 @@ class AppImages {
   static String diamon="assets/images/plan.png";
   static String booster="assets/images/booster.png";
   static String deepmind="assets/images/deepmind.png";
+  static String environmentImage = "assets/images/mountain.jpg";
+  static String visualObject = "assets/images/butterfly.png";
+
 
 }

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
@@ -15,9 +17,10 @@ class SessionThreePage extends StatefulWidget {
 }
 
 class _SessionThreePageState extends State<SessionThreePage> {
-  String currentAudio = "audio.mp4";
+  String currentAudio = "calm place.wav";
   final List<String> audioList = [
-    "audio.mp4",
+    "calm place.wav",
+    "puppies_v1.mp3",
   ];
   File? _pickedImage;
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -283,19 +286,43 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
+                  Expanded(
+                  child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.15), // glass layer
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.mainAppColor.withOpacity(0.6),
+                    width: 1.2,
+                  ),
+                ),
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    side: BorderSide.none,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const AppText(
+                    "Back",
+                    color: AppColors.mainAppColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+    ),
 
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppColors.mainAppColor),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: const AppText("Back", color: AppColors.mainAppColor, fontWeight: FontWeight.bold),
-                        ),
-                      ),
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(

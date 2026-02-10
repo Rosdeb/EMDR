@@ -49,6 +49,7 @@ dependencies:
   chewie: ^1.13.0
   fl_chart: ^1.1.1
   video_player: ^2.10.1
+  animations: ^2.1.1
   geolocator:
 
 dev_dependencies:
