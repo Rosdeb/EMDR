@@ -8,4 +8,5 @@ class AppIcons {
   static String text ="assets/icons/text.svg";
   static String progress_nav ="assets/icons/progress_nav.svg";
   static String calm ="assets/icons/calm.svg";
+  static String homework = "assets/icons/homework.svg";
 }

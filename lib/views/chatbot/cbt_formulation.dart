@@ -1,18 +1,18 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart'; // GetStorage ইম্পোর্ট করুন
+import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-class SessionFourPage extends StatefulWidget {
-  const SessionFourPage({super.key});
+class cbt_formulation extends StatefulWidget {
+  const cbt_formulation({super.key});
 
   @override
-  State<SessionFourPage> createState() => _SessionFourPageState();
+  State<cbt_formulation> createState() => _cbt_formulationState();
 }
 
-class _SessionFourPageState extends State<SessionFourPage> {
-  // GetStorage ইন্সট্যান্স তৈরি
+class _cbt_formulationState extends State<cbt_formulation> {
+
   final box = GetStorage();
 
   final List<String> _questions = [
@@ -21,7 +21,7 @@ class _SessionFourPageState extends State<SessionFourPage> {
     "“What is one thing you would like to change about your current routine?”",
   ];
 
-  // ইউজারের উত্তরগুলো লোকাল মেমোরি থেকে লোড হবে
+
   late List<dynamic> _userAnswers;
 
   @override
@@ -30,14 +30,14 @@ class _SessionFourPageState extends State<SessionFourPage> {
     _loadSavedAnswers();
   }
 
-  // মেমোরি থেকে ডাটা লোড করার ফাংশন
+
   void _loadSavedAnswers() {
-    // 'session4_answers' কি (key) দিয়ে ডাটা রিড করা হচ্ছে
+
     var savedData = box.read('session4_answers');
     if (savedData != null) {
       _userAnswers = List.from(savedData);
     } else {
-      // যদি আগে কোনো ডাটা না থাকে তবে নাল (null) লিস্ট তৈরি হবে
+
       _userAnswers = List.generate(_questions.length, (index) => null);
     }
   }

@@ -17,8 +17,6 @@ Widget Custom_AppBar(BuildContext context, String title) {
           onPressed: () => Navigator.pop(context),
         ),
 
-        // Dynamic Title
-        // Dynamic Title
         AppText(
           title,
           fontSize: 20,

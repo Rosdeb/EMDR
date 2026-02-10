@@ -5,7 +5,8 @@ import 'package:get/get.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/home/SessionFourPage.dart';
+import 'package:jonssony/views/chatbot/journry_page.dart';
+import 'package:jonssony/views/chatbot/SessionFourPage.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -79,7 +80,7 @@ class CustomNavBar extends StatelessWidget {
           const SizedBox(width: 12),
           GestureDetector(
             onTap: () {
-              Get.to(() => const SessionFourPage());
+              Get.to(() =>  CreateJourneyPage());
             },
             child: Container(
               height: 70,
@@ -117,7 +118,7 @@ class CustomNavBar extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: isActive
             ? BoxDecoration(
-                color: AppColors.mainAppColor, // Solid BG
+                color: AppColors.mainAppColor,
                 borderRadius: BorderRadius.circular(30),
               )
             : null,
