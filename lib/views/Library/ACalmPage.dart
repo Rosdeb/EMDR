@@ -23,7 +23,7 @@ class _ACalmPageState extends State<ACalmPage> {
   Future<void> _initAudio() async {
     try {
       // Asset path update karein apne naming convention ke hisaab se
-      await _audioPlayer.setAsset('assets/audio/calm_place.mp3');
+      await _audioPlayer.setAsset('assets/audio/calm place.wav');
     } catch (e) {
       debugPrint("Audio load error: $e");
     }

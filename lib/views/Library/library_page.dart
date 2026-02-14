@@ -5,6 +5,7 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/Library/bilateral_settings.dart';
 import 'package:jonssony/views/Library/clam_space_ex.dart';
+import 'package:jonssony/views/Library/settings_screen.dart';
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
@@ -80,7 +81,7 @@ class LibraryPage extends StatelessWidget {
                               boxColor: const Color(0xFFF3F3F3),
                               iconColor: Colors.black54,
                               onTap: () {
-                                Get.to(() => BilateralSimulationPage(environmentImage: '', visualObject: '', speedInSeconds: 0, audioAsset: '',));
+                                Get.to(() => SettingsScreen());
                               },
                             ),
 
@@ -176,7 +177,10 @@ class LibraryPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(25),
+            child: Container(
             padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.4),
@@ -225,22 +229,21 @@ class LibraryPage extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                GestureDetector(
-                  onTap: onTap,
-                  child: const AppText(
-                    "Listen Now",
-                    fontSize: 14,
-                    color: AppColors.mainAppColor,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.underline,
-                    decorationColor: AppColors.mainAppColor,
-                  ),
+                const AppText(
+                  "Listen Now",
+                  fontSize: 14,
+                  color: AppColors.mainAppColor,
+                  fontWeight: FontWeight.bold,
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.mainAppColor,
                 ),
               ],
             ),
           ),
         ),
       ),
+      ),
     );
+
   }
 }

@@ -127,7 +127,7 @@ class _VCalmPage2State extends State<VCalmPage2> {
       padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, left: 10, bottom: 10),
       child: Row(children: [
         IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        const AppText("Session 1", fontSize: 20, fontWeight: FontWeight.bold),
+        const AppText("Light Stream", fontSize: 20, fontWeight: FontWeight.bold),
       ]),
     );
   }
