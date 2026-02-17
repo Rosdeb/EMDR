@@ -133,18 +133,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       {"name": "Mountain", "path": "assets/images/mountain.jpg"},
       {"name": "Lake", "path": "assets/images/make_more.jpg"},
       {"name": "Night", "path": "assets/images/night.jpg"},
+      {"name": "Ice", "path": "assets/images/borof.jpg"},
+      {"name": "Fire Night", "path": "assets/images/fire.jpg"},
     ];
-    return SizedBox(
-      height: 90,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: envs.length,
-        itemBuilder: (context, index) {
-          bool isSelected = selectedEnv == envs[index]['path'];
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: envs.map((env) {
+          bool isSelected = selectedEnv == env['path'];
           return GestureDetector(
-            onTap: () => setState(() => selectedEnv = envs[index]['path']!),
+            onTap: () => setState(() => selectedEnv = env['path']!),
             child: Container(
               width: 120,
+              height: 90,
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
@@ -152,11 +154,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(envs[index]['path']!, fit: BoxFit.cover),
+                child: Image.asset(env['path']!, fit: BoxFit.cover),
               ),
             ),
           );
-        },
+        }).toList(),
       ),
     );
   }
@@ -268,7 +270,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal"),
         _dirIcon("assets/images/vertical.png", AnimationDirection.vertical, "Vertical"),
-        _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal"),
+        _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down"),
+        _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up"),
       ],
     );
   }

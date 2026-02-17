@@ -1,4 +1,4 @@
-enum AnimationDirection { horizontal, vertical, diagonal }
+enum AnimationDirection { horizontal, vertical, diagonal, diagonalReverse }
 
 class SimulationSettings {
   final String environmentImage;

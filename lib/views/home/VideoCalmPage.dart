@@ -1,20 +1,15 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:jonssony/utils/AppIcons/app_icons.dart';
-import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class VideoCalmPage extends StatefulWidget {
   const VideoCalmPage({super.key});
-
   @override
   State<VideoCalmPage> createState() => _VideoCalmPageState();
 }
-
 class _VideoCalmPageState extends State<VideoCalmPage> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
@@ -62,7 +57,6 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
     List<dynamic>? saved = box.read('selected_thoughts');
     if (saved != null) setState(() => _selectedIndices.addAll(saved.cast<int>()));
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,8 +113,6 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       ),
     );
   }
-
-
   Widget _buildVideoCard() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
@@ -146,8 +138,6 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       ),
     );
   }
-
-
   Widget _buildJourneyGuideCard() {
     return Container(
       width: double.infinity,
@@ -177,8 +167,6 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
             color: Colors.black87,
           ),
           const SizedBox(height: 15),
-
-          // চেকলিস্ট সেকশন
           Container(
             decoration: BoxDecoration(
               color: const Color(0xFFFDF9F3),

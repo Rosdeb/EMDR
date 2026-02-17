@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/services.dart';
 import 'simulation_settings.dart';
 
 class SimulationScreen extends StatefulWidget {
@@ -16,9 +17,15 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
   late Animation<double> _animation;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  bool _isPaused = false; // Track pause state
+
   @override
   void initState() {
     super.initState();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
     _controller = AnimationController(
       duration: Duration(milliseconds: (widget.settings.speed * 1000).toInt()),
       vsync: this,
@@ -42,7 +49,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
 
       _controller.addListener(() {
-        if (mounted) _audioPlayer.setBalance(_animation.value);
+        if (mounted && !_isPaused) _audioPlayer.setBalance(_animation.value);
       });
       await _audioPlayer.resume();
     } catch (e) {
@@ -50,22 +57,39 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
     }
   }
 
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
+      if (_isPaused) {
+        _controller.stop();
+        _audioPlayer.pause();
+      } else {
+        _controller.repeat(reverse: true);
+        _audioPlayer.resume();
+      }
+    });
+  }
+
   Alignment _getAlignment(double value) {
     switch (widget.settings.direction) {
       case AnimationDirection.vertical: return Alignment(0.0, value);
       case AnimationDirection.diagonal: return Alignment(value, value);
+      case AnimationDirection.diagonalReverse: return Alignment(value, -value);
       case AnimationDirection.horizontal:
-      default: return Alignment(value, 0.2); // 0.2 height-e rakha hoyeche
+      default: return Alignment(value, 0.2);
     }
   }
 
   @override
   void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     _controller.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,13 +109,11 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
             },
           ),
 
-          // Custom Top Bar (Figma-r moto)
           _buildTopBar(),
         ],
       ),
     );
   }
-
   Widget _buildTopBar() {
     return SafeArea(
       child: Padding(
@@ -99,11 +121,15 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
             const Text("Mountain Sanctuary", style: TextStyle(color: Colors.white, fontSize: 18, backgroundColor: Colors.black26)),
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: _togglePause,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.white24),
-              child: const Text("Pause", style: TextStyle(color: Colors.white)),
+              child: Text(_isPaused ? "Resume" : "Pause", style: const TextStyle(color: Colors.white)),
             )
           ],
         ),

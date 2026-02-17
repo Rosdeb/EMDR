@@ -1,8 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'EmotionBodyMap.dart';
 
-class MyHomework extends StatelessWidget {
-  const MyHomework({super.key});
+class MyHomeworkPri extends StatelessWidget {
+  const MyHomeworkPri({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +56,12 @@ class MyHomework extends StatelessWidget {
                     "Emotions",
                     "Tools to manage bigger emotions",
                     'assets/images/emotions_img.jpg',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const EmotionBodyMap()),
+                      );
+                    },
                   ),
                   const SizedBox(height: 50),
                 ],
@@ -66,56 +73,59 @@ class MyHomework extends StatelessWidget {
     );
   }
 
-  Widget _buildResourceCard(String title, String desc, String imagePath) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 25),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.transparent,
-              backgroundImage: AssetImage(imagePath),
-            ),
-            const SizedBox(height: 25),
-
-
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF4A4A4A),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-
-            Text(
-              desc,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF6A6A6A),
-                height: 1.4,
-              ),
+  Widget _buildResourceCard(String title, String desc, String imagePath, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 25),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.transparent,
+                backgroundImage: AssetImage(imagePath),
+              ),
+              const SizedBox(height: 25),
+
+
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF4A4A4A),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+
+              Text(
+                desc,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF6A6A6A),
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

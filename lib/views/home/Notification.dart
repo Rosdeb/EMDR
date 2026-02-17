@@ -71,8 +71,6 @@ class NotificationPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 15),
-
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
