@@ -41,12 +41,12 @@ class CreateRoadmapPage extends StatelessWidget {
               description: "Chat with our intelligent assistant to identify your target memory, negative beliefs, and emotions.",
               buttonText: "View Assessments",
               buttonColor: AppColors.mainAppColor,
-              // onTap: () {
-              //   Get.to(() => SessionFourPage());
-              // },
               onTap: () {
-                Get.to(() => SessionThreePage());
+                Get.to(() => SessionFourPage());
               },
+              // onTap: () {
+              //   Get.to(() => SessionThreePage());
+              // },
 
             ),
 

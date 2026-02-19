@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Column(
                 children: [
                   _buildHeader(),
@@ -268,10 +268,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal"),
-        _dirIcon("assets/images/vertical.png", AnimationDirection.vertical, "Vertical"),
-        _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down"),
-        _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up"),
+        Expanded(child: _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal")),
+        const SizedBox(width: 8),
+        Expanded(child: _dirIcon("assets/images/vertical.png", AnimationDirection.vertical, "Vertical")),
+        const SizedBox(width: 8),
+        Expanded(child: _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down")),
+        const SizedBox(width: 8),
+        Expanded(child: _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up")),
       ],
     );
   }
@@ -280,23 +283,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool isSelected = selectedDir == dir;
     return GestureDetector(
       onTap: () => setState(() => selectedDir = dir),
-      child: SizedBox(
-        width: 90,
-        child: _glassCard(
-          isSelected: isSelected,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Column(
-            children: [
-              Image.asset(
-                iconPath, 
-                width: 25, 
-                height: 25,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 4),
-              Text(label, style: TextStyle(fontSize: 10, color: isSelected ? primaryGreen : Colors.black54)),
-            ],
-          ),
+      child: _glassCard(
+        isSelected: isSelected,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Column(
+          children: [
+            Image.asset(
+              iconPath, 
+              width: 25, 
+              height: 25,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label, 
+              style: TextStyle(fontSize: 10, color: isSelected ? primaryGreen : Colors.black54),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

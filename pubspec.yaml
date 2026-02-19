@@ -52,6 +52,9 @@ dependencies:
   animations: ^2.1.1
   geolocator:
   audioplayers: ^6.5.1
+  path_provider: ^2.1.5
+  saver_gallery: ^4.1.0
+  signature: ^5.5.0
 
 dev_dependencies:
   flutter_test:

@@ -63,7 +63,7 @@ class MyCalmSpaceExercise extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildAppBar(context),
-SizedBox(height: 20,),
+SizedBox(height: 70,),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),

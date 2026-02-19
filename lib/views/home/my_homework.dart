@@ -1,5 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:jonssony/views/home/BehaviourScreen.dart';
+import 'package:jonssony/views/home/emdr2.dart';
+import 'package:jonssony/views/home/InKindChatBot.dart';
+import 'package:jonssony/views/home/Thoughts.dart';
+import 'package:jonssony/views/home/emotion_start.dart';
 import 'EmotionBodyMap.dart';
 
 class MyHomeworkPri extends StatelessWidget {
@@ -46,11 +51,23 @@ class MyHomeworkPri extends StatelessWidget {
                     "Behaviours",
                     "Transform what you're doing or not doing",
                     'assets/images/behaviour_img.jpg',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => BehaviourScreen()),
+                      );
+                    },
                   ),
                   _buildResourceCard(
                     "Thoughts",
                     "Understanding and reshaping your thinking",
                     'assets/images/thoughts_img.jpg',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CalmExercise()),
+                      );
+                    },
                   ),
                   _buildResourceCard(
                     "Emotions",
@@ -59,7 +76,9 @@ class MyHomeworkPri extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const EmotionBodyMap()),
+                        // MaterialPageRoute(builder: (context) => const EmotionBodyMap()),
+                        // MaterialPageRoute(builder: (context) => EmotionsScreen()),
+                        MaterialPageRoute(builder: (context) => EmotionStartScreen()),
                       );
                     },
                   ),
