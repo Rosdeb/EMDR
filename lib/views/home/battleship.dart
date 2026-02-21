@@ -139,6 +139,25 @@ class _PatternMemoryGameState extends State<PatternMemoryGame> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5E6D3),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF5A4A42)),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Pattern Memory',
+          style: TextStyle(
+            fontSize: 18,
+            fontFamily: 'Serif',
+            color: Color(0xFF5A4A42),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(

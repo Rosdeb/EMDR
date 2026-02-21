@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'simulation_settings.dart';
 import 'simulation_screen.dart';
+import 'save_game.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -113,15 +114,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildHeader() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 25),
-      child: Column(
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 25),
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Text("Bilateral Stimulation",
-              style: TextStyle(fontSize: 28, fontFamily: 'Serif', fontWeight: FontWeight.w500)),
-          SizedBox(height: 4),
-          Text("Customise your calming experience",
-              style: TextStyle(color: Colors.black54, fontSize: 14)),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFF333333), size: 22),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          SizedBox(width: 10,),
+          const Column(
+            children: [
+              Text("Bilateral Stimulation",
+                  style: TextStyle(
+                      fontSize: 28,
+                      fontFamily: 'Serif',
+                      fontWeight: FontWeight.w500)),
+              SizedBox(height: 4),
+              Text("Customise your calming experience",
+                  style: TextStyle(color: Colors.black54, fontSize: 14)),
+            ],
+          ),
         ],
       ),
     );
@@ -353,7 +371,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SaveGame()),
+              );
+            },
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.black12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

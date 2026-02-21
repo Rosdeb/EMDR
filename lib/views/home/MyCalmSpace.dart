@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/views/Library/ACalmPage.dart';
+import 'package:jonssony/views/chatbot/SessionFourPage.dart';
+import 'package:jonssony/views/home/act.dart';
 import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/views/home/VideoCalmPage.dart';
 import 'package:jonssony/utils/app_text.dart';
@@ -71,7 +74,15 @@ class MyCalmSpace extends StatelessWidget {
                             _buildThoughtsCard(
                               child: Column(
                                 children: [
-                                  _buildExerciseItem(Icons.description_outlined, "ACT Thoughts Exercise", "Text"),
+                                  _buildExerciseItem(Icons.description_outlined, "ACT Thoughts Exercise", "Text",
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                            const act()),
+                                      );
+                                    },),
                                   _buildExerciseItem(
                                     Icons.play_circle_outline,
                                     "ACT Thoughts Exercise",
@@ -94,7 +105,7 @@ class MyCalmSpace extends StatelessWidget {
                                         context,
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const AudioCalmPage()),
+                                                const ACalmPage()),
                                       );
                                     },
                                   ),
@@ -113,37 +124,37 @@ class MyCalmSpace extends StatelessWidget {
             ],
           ),
 
-          // Custom NavBar
-          CustomNavBar(
-            currentIndex: 0,
-            onTap: (index) => _handleNavigation(context, index),
-            primaryColor: AppColors.mainAppColor,
-          ),
+          // // Custom NavBar
+          // CustomNavBar(
+          //   currentIndex: 0,
+          //   onTap: (index) => _handleNavigation(context, index),
+          //   primaryColor: AppColors.mainAppColor,
+          // ),
         ],
       ),
     );
   }
 
-  void _handleNavigation(BuildContext context, int index) {
-    switch (index) {
-      case 0:
-        // Go back to Home - just pop this page
-        Navigator.pop(context);
-        break;
-      case 1:
-        // Navigate to Progress
-        Navigator.pushReplacementNamed(context, '/progress');
-        break;
-      case 2:
-        // Navigate to Library
-        Navigator.pushReplacementNamed(context, '/library');
-        break;
-      case 3:
-        // Navigate to Profile
-        Navigator.pushReplacementNamed(context, '/profile');
-        break;
-    }
-  }
+  // void _handleNavigation(BuildContext context, int index) {
+  //   switch (index) {
+  //     case 0:
+  //       // Go back to Home - just pop this page
+  //       Navigator.pop(context);
+  //       break;
+  //     case 1:
+  //       // Navigate to Progress
+  //       Navigator.pushReplacementNamed(context, '/progress');
+  //       break;
+  //     case 2:
+  //       // Navigate to Library
+  //       Navigator.pushReplacementNamed(context, '/library');
+  //       break;
+  //     case 3:
+  //       // Navigate to Profile
+  //       Navigator.pushReplacementNamed(context, '/profile');
+  //       break;
+  //   }
+  // }
 
   Widget _buildCalmAppBar(BuildContext context) {
     return Padding(

@@ -113,50 +113,50 @@ class _emdrState extends State<emdr> {
             ],
           ),
 
-          if (isBlurred)
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  color: Colors.black.withOpacity(0.4),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Resting the mind...",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontFamily: 'Georgia',
-                              fontStyle: FontStyle.italic
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          onPressed: () => setState(() => isBlurred = false),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4A7C5F),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                          ),
-                          child: const Text("Continue Session", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
+          // if (isBlurred)
+          //   Positioned.fill(
+          //     child: BackdropFilter(
+          //       filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          //       child: Container(
+          //         color: Colors.black.withOpacity(0.4),
+          //         child: Center(
+          //           child: Column(
+          //             mainAxisSize: MainAxisSize.min,
+          //             children: [
+          //               const Text(
+          //                 "Resting the mind...",
+          //                 style: TextStyle(
+          //                     color: Colors.white,
+          //                     fontSize: 24,
+          //                     fontFamily: 'Georgia',
+          //                     fontStyle: FontStyle.italic
+          //                 ),
+          //               ),
+          //               const SizedBox(height: 20),
+          //               ElevatedButton(
+          //                 onPressed: () => setState(() => isBlurred = false),
+          //                 style: ElevatedButton.styleFrom(
+          //                   backgroundColor: const Color(0xFF4A7C5F),
+          //                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          //                   padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+          //                 ),
+          //                 child: const Text("Continue Session", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          //               ),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
 
-      // ৫. ফ্লোটিং অ্যাকশন বাটন (মোড টগল)
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => setState(() => isBlurred = !isBlurred),
-        backgroundColor: const Color(0xFF4A7C5F),
-        child: Icon(isBlurred ? Icons.visibility : Icons.visibility_off, color: Colors.white),
-      ),
+      // // ৫. ফ্লোটিং অ্যাকশন বাটন (মোড টগল)
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () => setState(() => isBlurred = !isBlurred),
+      //   backgroundColor: const Color(0xFF4A7C5F),
+      //   child: Icon(isBlurred ? Icons.visibility : Icons.visibility_off, color: Colors.white),
+      // ),
     );
   }
 

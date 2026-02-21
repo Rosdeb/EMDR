@@ -127,7 +127,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
                             children: [
                               _sectionTitle("Data Protection & Privacy"),
                               _bodyText("Legal Basis: Article 9(2)(h) UK GDPR.", isBold: true),
-                              _bodyText("• Data Storage: AWS Elastic Beanstalk (UK/EU مراکز)\n• Encryption: AES-256 at rest, TLS 1.2+ in transit\n• Retention: 8 years for adults, age 25 for children"),
+                              _bodyText("• Data Storage: AWS Elastic Beanstalk (UK/EU)\n• Encryption: AES-256 at rest, TLS 1.2+ in transit\n• Retention: 8 years for adults, age 25 for children"),
                               const SizedBox(height: 10),
                               _bodyText("Your Rights: Access, Rectify, Object, or Lodge a complaint with ICO."),
                               _bodyText("Note: Right to erasure is limited due to clinical record-keeping requirements.", color: Colors.orange.shade900, isBold: true),
@@ -333,20 +333,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen> {
   }
 
   void _submit() {
-    if (_formKey.currentState!.validate()) {
-      if (!understandsEMDR || !understandsGDPR || !isVoluntary || !knowsEmergency) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please accept all declarations.")));
-        return;
-      }
-      if (nameCtrl.text.trim() != signatureCtrl.text.trim()) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Signature name does not match Full Name.")));
-        return;
-      }
-      // navigation for submission success
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const FullAssessmentFlow()),
-      );
-    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FullAssessmentFlow()),
+    );
   }
 }

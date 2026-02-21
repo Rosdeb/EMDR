@@ -6,14 +6,14 @@ import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-class VCalmPage extends StatefulWidget {
-  const VCalmPage({super.key});
+class VCalmPage1 extends StatefulWidget {
+  const VCalmPage1({super.key});
 
   @override
-  State<VCalmPage> createState() => _VCalmPageState();
+  State<VCalmPage1> createState() => _VCalmPage1State();
 }
 
-class _VCalmPageState extends State<VCalmPage> {
+class _VCalmPage1State extends State<VCalmPage1> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
   final box = GetStorage();
@@ -25,21 +25,24 @@ class _VCalmPageState extends State<VCalmPage> {
     _initializePlayer();
     _loadSavedData();
   }
+
   @override
   void dispose() {
     _videoPlayerController.dispose();
     _chewieController?.dispose();
     super.dispose();
   }
+
   Future<void> _initializePlayer() async {
-    _videoPlayerController = VideoPlayerController.asset('assets/video/spiral_technique.mp4');
+    _videoPlayerController = VideoPlayerController.asset(
+        'assets/video/spiral_technique.mp4');
     await _videoPlayerController.initialize();
     _chewieController = ChewieController(
       videoPlayerController: _videoPlayerController,
       autoPlay: false,
       aspectRatio: _videoPlayerController.value.aspectRatio,
       materialProgressColors: ChewieProgressColors(
-        playedColor:AppColors.mainAppColor,
+        playedColor: AppColors.mainAppColor,
         handleColor: AppColors.mainAppColor,
       ),
     );
@@ -48,7 +51,9 @@ class _VCalmPageState extends State<VCalmPage> {
 
   void _loadSavedData() {
     List<dynamic>? saved = box.read('selected_thoughts');
-    if (saved != null) setState(() => _selectedIndices.addAll(saved.cast<int>()));
+    if (saved != null) {
+      setState(() => _selectedIndices.addAll(saved.cast<int>()));
+    }
   }
 
   @override
@@ -57,7 +62,8 @@ class _VCalmPageState extends State<VCalmPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          Positioned(top: 0, left: 0, right: 0, height: 180,
+          Positioned(
+            top: 0, left: 0, right: 0, height: 180,
             child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
           Column(
@@ -66,35 +72,54 @@ class _VCalmPageState extends State<VCalmPage> {
               Expanded(
                 child: Stack(
                   children: [
-
+                    // Background
                     Positioned.fill(
                       child: Container(
                         decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(topLeft: Radius.circular(35), topRight: Radius.circular(35)),
-                          image: DecorationImage(image: AssetImage('assets/images/bg_library.jpg'), fit: BoxFit.cover),
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(35),
+                            topRight: Radius.circular(35),
+                          ),
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/bg_library.jpg'),
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
-                    Column(
-                      children: [
-                        const SizedBox(height: 30),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _buildVideoCard(),
-                        ),
-                      ],
+
+                    // Content
+                    SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(
+                        left: 20, right: 20, top: 30, bottom: 30,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // ── Video Card ──────────────────────────
+                          _buildVideoCard(),
+
+                          const SizedBox(height: 20),
+
+                          // ── Quote Card ──────────────────────────
+                          _buildQuoteCard(
+                            quote:
+                            '"Beautifully simple. Incredibly easy to use but can be customized to your hiring workflow and needs."',
+                            author: 'Mike Preuss, Co-founder and CEO, Visible.vc',
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-
         ],
       ),
     );
   }
-
 
   Widget _buildVideoCard() {
     return ClipRRect(
@@ -114,8 +139,52 @@ class _VCalmPageState extends State<VCalmPage> {
               borderRadius: BorderRadius.circular(20),
               child: _chewieController != null
                   ? Chewie(controller: _chewieController!)
-                  : const Center(child: CircularProgressIndicator(color: Color(0xFF537E5D))),
+                  : const Center(
+                  child: CircularProgressIndicator(
+                      color: Color(0xFF537E5D))),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Quote Card (missing from original) ──────────────────────
+  Widget _buildQuoteCard({
+    required String quote,
+    required String author,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(25),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(color: Colors.white.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Quote text
+              AppText(
+                quote,
+                fontSize: 15,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              const SizedBox(height: 12),
+              // Author
+              AppText(
+                author,
+                fontSize: 13,
+                color: Colors.black45,
+                fontWeight: FontWeight.w400,
+              ),
+            ],
           ),
         ),
       ),
@@ -124,13 +193,19 @@ class _VCalmPageState extends State<VCalmPage> {
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, left: 10, bottom: 10),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 10,
+        bottom: 10,
+      ),
       child: Row(children: [
-        IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        const AppText("Session 1", fontSize: 20, fontWeight: FontWeight.bold),
+        IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+        const AppText('Spiral Technique',
+            fontSize: 20, fontWeight: FontWeight.bold),
       ]),
     );
   }
-
-
 }

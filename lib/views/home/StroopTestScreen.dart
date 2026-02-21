@@ -122,7 +122,30 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5E6D3), // [cite: 15]
+      backgroundColor: const Color(0xFFF5E6D3),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5E6D3),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF5A4A42)),
+          onPressed: () {
+            _timer?.cancel();
+            _stopwatch.stop();
+            Navigator.of(context).pop();
+          },
+        ),
+        title: const Text(
+          'Stroop Test',
+          style: TextStyle(
+            fontSize: 18,
+            fontFamily: 'Georgia',
+            color: Color(0xFF5A4A42),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

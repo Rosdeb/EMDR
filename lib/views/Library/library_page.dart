@@ -6,6 +6,8 @@ import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/Library/bilateral_settings.dart';
 import 'package:jonssony/views/Library/clam_space_ex.dart';
 import 'package:jonssony/views/Library/settings_screen.dart';
+import 'package:jonssony/views/home/act.dart';
+import 'package:jonssony/views/home/cbt.dart';
 
 class LibraryPage extends StatelessWidget {
   const LibraryPage({super.key});
@@ -92,7 +94,9 @@ class LibraryPage extends StatelessWidget {
                               icon: Icons.menu_book_outlined,
                               boxColor: const Color(0xFFFFF7CF),
                               iconColor: const Color(0xFFAD8C63),
-                              onTap: () {},
+                              onTap: () {
+                                Get.to(() => cbt());
+                              },
                             ),
 
                             const SizedBox(height: 150),

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/home/my_homework.dart';
+import 'package:jonssony/views/profile/Subscription.dart';
 import 'package:jonssony/views/profile/subcription/EMDRConsentForm.dart';
 
 class MyHomework extends StatefulWidget {
@@ -15,7 +16,7 @@ class _MyHomeworkState extends State<MyHomework> {
   bool isOverlayVisible = true;
 
   Future<void> _onStartHealing() async {
-    await Get.to(() =>ConsentFormScreen());
+    await Get.to(() =>SubscriptionScreen());
     setState(() {
       isOverlayVisible = false;
     });

@@ -181,14 +181,14 @@ class HomeScreen extends StatelessWidget {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationPage()));
             },
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: const Color(0xFFAD8C63),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 1.5),
                 boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
               ),
-              child: SvgPicture.asset(AppIcons.notification, height: 20, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
+              child: SvgPicture.asset(AppIcons.notification, height: 16, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
             ),
           ),
         ],
@@ -215,8 +215,8 @@ class HomeScreen extends StatelessWidget {
               children: [
                 SvgPicture.asset(iconPath, height: 28),
                 const SizedBox(height: 15),
-                AppText(title, fontWeight: FontWeight.bold, fontSize: 16),
-                AppText(subtitle, fontSize: 12, color: AppColors.mainAppColor, fontWeight: FontWeight.w600,),
+                AppText(title, fontWeight: FontWeight.w600, fontSize: 15),
+                AppText(subtitle, fontSize: 13, color: AppColors.mainAppColor, fontWeight: FontWeight.w600,),
               ],
             ),
           ),

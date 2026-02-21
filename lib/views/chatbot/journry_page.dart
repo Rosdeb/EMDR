@@ -12,6 +12,7 @@ class CreateJourneyPage extends StatefulWidget {
 
 class _CreateJourneyPageState extends State<CreateJourneyPage> {
   int selectedImageIndex = 1;
+  String? selectedJourney;
 
   @override
   Widget build(BuildContext context) {
@@ -54,11 +55,32 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
                       color: Colors.white.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: "Enter your name",
-                        border: InputBorder.none,
-                        // suffixIcon: Icon(Icons.keyboard_arrow_down),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        hint: const Text(
+                          "Select your journey",
+                          style: TextStyle(color: Colors.black45, fontSize: 14),
+                        ),
+                        value: selectedJourney,
+                        icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                            color: Color(0xFF5D7E5D)),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Anxiety Management Journey',
+                            child: Text('Anxiety Management Journey'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Childhood Trauma Processing',
+                            child: Text('Childhood Trauma Processing'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Grief and Loss Support',
+                            child: Text('Grief and Loss Support'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => selectedJourney = value),
                       ),
                     ),
                   ),

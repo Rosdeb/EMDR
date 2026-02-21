@@ -77,7 +77,7 @@ Get.to(() => ACalmPage());
                             title: "Hunder and Lightning",
                             desc: "A grounding technique to help when emotions feel overwhelming.",
                             onTap: () {
-                              Get.to(() => VCalmPage());
+                              Get.to(() => VCalmPage1());
                             },
                           ),
                           _buildModernCard(

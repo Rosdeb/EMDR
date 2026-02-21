@@ -1,9 +1,12 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/chatbot/journry_page.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -35,44 +38,44 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   void _initAudioPlayer() async {
-     // Ensure the file exists in assets. For now, we simulate loading or try to load if possible.
-     // Since assets are not files on disk directly easily without loading to cache, just_audio can load from asset.
-     // We will try to load the current audio.
-     try {
-       await _audioPlayer.setAsset('assets/audio/$currentAudio');
-     } catch (e) {
-       print("Error loading audio: $e");
-     }
+    // Ensure the file exists in assets. For now, we simulate loading or try to load if possible.
+    // Since assets are not files on disk directly easily without loading to cache, just_audio can load from asset.
+    // We will try to load the current audio.
+    try {
+      await _audioPlayer.setAsset('assets/audio/$currentAudio');
+    } catch (e) {
+      print("Error loading audio: $e");
+    }
 
-     _audioPlayer.playerStateStream.listen((state) {
-       if (mounted) {
-         setState(() {
-           isPlaying = state.playing;
-         });
-       }
-       if (state.processingState == ProcessingState.completed) {
-         if (mounted) {
-            _audioPlayer.seek(Duration.zero);
-            _audioPlayer.pause();
-         }
-       }
-     });
+    _audioPlayer.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          isPlaying = state.playing;
+        });
+      }
+      if (state.processingState == ProcessingState.completed) {
+        if (mounted) {
+          _audioPlayer.seek(Duration.zero);
+          _audioPlayer.pause();
+        }
+      }
+    });
 
-     _audioPlayer.durationStream.listen((newDuration) {
-       if (mounted) {
-         setState(() {
-           duration = newDuration ?? Duration.zero;
-         });
-       }
-     });
+    _audioPlayer.durationStream.listen((newDuration) {
+      if (mounted) {
+        setState(() {
+          duration = newDuration ?? Duration.zero;
+        });
+      }
+    });
 
-     _audioPlayer.positionStream.listen((newPosition) {
-       if (mounted) {
-         setState(() {
-           position = newPosition;
-         });
-       }
-     });
+    _audioPlayer.positionStream.listen((newPosition) {
+      if (mounted) {
+        setState(() {
+          position = newPosition;
+        });
+      }
+    });
   }
 
   @override
@@ -133,10 +136,10 @@ class _SessionThreePageState extends State<SessionThreePage> {
                     currentAudio = audio;
                     // Reset player with new audio
                     try {
-                       _audioPlayer.setAsset('assets/audio/$currentAudio');
-                       _audioPlayer.play();
+                      _audioPlayer.setAsset('assets/audio/$currentAudio');
+                      _audioPlayer.play();
                     } catch (e) {
-                       print("Error playing new audio: $e");
+                      print("Error playing new audio: $e");
                     }
                   });
                   Navigator.pop(context);
@@ -286,47 +289,49 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
                   Row(
                     children: [
-                  Expanded(
-                  child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15), // glass layer
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.mainAppColor.withOpacity(0.6),
-                    width: 1.2,
-                  ),
-                ),
-                child: OutlinedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    side: BorderSide.none,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const AppText(
-                    "Back",
-                    color: AppColors.mainAppColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-    ),
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15), // glass layer
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.mainAppColor.withOpacity(0.6),
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  side: BorderSide.none,
+                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const AppText(
+                                  "Back",
+                                  color: AppColors.mainAppColor,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
 
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Get.to(() => CreateJourneyPage());
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.mainAppColor,
                             padding: const EdgeInsets.symmetric(vertical: 15),
@@ -452,8 +457,8 @@ class _SessionThreePageState extends State<SessionThreePage> {
     return "$minutes:$seconds";
   }
 
-  // _buildAudioListItem is no longer needed in the main body, but kept if we want to reuse it elsewhere, 
-  // though for the modal I used ListTile for simplicity. I will remove it to clean up as it's not used.
+// _buildAudioListItem is no longer needed in the main body, but kept if we want to reuse it elsewhere,
+// though for the modal I used ListTile for simplicity. I will remove it to clean up as it's not used.
 }
 /*
 Replace  button e click korle _buildAudioListItem gulu pop up akare show korbe and music gula change hobe

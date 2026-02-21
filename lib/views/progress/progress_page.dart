@@ -15,6 +15,7 @@ import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 import '../../widets/custom_appbar.dart';
+import 'result_step_screen.dart';
 
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
@@ -193,51 +194,60 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   Widget _testItemCard(String title) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultStepScreen(title: title),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
 
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
 
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
 
-          padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(15),
 
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.4),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.4),
 
-            borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20),
 
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
+              border: Border.all(color: Colors.white.withOpacity(0.2)),
+            ),
 
-          child: Row(
-            children: [
-              const CircleAvatar(
-                backgroundColor: Colors.white,
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  backgroundColor: Colors.white,
 
-                radius: 20,
+                  radius: 20,
 
-                child: Icon(
-                  Icons.description_outlined,
-                  color: Colors.black87,
-                  size: 20,
+                  child: Icon(
+                    Icons.description_outlined,
+                    color: Colors.black87,
+                    size: 20,
+                  ),
                 ),
-              ),
 
-              const SizedBox(width: 15),
+                const SizedBox(width: 15),
 
-              Expanded(
-                child: AppText(
-                  title,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                Expanded(
+                  child: AppText(
+                    title,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
 
-              const AppText("Today", fontSize: 12, color: Colors.black45),
-            ],
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 14, color: Colors.black45),
+              ],
+            ),
           ),
         ),
       ),
@@ -403,7 +413,10 @@ class _ProgressPageState extends State<ProgressPage> {
                 : FlDotCirclePainter(radius: 0),
           ),
 
-          belowBarData: BarAreaData(show: false),
+          belowBarData: BarAreaData(
+            show: true,
+            color: const Color(0xFF537E5D).withOpacity(0.1),
+          ),
         ),
       ],
 

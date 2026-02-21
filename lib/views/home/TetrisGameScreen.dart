@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class TetrisGameScreen extends StatefulWidget {
   const TetrisGameScreen({super.key});
@@ -12,23 +13,20 @@ class TetrisGameScreen extends StatefulWidget {
 enum GameState { start, playing, paused, gameOver }
 
 class _TetrisGameScreenState extends State<TetrisGameScreen> {
-  // Game Constants
   static const int boardWidth = 10;
   static const int boardHeight = 20;
-  static const double cellSize = 20.0;
+  static const double boardAspectRatio = boardWidth / boardHeight; // 0.5
 
-  // Watercolor Palette
   final Map<String, Color> pieceColors = {
-    'I': const Color(0xFF4A7C9E).withOpacity(0.7), // Blue
-    'O': const Color(0xFFD4A017).withOpacity(0.7), // Yellow
-    'T': const Color(0xFF8B7355).withOpacity(0.7), // Tan
-    'S': const Color(0xFF6B8E23).withOpacity(0.7), // Green
-    'Z': const Color(0xFFC1475B).withOpacity(0.7), // Red
-    'J': const Color(0xFF5A4A42).withOpacity(0.7), // Brown
-    'L': const Color(0xFF94544B).withOpacity(0.7), // Rust
+    'I': Color(0xFF4A7C9E),
+    'O': Color(0xFFD4A017),
+    'T': Color(0xFF8B7355),
+    'S': Color(0xFF6B8E23),
+    'Z': Color(0xFFC1475B),
+    'J': Color(0xFF5A4A42),
+    'L': Color(0xFF94544B),
   };
 
-  // Standard Tetris Shapes
   final Map<String, List<List<int>>> shapes = {
     'I': [[1, 1, 1, 1]],
     'O': [[1, 1], [1, 1]],
@@ -39,13 +37,13 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     'L': [[0, 0, 1], [1, 1, 1]],
   };
 
-  // Game Logic Variables
-  List<List<String?>> board = List.generate(boardHeight, (_) => List.filled(boardWidth, null));
+  List<List<String?>> board =
+  List.generate(boardHeight, (_) => List.filled(boardWidth, null));
   Timer? gameTimer;
   GameState gameState = GameState.start;
   int score = 0;
+  int highScore = 0;
 
-  // Current Piece State
   List<List<int>>? currentPiece;
   String? currentType;
   int currentX = 0;
@@ -59,8 +57,22 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
       spawnPiece();
     });
     gameTimer?.cancel();
-    gameTimer = Timer.periodic(const Duration(milliseconds: 550), (timer) {
+    gameTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
       if (gameState == GameState.playing) moveDown();
+    });
+  }
+
+  void togglePause() {
+    setState(() {
+      if (gameState == GameState.playing) {
+        gameState = GameState.paused;
+        gameTimer?.cancel();
+      } else if (gameState == GameState.paused) {
+        gameState = GameState.playing;
+        gameTimer = Timer.periodic(const Duration(milliseconds: 500), (_) {
+          if (gameState == GameState.playing) moveDown();
+        });
+      }
     });
   }
 
@@ -70,22 +82,21 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     currentPiece = shapes[currentType];
     currentX = (boardWidth / 2).floor() - (currentPiece![0].length / 2).floor();
     currentY = 0;
-
     if (checkCollision(currentX, currentY, currentPiece!)) {
+      if (score > highScore) highScore = score;
       setState(() => gameState = GameState.gameOver);
       gameTimer?.cancel();
     }
   }
 
   bool checkCollision(int x, int y, List<List<int>> piece) {
-    for (int row = 0; row < piece.length; row++) {
-      for (int col = 0; col < piece[row].length; col++) {
-        if (piece[row][col] == 1) {
-          int nextX = x + col;
-          int nextY = y + row;
-          if (nextX < 0 || nextX >= boardWidth || nextY >= boardHeight || (nextY >= 0 && board[nextY][nextX] != null)) {
-            return true;
-          }
+    for (int r = 0; r < piece.length; r++) {
+      for (int c = 0; c < piece[r].length; c++) {
+        if (piece[r][c] == 1) {
+          final nx = x + c;
+          final ny = y + r;
+          if (nx < 0 || nx >= boardWidth || ny >= boardHeight ||
+              (ny >= 0 && board[ny][nx] != null)) return true;
         }
       }
     }
@@ -102,11 +113,46 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     });
   }
 
+  void moveLeft() {
+    if (gameState != GameState.playing) return;
+    setState(() {
+      if (!checkCollision(currentX - 1, currentY, currentPiece!)) currentX--;
+    });
+  }
+
+  void moveRight() {
+    if (gameState != GameState.playing) return;
+    setState(() {
+      if (!checkCollision(currentX + 1, currentY, currentPiece!)) currentX++;
+    });
+  }
+
+  void hardDrop() {
+    if (gameState != GameState.playing) return;
+    setState(() {
+      while (!checkCollision(currentX, currentY + 1, currentPiece!)) currentY++;
+      lockPiece();
+    });
+  }
+
+  void rotatePiece() {
+    if (currentPiece == null || gameState != GameState.playing) return;
+    final rotated = List.generate(
+      currentPiece![0].length,
+          (j) => List.generate(
+          currentPiece!.length,
+              (i) => currentPiece![currentPiece!.length - 1 - i][j]),
+    );
+    if (!checkCollision(currentX, currentY, rotated)) {
+      setState(() => currentPiece = rotated);
+    }
+  }
+
   void lockPiece() {
-    for (int row = 0; row < currentPiece!.length; row++) {
-      for (int col = 0; col < currentPiece![row].length; col++) {
-        if (currentPiece![row][col] == 1) {
-          board[currentY + row][currentX + col] = currentType;
+    for (int r = 0; r < currentPiece!.length; r++) {
+      for (int c = 0; c < currentPiece![r].length; c++) {
+        if (currentPiece![r][c] == 1 && currentY + r >= 0) {
+          board[currentY + r][currentX + c] = currentType;
         }
       }
     }
@@ -115,27 +161,17 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
   }
 
   void clearLines() {
-    int linesCleared = 0;
-    for (int row = boardHeight - 1; row >= 0; row--) {
-      if (board[row].every((cell) => cell != null)) {
-        board.removeAt(row);
+    int cleared = 0;
+    for (int r = boardHeight - 1; r >= 0; r--) {
+      if (board[r].every((c) => c != null)) {
+        board.removeAt(r);
         board.insert(0, List.filled(boardWidth, null));
-        linesCleared++;
-        row++;
+        cleared++;
+        r++;
       }
     }
-    if (linesCleared > 0) score += (linesCleared * 100);
-  }
-
-  void rotatePiece() {
-    if (currentPiece == null) return;
-    List<List<int>> rotated = List.generate(
-      currentPiece![0].length,
-          (j) => List.generate(currentPiece!.length, (i) => currentPiece![currentPiece!.length - 1 - i][j]),
-    );
-    if (!checkCollision(currentX, currentY, rotated)) {
-      setState(() => currentPiece = rotated);
-    }
+    const pts = [0, 100, 300, 500, 800];
+    if (cleared > 0) score += pts[cleared.clamp(0, 4)];
   }
 
   @override
@@ -146,46 +182,151 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       backgroundColor: const Color(0xFFF5E6D3),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Center(
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5E6D3),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF5A4A42)),
+          onPressed: () {
+            gameTimer?.cancel();
+            Navigator.of(context).pop();
+          },
+        ),
+        title: const Text(
+          'Watercolor Tetris',
+          style: TextStyle(
+            fontSize: 20,
+            fontFamily: 'Georgia',
+            color: Color(0xFF5A4A42),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          if (gameState == GameState.playing || gameState == GameState.paused)
+            IconButton(
+              icon: Icon(
+                gameState == GameState.paused
+                    ? Icons.play_arrow_rounded
+                    : Icons.pause_rounded,
+                color: const Color(0xFF5A4A42),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+              onPressed: togglePause,
+            ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Score Row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Watercolor Tetris", style: TextStyle(fontSize: 24, fontFamily: 'Georgia', color: Color(0xFF5A4A42))),
-                  Text("Score: $score", style: TextStyle(fontSize: 16, color: Color(0xFF8B7355))),
-                  const SizedBox(height: 15),
-                  GestureDetector(
-                    onTap: rotatePiece,
-                    child: Container(
-                      width: boardWidth * cellSize,
-                      height: boardHeight * cellSize,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFAF5EB),
-                        border: Border.all(color: Colors.brown.withOpacity(0.2)),
-                      ),
-                      child: Stack(
-                        children: [
-                          _buildBoard(),
-                          if (currentPiece != null && gameState == GameState.playing) _buildCurrentPiece(),
-                          if (gameState == GameState.start || gameState == GameState.gameOver) _buildOverlay(),
-                        ],
+                  _scoreBox('SCORE', score),
+                  _scoreBox('BEST', highScore),
+                ],
+              ),
+            ),
+
+            // Board — fills all remaining vertical space
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Center(
+                  // AspectRatio ensures board is always 1:2 (w:h)
+                  // and never overflows either axis
+                  child: AspectRatio(
+                    aspectRatio: boardAspectRatio,
+                    child: GestureDetector(
+                      onTap: rotatePiece,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFAF5EB),
+                          border: Border.all(
+                              color: Colors.brown.withOpacity(0.25),
+                              width: 1.5),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: LayoutBuilder(builder: (ctx, bc) {
+                          // cell dimensions derived from actual rendered size
+                          final cw = bc.maxWidth / boardWidth;
+                          final ch = bc.maxHeight / boardHeight;
+                          return Stack(children: [
+                            _buildBoard(cw, ch),
+                            if (currentPiece != null &&
+                                gameState == GameState.playing)
+                              _buildCurrentPiece(cw, ch),
+                            if (gameState != GameState.playing)
+                              _buildOverlay(),
+                          ]);
+                        }),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 15),
-                  _buildControls(),
-                ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 8),
+            _buildControls(),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _scoreBox(String label, int value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.brown.withOpacity(0.15)),
+      ),
+      child: Column(children: [
+        Text(label,
+            style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF8B7355),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1)),
+        Text('$value',
+            style: const TextStyle(
+                fontSize: 22,
+                color: Color(0xFF5A4A42),
+                fontWeight: FontWeight.bold)),
+      ]),
+    );
+  }
+
+  Widget _buildBoard(double cw, double ch) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(
+        boardHeight,
+            (y) => SizedBox(
+          height: ch,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              boardWidth,
+                  (x) => Container(
+                width: cw,
+                height: ch,
+                decoration: BoxDecoration(
+                  color: board[y][x] != null
+                      ? pieceColors[board[y][x]]!.withOpacity(0.75)
+                      : Colors.transparent,
+                  border: Border.all(
+                      color: Colors.black.withOpacity(0.04), width: 0.5),
+                ),
               ),
             ),
           ),
@@ -194,75 +335,107 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     );
   }
 
-  Widget _buildBoard() {
-    return SizedBox(
-      width: boardWidth * cellSize,
-      height: boardHeight * cellSize,
+  Widget _buildCurrentPiece(double cw, double ch) {
+    return Positioned(
+      left: currentX * cw,
+      top: currentY * ch,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: List.generate(boardHeight, (y) => Row(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(boardWidth, (x) => Container(
-            width: cellSize,
-            height: cellSize,
-            decoration: BoxDecoration(
-              color: board[y][x] != null ? pieceColors[board[y][x]] : Colors.transparent,
-              border: Border.all(color: Colors.black.withOpacity(0.05), width: 0.5),
+        children: List.generate(
+          currentPiece!.length,
+              (y) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(
+              currentPiece![y].length,
+                  (x) => Container(
+                width: cw,
+                height: ch,
+                color: currentPiece![y][x] == 1
+                    ? pieceColors[currentType]!.withOpacity(0.75)
+                    : Colors.transparent,
+              ),
             ),
-          )),
-        )),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildCurrentPiece() {
-    return Positioned(
-      left: currentX * cellSize,
-      top: currentY * cellSize,
-      child: Column(
-        children: List.generate(currentPiece!.length, (y) => Row(
-          children: List.generate(currentPiece![y].length, (x) => Container(
-            width: cellSize,
-            height: cellSize,
-            decoration: BoxDecoration(
-              color: currentPiece![y][x] == 1 ? pieceColors[currentType] : Colors.transparent,
+  Widget _buildOverlay() {
+    final isGameOver = gameState == GameState.gameOver;
+    final isPaused = gameState == GameState.paused;
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.85),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Center(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              isPaused ? '⏸ Paused' : isGameOver ? 'Game Over' : 'Ready to Focus?',
+              style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Georgia',
+                  color: Color(0xFF5A4A42)),
             ),
-          )),
-        )),
+            if (isGameOver) ...[
+              const SizedBox(height: 8),
+              Text('Score: $score',
+                  style: const TextStyle(fontSize: 16, color: Color(0xFF8B7355))),
+            ],
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isPaused ? togglePause : startGame,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8B7355),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: Text(
+                isPaused ? 'Resume' : isGameOver ? 'Try Again' : 'Start Game',
+                style: const TextStyle(
+                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
 
   Widget _buildControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(icon: const Icon(Icons.arrow_left), onPressed: () => setState(() { if(!checkCollision(currentX-1, currentY, currentPiece!)) currentX--; })),
-        IconButton(icon: const Icon(Icons.arrow_drop_down), onPressed: moveDown),
-        IconButton(icon: const Icon(Icons.arrow_right), onPressed: () => setState(() { if(!checkCollision(currentX+1, currentY, currentPiece!)) currentX++; })),
-        const SizedBox(width: 20),
-        IconButton(icon: const Icon(Icons.rotate_right), onPressed: rotatePiece),
-      ],
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.brown.withOpacity(0.15)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _ctrlBtn(Icons.arrow_left_rounded, moveLeft),
+          _ctrlBtn(Icons.arrow_drop_down_rounded, moveDown),
+          _ctrlBtn(Icons.arrow_right_rounded, moveRight),
+          Container(width: 1, height: 28, color: Colors.brown.withOpacity(0.2)),
+          _ctrlBtn(Icons.rotate_right_rounded, rotatePiece),
+          _ctrlBtn(Icons.vertical_align_bottom_rounded, hardDrop),
+        ],
+      ),
     );
   }
 
-  Widget _buildOverlay() {
-    return Container(
-      color: Colors.white.withOpacity(0.8),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(gameState == GameState.start ? "Ready to Focus?" : "Game Over",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: startGame,
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B7355)),
-              child: Text(gameState == GameState.start ? "Start Game" : "Try Again", style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+  Widget _ctrlBtn(IconData icon, VoidCallback onPressed) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Icon(icon, size: 30, color: const Color(0xFF5A4A42)),
       ),
     );
   }

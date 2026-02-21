@@ -117,21 +117,62 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
   Widget _buildTopBar() {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Navigator.pop(context),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(50),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(50),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
+              ),
+              child: Row(
+                children: [
+                  // Back button + Title
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new,
+                        color: Colors.black87, size: 18),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const Text(
+                    'Mountain Sanctuary',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Pause / Resume button
+                  ElevatedButton(
+                    onPressed: _togglePause,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF537E5D),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 22, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                    ),
+                    child: Text(
+                      _isPaused ? 'Resume' : 'Pause',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Text("Mountain Sanctuary", style: TextStyle(color: Colors.white, fontSize: 18, backgroundColor: Colors.black26)),
-            ElevatedButton(
-              onPressed: _togglePause,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white24),
-              child: Text(_isPaused ? "Resume" : "Pause", style: const TextStyle(color: Colors.white)),
-            )
-          ],
+          ),
         ),
       ),
     );

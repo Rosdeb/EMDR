@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:jonssony/views/Library/ACalmPage.dart';
 import 'package:jonssony/views/Library/VCalmPage1.dart';
 import 'package:jonssony/views/Library/VCalmPage2.dart';
+import 'package:jonssony/views/home/AudioCalmPage.dart';
 
 class MyCalmSpaceExercise extends StatelessWidget {
   const MyCalmSpaceExercise({super.key});
@@ -74,7 +75,7 @@ SizedBox(height: 70,),
                         title: "spiral_technique.mp4",
                         type: "Video",
                         onTap: () {
-                          Get.to(() =>VCalmPage());
+                          Get.to(() =>VCalmPage1());
 
                         },
                       ),

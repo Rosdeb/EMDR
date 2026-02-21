@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/profile/subcription/EMDRConsentForm.dart';
 import 'package:jonssony/views/profile/subcription/assignment.dart';
 
 class SubscriptionScreen extends StatefulWidget {
@@ -141,7 +142,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         child: ElevatedButton(
                           onPressed: _selectedIndex != null 
                               ? () {
-                            Get.to(() => FullAssessmentFlow());
+                            Get.to(() => ConsentFormScreen());
                                 } 
                               : null,
                           style: ElevatedButton.styleFrom(

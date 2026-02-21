@@ -41,7 +41,7 @@ class _CalmExerciseState extends State<CalmExercise> {
     Widget? page;
 
     if (index == 0) {
-      page = VCalmPage();
+      page = VCalmPage1();
     } else if (index == 1) {
       page = VCalmPage2();
     } else if (index == 2) {

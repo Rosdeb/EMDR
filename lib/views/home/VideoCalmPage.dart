@@ -15,15 +15,15 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
   ChewieController? _chewieController;
   final box = GetStorage();
 
-  final List<String> _options = [
-    "I don't deserve love",
-    "I am a bad person",
-    "I am terrible",
-    "I am worthless/inadequate",
-    "I am shameful",
-    "I am not lovable",
-    "I am not good enough",
-  ];
+  // final List<String> _options = [
+  //   "I don't deserve love",
+  //   "I am a bad person",
+  //   "I am terrible",
+  //   "I am worthless/inadequate",
+  //   "I am shameful",
+  //   "I am not lovable",
+  //   "I am not good enough",
+  // ];
   final Set<int> _selectedIndices = {};
 
   @override
@@ -95,7 +95,7 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
                             child: Column(
                               children: [
                                 const SizedBox(height: 20),
-                                _buildJourneyGuideCard(),
+                                // _buildJourneyGuideCard(),
                                 const SizedBox(height: 150),
                               ],
                             ),
@@ -138,101 +138,101 @@ class _VideoCalmPageState extends State<VideoCalmPage> {
       ),
     );
   }
-  Widget _buildJourneyGuideCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const AppText("Your Journey Guide", fontSize: 18, fontWeight: FontWeight.bold),
-          const SizedBox(height: 10),
-          const AppText("When I was little (Childhood)", fontSize: 15, fontWeight: FontWeight.w600),
-          const AppText(
-            "This may or may not be relevant to what you would like to work on so skip it if not.",
-            fontSize: 12,
-            color: Colors.black45,
-          ),
-          const SizedBox(height: 15),
-          const AppText(
-            "Float back in time and see if you remember feeling this way from your situation as a child or any other time?",
-            fontSize: 13,
-            color: Colors.black87,
-          ),
-          const SizedBox(height: 15),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFFDF9F3),
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: const Color(0xFFE8E1D5).withOpacity(0.5)),
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: EdgeInsets.zero,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _options.length,
-              itemBuilder: (context, index) {
-                bool isSelected = _selectedIndices.contains(index);
-                return CheckboxListTile(
-                  value: isSelected,
-                  title: AppText(_options[index], fontSize: 14),
-                  activeColor: const Color(0xFF537E5D),
-                  onChanged: (val) => setState(() => val! ? _selectedIndices.add(index) : _selectedIndices.remove(index)),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-
-
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    box.write('selected_thoughts', _selectedIndices.toList());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF537E5D),
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const AppText("Save & Continue", color: Colors.white,fontSize: 14, fontWeight: FontWeight.w500,),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(0, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const AppText("Skip for now", color: Colors.black54,fontSize: 14, fontWeight: FontWeight.w500,),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildJourneyGuideCard() {
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: const EdgeInsets.all(20),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(25),
+  //       boxShadow: [
+  //         BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
+  //       ],
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const AppText("Your Journey Guide", fontSize: 18, fontWeight: FontWeight.bold),
+  //         const SizedBox(height: 10),
+  //         const AppText("When I was little (Childhood)", fontSize: 15, fontWeight: FontWeight.w600),
+  //         const AppText(
+  //           "This may or may not be relevant to what you would like to work on so skip it if not.",
+  //           fontSize: 12,
+  //           color: Colors.black45,
+  //         ),
+  //         const SizedBox(height: 15),
+  //         const AppText(
+  //           "Float back in time and see if you remember feeling this way from your situation as a child or any other time?",
+  //           fontSize: 13,
+  //           color: Colors.black87,
+  //         ),
+  //         const SizedBox(height: 15),
+  //         Container(
+  //           decoration: BoxDecoration(
+  //             color: const Color(0xFFFDF9F3),
+  //             borderRadius: BorderRadius.circular(15),
+  //             border: Border.all(color: const Color(0xFFE8E1D5).withOpacity(0.5)),
+  //           ),
+  //           // child: ListView.builder(
+  //           //   shrinkWrap: true,
+  //           //   padding: EdgeInsets.zero,
+  //           //   physics: const NeverScrollableScrollPhysics(),
+  //           //   itemCount: _options.length,
+  //           //   itemBuilder: (context, index) {
+  //           //     bool isSelected = _selectedIndices.contains(index);
+  //           //     return CheckboxListTile(
+  //           //       value: isSelected,
+  //           //       title: AppText(_options[index], fontSize: 14),
+  //           //       activeColor: const Color(0xFF537E5D),
+  //           //       onChanged: (val) => setState(() => val! ? _selectedIndices.add(index) : _selectedIndices.remove(index)),
+  //           //       controlAffinity: ListTileControlAffinity.leading,
+  //           //       contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+  //           //     );
+  //           //   },
+  //           // ),
+  //         ),
+  //         const SizedBox(height: 20),
+  //
+  //
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: ElevatedButton(
+  //                 onPressed: () {
+  //                   box.write('selected_thoughts', _selectedIndices.toList());
+  //                 },
+  //                 style: ElevatedButton.styleFrom(
+  //                   backgroundColor: const Color(0xFF537E5D),
+  //                   minimumSize: const Size(0, 50),
+  //                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  //                 ),
+  //                 child: const AppText("Save & Continue", color: Colors.white,fontSize: 14, fontWeight: FontWeight.w500,),
+  //               ),
+  //             ),
+  //             const SizedBox(width: 10),
+  //             Expanded(
+  //               child: OutlinedButton(
+  //                 onPressed: () {},
+  //                 style: OutlinedButton.styleFrom(
+  //                   minimumSize: const Size(0, 50),
+  //                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  //                 ),
+  //                 child: const AppText("Skip for now", color: Colors.black54,fontSize: 14, fontWeight: FontWeight.w500,),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 20, left: 10, bottom: 10),
+      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 0, left: 10, bottom: 10),
       child: Row(children: [
         IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        const AppText("Session 1", fontSize: 20, fontWeight: FontWeight.bold),
+        const AppText("ACT Thoughts Exercise", fontSize: 18, fontWeight: FontWeight.bold),
       ]),
     );
   }

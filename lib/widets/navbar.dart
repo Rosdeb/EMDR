@@ -115,7 +115,7 @@ class CustomNavBar extends StatelessWidget {
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: isActive
             ? BoxDecoration(
                 color: AppColors.mainAppColor,
@@ -123,22 +123,25 @@ class CustomNavBar extends StatelessWidget {
               )
             : null,
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             SvgPicture.asset(
               iconPath,
-              height: 24,
+              height: 22,
               colorFilter: ColorFilter.mode(
-                isActive ? Colors.white : Colors.black45, // White when active
+                isActive ? Colors.white : Colors.black45,
                 BlendMode.srcIn,
               ),
             ),
-            if (isActive) const SizedBox(width: 6),
+            if (isActive) const SizedBox(width: 5),
             if (isActive)
-              AppText(
-                label,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
+              Flexible(
+                child: AppText(
+                  label,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
           ],
         ),
