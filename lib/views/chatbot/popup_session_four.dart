@@ -92,8 +92,8 @@ void showReadyDialog(BuildContext context) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          // builder: (context) => const SessionThreePage(),
-                            builder: (context) => CreateJourneyPage(),
+                          builder: (context) => const SessionThreePage(),
+                          //   builder: (context) => CreateJourneyPage(),
                         ),
                       );
                     },
