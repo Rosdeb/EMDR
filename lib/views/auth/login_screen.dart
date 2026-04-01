@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/home/home_screen.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.find<AuthController>();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
     const Color primaryButtonColor = Color(0xFF4C6D4D);
     const Color forgotPassColor = Color(0xFFE57373);
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -17,7 +20,7 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // ১. ব্যাকগ্রাউন্ড ইমেজ
+          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/images/login.jpg',
@@ -25,7 +28,7 @@ class LoginScreen extends StatelessWidget {
             ),
           ),
 
-          // ২. ট্রানজিশন ফেড ইফেক্ট
+          // Gradient overlay
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -50,8 +53,7 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: screenHeight * 0.38), 
-
+                  SizedBox(height: screenHeight * 0.38),
 
                   Image.asset(
                     'assets/images/splash_log.png',
@@ -61,14 +63,12 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-
                   const AppText(
                     "Sign in",
                     fontSize: 42,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF0F1912),
                   ),
-
 
                   SizedBox(height: screenHeight * 0.035),
 
@@ -81,16 +81,17 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 15),
 
-
                   _textField(
+                    controller: emailController,
                     icon: Icons.email_outlined,
                     hint: "Enter Your Email",
+                    keyboardType: TextInputType.emailAddress,
                   ),
 
                   const SizedBox(height: 16),
 
-
                   _textField(
+                    controller: passwordController,
                     icon: Icons.lock_outline,
                     hint: "Enter Your Password",
                     isObscure: true,
@@ -114,27 +115,51 @@ class LoginScreen extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryButtonColor,
-                      minimumSize: const Size(double.infinity, 56),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () => Get.offAllNamed(RouteHelper.main),
-                    child: const AppText(
-                      "Sign In",
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Obx(() => ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryButtonColor,
+                          minimumSize: const Size(double.infinity, 56),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          elevation: 0,
+                        ),
+                        onPressed: authController.isLoading.value
+                            ? null
+                            : () {
+                                final email = emailController.text.trim();
+                                final password = passwordController.text.trim();
+                                if (email.isEmpty || password.isEmpty) {
+                                  Get.snackbar(
+                                    'Error',
+                                    'Please enter email and password',
+                                    snackPosition: SnackPosition.BOTTOM,
+                                  );
+                                  return;
+                                }
+                                authController.login(
+                                  email: email,
+                                  password: password,
+                                );
+                              },
+                        child: authController.isLoading.value
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const AppText(
+                                "Sign In",
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                      )),
 
                   const SizedBox(height: 30),
-
 
                   Center(
                     child: GestureDetector(
@@ -142,14 +167,17 @@ class LoginScreen extends StatelessWidget {
                         Get.toNamed(RouteHelper.signup);
                       },
                       child: RichText(
-                        text: TextSpan(
-                          style: const TextStyle(color: Colors.black54, fontSize: 14, fontFamily: 'Serif'),
+                        text: const TextSpan(
+                          style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                              fontFamily: 'Serif'),
                           children: [
-                            const TextSpan(text: "Dont have an account? "),
+                            TextSpan(text: "Dont have an account? "),
                             TextSpan(
                               text: "Sign up",
                               style: TextStyle(
-                                color: const Color(0xFF0F1912),
+                                color: Color(0xFF0F1912),
                                 fontFamily: 'Serif',
                                 fontWeight: FontWeight.bold,
                               ),
@@ -169,9 +197,17 @@ class LoginScreen extends StatelessWidget {
     );
   }
 
-  Widget _textField({required IconData icon, required String hint, bool isObscure = false}) {
+  Widget _textField({
+    required TextEditingController controller,
+    required IconData icon,
+    required String hint,
+    bool isObscure = false,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
     return TextField(
+      controller: controller,
       obscureText: isObscure,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
 
 class Verification extends StatefulWidget {
   const Verification({super.key});
@@ -14,7 +14,7 @@ class Verification extends StatefulWidget {
 }
 
 class _VerificationState extends State<Verification> {
-  // 1. Controllers and FocusNodes for the 6 digits
+  final AuthController authController = Get.find<AuthController>();
   final List<TextEditingController> _controllers = List.generate(6, (index) => TextEditingController());
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
@@ -86,12 +86,12 @@ class _VerificationState extends State<Verification> {
                     ),
                     const SizedBox(height: 12),
 
-                    const AppText(
-                      "Enter the 6-digit code sent to your email.",
+                    Obx(() => AppText(
+                      "Enter the 6-digit code sent to ${authController.pendingEmail.value.isNotEmpty ? authController.pendingEmail.value : 'your email'}.",
                       textAlign: TextAlign.center,
                       fontSize: 13,
                       color: Colors.black54,
-                    ),
+                    )),
                     const SizedBox(height: 30),
 
                     // --- OTP Input Row ---
@@ -139,21 +139,29 @@ class _VerificationState extends State<Verification> {
 
                     // --- Paste Code ---
                     GestureDetector(
-                      onTap: () {
-                        // Logic to paste code could go here
+                      onTap: () async {
+                        ClipboardData? clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+                        if (clipboardData != null && clipboardData.text != null) {
+                          String text = clipboardData.text!.trim();
+                          if (text.length == 6 && int.tryParse(text) != null) {
+                            for (int i = 0; i < 6; i++) {
+                              _controllers[i].text = text[i];
+                            }
+                          }
+                        }
                       },
                       child: const AppText(
                         'Paste Code',
-                         fontSize: 14,
-                         color: primaryGreen,
-                         fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: primaryGreen,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
 
                     const SizedBox(height: 30),
 
                     // --- Verify Button ---
-                    ElevatedButton(
+                    Obx(() => ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.mainAppColor,
                         minimumSize: const Size(double.infinity, 54),
@@ -162,18 +170,25 @@ class _VerificationState extends State<Verification> {
                         ),
                         elevation: 0,
                       ),
-                      onPressed: () {
-                        Get.toNamed(RouteHelper.changePassword);
+                      onPressed: authController.isLoading.value ? null : () {
                         String otp = _controllers.map((c) => c.text).join();
-                        print("Entered OTP: $otp");
+                        if (otp.length < 6) {
+                          Get.snackbar('Error', 'Please enter a valid 6-digit code');
+                          return;
+                        }
+                        // Use verifyPasswordOtp which redirects to Reset Password
+                        authController.verifyPasswordOtp(otp: otp);
                       },
-                      child: const AppText(
+                      child: authController.isLoading.value ? const SizedBox(
+                        height: 20, width: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                      ) : const AppText(
                         "Verify",
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
-                    ),
+                    )),
 
                     const SizedBox(height: 20),
 
@@ -183,7 +198,9 @@ class _VerificationState extends State<Verification> {
                       children: [
                         const AppText("Didn't receive the code? ", fontSize: 13, color: Colors.black54),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            authController.sendVerificationOtp(email: authController.pendingEmail.value);
+                          },
                           child: const AppText(
                             "Resend",
                             fontSize: 13,
@@ -195,23 +212,23 @@ class _VerificationState extends State<Verification> {
                     ),
 
                     const SizedBox(height: 15),
-                    
-                     GestureDetector(
+
+                    GestureDetector(
                       onTap: () => Get.back(),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.arrow_back, size: 16, color: primaryGreen),
-                            SizedBox(width: 5),
-                            AppText(
-                              "Back to Sign In",
-                              fontSize: 13,
-                              color: primaryGreen,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ],
-                        ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.arrow_back, size: 16, color: primaryGreen),
+                          SizedBox(width: 5),
+                          AppText(
+                            "Back to Sign In",
+                            fontSize: 13,
+                            color: primaryGreen,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ],
                       ),
+                    ),
                   ],
                 ),
               ),
