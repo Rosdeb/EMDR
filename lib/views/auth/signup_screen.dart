@@ -6,7 +6,11 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class SignUpScreen extends StatelessWidget {
-  const SignUpScreen({super.key});
+  SignUpScreen({super.key});
+
+  final RxBool _isPasswordHidden = true.obs;
+  final RxBool _isConfirmPasswordHidden = true.obs;
+  final RxBool _isPrivacyAccepted = false.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -93,10 +97,50 @@ class SignUpScreen extends StatelessWidget {
                     _buildFullField(emailController, "Enter your email", keyboardType: TextInputType.emailAddress),
                     const SizedBox(height: 15),
 
-                    _buildFullField(passwordController, "Create your password", isPassword: true),
+                    _buildFullField(passwordController, "Create your password", isPasswordHidden: _isPasswordHidden),
                     const SizedBox(height: 15),
 
-                    _buildFullField(confirmPasswordController, "Confirm your password", isPassword: true),
+                    _buildFullField(confirmPasswordController, "Confirm your password", isPasswordHidden: _isConfirmPasswordHidden),
+
+                    const SizedBox(height: 15),
+
+                    Obx(() => Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: Checkbox(
+                            value: _isPrivacyAccepted.value,
+                            onChanged: (value) {
+                              _isPrivacyAccepted.value = value ?? false;
+                            },
+                            activeColor: primaryGreen,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: RichText(
+                            text: const TextSpan(
+                              style: TextStyle(fontSize: 12, color: Colors.black54),
+                              children: [
+                                TextSpan(text: "I accept the "),
+                                TextSpan(
+                                  text: "Privacy Policy",
+                                  style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(text: " and "),
+                                TextSpan(
+                                  text: "Terms of Service",
+                                  style: TextStyle(color: primaryGreen, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    )),
 
                     const SizedBox(height: 30),
 
@@ -126,12 +170,18 @@ class SignUpScreen extends StatelessWidget {
                                     Get.snackbar('Error', 'Passwords do not match');
                                     return;
                                   }
+                                  if (!_isPrivacyAccepted.value) {
+                                    Get.snackbar('Error', 'You must accept the Privacy Policy');
+                                    return;
+                                  }
 
                                   authController.signup(
                                     firstName: fName,
                                     lastName: lName,
                                     email: email,
                                     password: password,
+                                    confirmPassword: cPassword,
+                                    isAcceptPrivacyStatement: _isPrivacyAccepted.value,
                                   );
                                 },
                           child: authController.isLoading.value
@@ -204,31 +254,46 @@ class SignUpScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFullField(TextEditingController controller, String hint, {bool isPassword = false, TextInputType? keyboardType}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
-        suffixIcon: isPassword ? const Icon(Icons.visibility_outlined, size: 18, color: Colors.black38) : null,
-        filled: true,
-        fillColor: const Color(0xFFFBFBFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.border),
+  Widget _buildFullField(TextEditingController controller, String hint, {RxBool? isPasswordHidden, TextInputType? keyboardType}) {
+    Widget buildTextField(bool obscure) {
+      return TextField(
+        controller: controller,
+        obscureText: obscure,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
+          suffixIcon: isPasswordHidden != null
+              ? IconButton(
+                  icon: Icon(
+                    obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, 
+                    size: 18, color: Colors.black38
+                  ),
+                  onPressed: () => isPasswordHidden.value = !isPasswordHidden.value,
+                )
+              : null,
+          filled: true,
+          fillColor: const Color(0xFFFBFBFC),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: AppColors.border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: AppColors.mainAppColor),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: AppColors.border),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: AppColors.mainAppColor),
-        ),
-      ),
-    );
+      );
+    }
+
+    if (isPasswordHidden != null) {
+      return Obx(() => buildTextField(isPasswordHidden.value));
+    }
+    return buildTextField(false);
   }
 }

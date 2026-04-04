@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -11,9 +14,39 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController(text: "alice@example.com");
+  final ProfileController _profileController = Get.find<ProfileController>();
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
+  
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = _profileController.userProfile;
+    _nameController = TextEditingController(text: profile['fullName'] ?? '');
+    _phoneController = TextEditingController(text: profile['phoneNumber']?.toString() ?? '');
+    _emailController = TextEditingController(text: profile['email'] ?? '');
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +56,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
             top: 0,
             left: 0,
@@ -34,17 +66,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               fit: BoxFit.fill,
             ),
           ),
-
-          // 2. Main Content
           Column(
             children: [
-              // Custom AppBar
               _buildAppBar(context),
-
               Expanded(
                 child: Stack(
                   children: [
-
                     Positioned.fill(
                       child: Container(
                         decoration: const BoxDecoration(
@@ -59,18 +86,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         ),
                       ),
                     ),
-
-
                     Positioned.fill(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Column(
                           children: [
-
-                            const SizedBox(height: 30),
-
-
+                            const SizedBox(height: 20),
+                            _buildImagePicker(),
+                            const SizedBox(height: 20),
                             ClipRRect(
                               borderRadius: BorderRadius.circular(30),
                               child: BackdropFilter(
@@ -80,16 +104,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.white.withOpacity(0.4),
                                     borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                                    border: Border.all(
+                                        color: Colors.white.withOpacity(0.3)),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       _buildLabel("Full Name"),
-                                      _buildTextField(_nameController, "Enter your name"),
+                                      _buildTextField(
+                                          _nameController, "Enter your name"),
                                       const SizedBox(height: 20),
                                       _buildLabel("Phone Number"),
-                                      _buildTextField(_phoneController, "Enter phone number"),
+                                      _buildTextField(_phoneController,
+                                          "Enter phone number"),
                                       const SizedBox(height: 20),
                                       _buildLabel("Email Address"),
                                       _buildEmailField(),
@@ -98,32 +126,42 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 ),
                               ),
                             ),
-
                             const SizedBox(height: 30),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 55,
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  // Save logic here
-                                  Navigator.pop(context);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F7957),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(15),
+                            Obx(() {
+                              return SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  onPressed: _profileController.isLoading.value
+                                      ? null
+                                      : () async {
+                                          final success = await _profileController.updateProfile(
+                                            fullName: _nameController.text,
+                                            phoneNumber: _phoneController.text,
+                                            profilePic: _selectedImage,
+                                          );
+                                          if (success) {
+                                            Get.back();
+                                          }
+                                        },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4F7957),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    elevation: 0,
                                   ),
-                                  elevation: 0,
+                                  child: _profileController.isLoading.value
+                                      ? const CircularProgressIndicator(color: Colors.white)
+                                      : const AppText(
+                                          "Save",
+                                          color: Colors.white,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                 ),
-                                child: const AppText(
-                                  "Save",
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
+                              );
+                            }),
                             const SizedBox(height: 50),
                           ],
                         ),
@@ -163,6 +201,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  Widget _buildImagePicker() {
+    final avatar = _profileController.userProfile['avatar'];
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Stack(
+        children: [
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: _selectedImage != null
+                ? FileImage(_selectedImage!)
+                : (avatar != null
+                    ? NetworkImage(avatar)
+                    : const AssetImage('assets/images/home_profile.png')) as ImageProvider,
+          ),
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFF4F7957),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -187,7 +256,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
       ),
     );
   }
@@ -195,18 +265,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Widget _buildEmailField() {
     return TextField(
       controller: _emailController,
+      readOnly: true, // Email is usually not editable through this API
       decoration: InputDecoration(
         hintText: "Enter email address",
         hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.6),
-        suffixIcon: const Icon(Icons.email_outlined, color: Colors.black87, size: 20),
+        fillColor: Colors.white.withOpacity(0.4),
+        suffixIcon:
+            const Icon(Icons.email_outlined, color: Colors.black87, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
       ),
     );
   }
-}
+}

@@ -6,7 +6,10 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
-  const ChangePasswordScreen({super.key});
+  ChangePasswordScreen({super.key});
+
+  final RxBool _isNewPasswordHidden = true.obs;
+  final RxBool _isConfirmPasswordHidden = true.obs;
 
   @override
   Widget build(BuildContext context) {
@@ -77,10 +80,10 @@ class ChangePasswordScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 25),
 
-                    _buildFullField(newPasswordController, "New Password", isPassword: true),
+                    _buildFullField(newPasswordController, "New Password", isPasswordHidden: _isNewPasswordHidden),
                     const SizedBox(height: 15),
 
-                    _buildFullField(confirmPasswordController, "Confirm New Password", isPassword: true),
+                    _buildFullField(confirmPasswordController, "Confirm New Password", isPasswordHidden: _isConfirmPasswordHidden),
 
                     const SizedBox(height: 30),
 
@@ -118,8 +121,8 @@ class ChangePasswordScreen extends StatelessWidget {
                                   // Wait, let me add an OTP property or pass it here. 
                                   // I will assume the user entered OTP is not stored... Wait, I should add verifiedOtp to AuthController. Let's do that right after this.
                                   authController.recoverAccount(
-                                    otp: authController.verifiedOtp.value, 
                                     newPassword: newPass,
+                                    confirmPassword: confirmPass,
                                   );
 
                                 },
@@ -155,33 +158,46 @@ class ChangePasswordScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFullField(TextEditingController controller, String hint, {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
-        prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black38),
-        suffixIcon: isPassword
-            ? const Icon(Icons.visibility_outlined, size: 18, color: Colors.black38)
-            : null,
-        filled: true,
-        fillColor: const Color(0xFFFBFBFC),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
+  Widget _buildFullField(TextEditingController controller, String hint, {RxBool? isPasswordHidden}) {
+    Widget buildTextField(bool obscure) {
+      return TextField(
+        controller: controller,
+        obscureText: obscure,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
+          prefixIcon: const Icon(Icons.lock_outline, size: 20, color: Colors.black38),
+          suffixIcon: isPasswordHidden != null
+              ? IconButton(
+                  icon: Icon(
+                    obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined, 
+                    size: 18, color: Colors.black38
+                  ),
+                  onPressed: () => isPasswordHidden.value = !isPasswordHidden.value,
+                )
+              : null,
+          filled: true,
+          fillColor: const Color(0xFFFBFBFC),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: Color(0xFF537E5D), width: 1.2),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: const BorderSide(color: Color(0xFF537E5D), width: 1.2),
-        ),
-      ),
-    );
+      );
+    }
+
+    if (isPasswordHidden != null) {
+      return Obx(() => buildTextField(isPasswordHidden.value));
+    }
+    return buildTextField(false);
   }
 }

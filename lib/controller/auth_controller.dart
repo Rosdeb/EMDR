@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/auth_service.dart';
+import 'package:jonssony/services/gogle_sign.dart';
 
 class AuthController extends GetxController {
   final _box = GetStorage();
@@ -17,16 +18,29 @@ class AuthController extends GetxController {
 
   // ─── Storage keys ──────────────────────────────────────────
   static const _tokenKey = 'auth_token';
+  static const _refreshTokenKey = 'auth_refresh_token';
   static const _userKey = 'auth_user';
 
   // ─── Token helpers ─────────────────────────────────────────
   String? get token => _box.read<String>(_tokenKey);
+  String? get refreshToken => _box.read<String>(_refreshTokenKey);
   bool get isLoggedIn => token != null && token!.isNotEmpty;
 
   void _saveSession(Map<String, dynamic> data) {
-    if (data['token'] != null) {
+    if (data['session'] != null && data['session']['accessToken'] != null) {
+      _box.write(_tokenKey, data['session']['accessToken']);
+    } else if (data['token'] != null) {
       _box.write(_tokenKey, data['token']);
+    } else if (data['accessToken'] != null) {
+      _box.write(_tokenKey, data['accessToken']);
     }
+
+    if (data['session'] != null && data['session']['refreshToken'] != null) {
+      _box.write(_refreshTokenKey, data['session']['refreshToken']);
+    } else if (data['refreshToken'] != null) {
+      _box.write(_refreshTokenKey, data['refreshToken']);
+    }
+
     if (data['user'] != null) {
       _box.write(_userKey, data['user']);
     }
@@ -34,6 +48,7 @@ class AuthController extends GetxController {
 
   void _clearSession() {
     _box.remove(_tokenKey);
+    _box.remove(_refreshTokenKey);
     _box.remove(_userKey);
   }
 
@@ -43,6 +58,8 @@ class AuthController extends GetxController {
     required String lastName,
     required String email,
     required String password,
+    required String confirmPassword,
+    required bool isAcceptPrivacyStatement,
   }) async {
     isLoading.value = true;
     errorMessage.value = '';
@@ -52,6 +69,8 @@ class AuthController extends GetxController {
         lastName: lastName,
         email: email,
         password: password,
+        confirmPassword: confirmPassword,
+        isAcceptPrivacyStatement: isAcceptPrivacyStatement,
       );
       if (result['success'] == true) {
         pendingEmail.value = email;
@@ -138,6 +157,37 @@ class AuthController extends GetxController {
     }
   }
 
+  // ─── 4.1. Google Login ─────────────────────────────────────
+  Future<void> signInWithGoogle() async {
+    isLoading.value = true;
+    errorMessage.value = '';
+    try {
+      final user = await GoogleSignInService.signInWithGoogle();
+      if (user != null) {
+        final userData = {
+          'user': {
+            'uid': user.uid,
+            'email': user.email,
+            'firstName': user.displayName?.split(' ').first ?? '',
+            'lastName': user.displayName?.split(' ').last ?? '',
+          },
+          'token': await user.getIdToken(),
+        };
+        _saveSession(userData);
+        Get.offAllNamed(RouteHelper.main);
+      } else {
+        errorMessage.value = 'Sign-in canceled or failed quietly.';
+        _showError(errorMessage.value);
+      }
+    } catch (e, stack) {
+      print("Google Sign In Error: $e\n$stack");
+      errorMessage.value = 'Failed: ${e.toString().split('\n').first}';
+      _showError(errorMessage.value);
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // ─── 5. Send verification OTP (forgot password) ────────────
   Future<void> sendVerificationOtp({required String email}) async {
     isLoading.value = true;
@@ -168,12 +218,16 @@ class AuthController extends GetxController {
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      final result = await AuthService.verifyOtp(
+      final result = await AuthService.verifyResetOtp(
         email: pendingEmail.value,
         otp: otp,
       );
       if (result['success'] == true) {
         verifiedOtp.value = otp;
+        // Postman Step 6 returns an accessToken for the rest of the flow
+        if (result['accessToken'] != null) {
+          _box.write(_tokenKey, result['accessToken']);
+        }
         Get.toNamed(RouteHelper.changePassword);
       } else {
         errorMessage.value = result['message'] ?? 'Invalid OTP';
@@ -189,23 +243,24 @@ class AuthController extends GetxController {
 
   // ─── 7. Recover account (reset password) ───────────────────
   Future<void> recoverAccount({
-    required String otp,
     required String newPassword,
+    required String confirmPassword,
   }) async {
-    if (pendingEmail.isEmpty) {
-      _showError('Session expired. Please try again.');
+    if (token == null) {
+      _showError('Session expired. Please verify OTP again.');
       return;
     }
     isLoading.value = true;
     errorMessage.value = '';
     try {
       final result = await AuthService.recoverAccount(
-        email: pendingEmail.value,
-        otp: otp,
+        token: token!,
         newPassword: newPassword,
+        confirmPassword: confirmPassword,
       );
       if (result['success'] == true) {
         pendingEmail.value = '';
+        _clearSession();
         Get.offAllNamed(RouteHelper.login);
         Get.snackbar('Success', 'Password updated! Please sign in.');
       } else {
@@ -224,8 +279,8 @@ class AuthController extends GetxController {
   Future<void> logout() async {
     isLoading.value = true;
     try {
-      if (token != null) {
-        await AuthService.logout(token: token!);
+      if (token != null && refreshToken != null) {
+        await AuthService.logout(token: token!, refreshToken: refreshToken!);
       }
     } catch (_) {
       // Ignore logout API errors — still clear session locally
@@ -241,8 +296,10 @@ class AuthController extends GetxController {
     Get.snackbar(
       'Error',
       message,
-      snackPosition: SnackPosition.BOTTOM,
-      duration: const Duration(seconds: 3),
+      snackPosition: SnackPosition.TOP,
+      // backgroundColor: Colors.red,
+      // colorText: Colors.white,
+      duration: const Duration(seconds: 4),
     );
   }
 }

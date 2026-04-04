@@ -1,37 +1,42 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart'; // Added missing import
+import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/views/profile/ProfileDetailScreen.dart';
 import 'package:jonssony/views/profile/SettingsScreen.dart';
 import 'package:jonssony/views/profile/Subscription.dart';
 import 'package:jonssony/views/profile/permission.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:intl/intl.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Inject Controller
+    final profileController = Get.put(ProfileController());
     const double appBarImageHeight = 150;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
-            top: 0, left: 0, right: 0, height: appBarImageHeight,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: appBarImageHeight,
             child: Image.asset(
               'assets/images/my_emdr.png',
               fit: BoxFit.fill,
             ),
           ),
-
           Column(
             children: [
               _buildAppBar(context),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Expanded(
                 child: Stack(
                   children: [
@@ -49,7 +54,6 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     Positioned.fill(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
@@ -57,29 +61,44 @@ class ProfilePage extends StatelessWidget {
                         child: Column(
                           children: [
                             const SizedBox(height: 30),
-                            _buildMainProfileCard(),
+                            Obx(() {
+                              if (profileController.isLoading.value &&
+                                  profileController.userProfile.isEmpty) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              return _buildMainProfileCard(profileController);
+                            }),
                             const SizedBox(height: 25),
                             _buildSettingsGroup([
                               _settingsTile(Icons.person_outline, "Profile", () {
-                                Get.to(() => ProfileDetailScreen());
+                                Get.to(() => const ProfileDetailScreen());
                               }),
-                              _settingsTile(Icons.assignment_outlined, "Subscription Offer", () {
+                              _settingsTile(
+                                  Icons.assignment_outlined, "Subscription Offer",
+                                  () {
                                 Get.to(() => SubscriptionScreen());
                               }),
                             ]),
-
                             const SizedBox(height: 20),
-
-
                             _buildSettingsGroup([
-                              _settingsTile(Icons.check_circle_outline, "Permission", () {
+                              _settingsTile(
+                                  Icons.check_circle_outline, "Permission", () {
                                 Get.to(() => PermissionScreen());
                               }),
-                              _settingsTile(Icons.settings_outlined, "Settings", () {
+                              _settingsTile(Icons.settings_outlined, "Settings",
+                                  () {
                                 Get.to(() => SettingsScreen());
                               }),
                             ]),
-
+                            // Account Deletion Option
+                            const SizedBox(height: 20),
+                            _buildSettingsGroup([
+                              _settingsTile(Icons.delete_forever_outlined,
+                                  "Delete Account", () {
+                                _showDeleteDialog(context, profileController);
+                              }),
+                            ]),
                             const SizedBox(height: 150),
                           ],
                         ),
@@ -90,21 +109,19 @@ class ProfilePage extends StatelessWidget {
               ),
             ],
           ),
-
-
         ],
       ),
     );
   }
 
-
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 10),
-      child: Row(
+      padding: EdgeInsets.only(
+          top: MediaQuery.of(context).padding.top + 10, left: 10),
+      child: const Row(
         children: [
-          const SizedBox(width: 15),
-          const AppText(
+          SizedBox(width: 15),
+          AppText(
             "Profile",
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -115,8 +132,20 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  Widget _buildMainProfileCard(ProfileController controller) {
+    final profile = controller.userProfile;
+    final fullName = profile['fullName'] ?? 'User';
+    final memberSinceStr = profile['memberSince'] ?? '';
+    String formattedDate = '';
+    if (memberSinceStr.isNotEmpty) {
+      try {
+        DateTime date = DateTime.parse(memberSinceStr);
+        formattedDate = "Member since ${DateFormat('MMM yyyy').format(date)}";
+      } catch (e) {
+        formattedDate = memberSinceStr;
+      }
+    }
 
-  Widget _buildMainProfileCard() {
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
@@ -130,33 +159,35 @@ class ProfilePage extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 35,
-                backgroundImage: AssetImage('assets/images/home_profile.png'),
+                backgroundImage: profile['avatar'] != null
+                    ? NetworkImage(profile['avatar'])
+                    : const AssetImage('assets/images/home_profile.png')
+                        as ImageProvider,
               ),
               const SizedBox(width: 15),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppText(
-                      "Anaya Sharma",
+                      fullName,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: const Color(0xFF2E3E32),
                     ),
                     AppText(
-                      "Member since Nov 2025",
+                      formattedDate,
                       fontSize: 13,
                       color: Colors.black54,
                     ),
                   ],
                 ),
               ),
-
               GestureDetector(
                 onTap: () {
-
+                  _showLogoutDialog(Get.context!);
                 },
                 child: Container(
                   padding: const EdgeInsets.all(12),
@@ -165,7 +196,8 @@ class ProfilePage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(15),
                     border: Border.all(color: Colors.black12),
                   ),
-                  child: const Icon(Icons.logout, color: Colors.black87, size: 24),
+                  child:
+                      const Icon(Icons.logout, color: Colors.black87, size: 24),
                 ),
               ),
             ],
@@ -174,7 +206,6 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _buildSettingsGroup(List<Widget> tiles) {
     return ClipRRect(
@@ -192,7 +223,6 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-
 
   Widget _settingsTile(IconData icon, String title, VoidCallback onTap) {
     return InkWell(
@@ -220,5 +250,40 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  void _showLogoutDialog(BuildContext context) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                Get.back();
+                Get.find<AuthController>().logout();
+              },
+              child: const Text('Logout')),
+        ],
+      ),
+    );
+  }
 
-}
+  void _showDeleteDialog(BuildContext context, ProfileController controller) {
+    Get.dialog(
+      AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+            'Are you sure you want to delete your account? This action is irreversible.'),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () {
+                Get.back();
+                controller.deleteAccount();
+              },
+              child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+  }
+}

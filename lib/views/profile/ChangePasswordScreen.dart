@@ -1,18 +1,38 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-class SettingChangePasswordScreen extends StatelessWidget {
+class SettingChangePasswordScreen extends StatefulWidget {
   const SettingChangePasswordScreen({super.key});
+
+  @override
+  State<SettingChangePasswordScreen> createState() => _SettingChangePasswordScreenState();
+}
+
+class _SettingChangePasswordScreenState extends State<SettingChangePasswordScreen> {
+  final ProfileController _profileController = Get.find<ProfileController>();
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-        BackgroundDesign(),
+          BackgroundDesign(),
           Column(
             children: [
               Custom_AppBar(context, "Change Password"),
@@ -21,7 +41,7 @@ class SettingChangePasswordScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                   SizedBox(height: 150),
+                      const SizedBox(height: 150),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(25),
                         child: BackdropFilter(
@@ -39,45 +59,56 @@ class SettingChangePasswordScreen extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildLabel("Current Password"),
-                                _buildGlassTextField("Enter old password", isPassword: true),
+                                _buildGlassTextField(_currentPasswordController, "Enter old password", isPassword: true),
                                 const SizedBox(height: 20),
 
                                 _buildLabel("New Password"),
-                                _buildGlassTextField("Enter new password", isPassword: true),
+                                _buildGlassTextField(_newPasswordController, "Enter new password", isPassword: true),
                                 const SizedBox(height: 20),
 
                                 _buildLabel("Confirm Password"),
-                                _buildGlassTextField("Re-enter new password", isPassword: true),
-                                const SizedBox(height: 10), // Card-er bhetore ektu bottom space
+                                _buildGlassTextField(_confirmPasswordController, "Re-enter new password", isPassword: true),
+                                const SizedBox(height: 10),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      // --- Glasscard End ---
 
                       const SizedBox(height: 30),
 
-                      // Update Button (Glasscard-er baire thaka bhalo, design onujayi)
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4F7957),
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
+                      Obx(() {
+                        return SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: _profileController.isLoading.value ? null : () async {
+                              final success = await _profileController.changePassword(
+                                currentPassword: _currentPasswordController.text,
+                                newPassword: _newPasswordController.text,
+                                confirmPassword: _confirmPasswordController.text,
+                              );
+                              if (success) {
+                                Get.back();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F7957),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
                             ),
+                            child: _profileController.isLoading.value 
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const AppText(
+                                "Update password",
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
                           ),
-                          child: const AppText(
-                            "Update password",
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
+                        );
+                      }),
                     ],
                   ),
                 ),
@@ -95,20 +126,21 @@ class SettingChangePasswordScreen extends StatelessWidget {
       child: AppText(
         text,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF2E3E32),
+        color: const Color(0xFF2E3E32),
         fontSize: 14,
       ),
     );
   }
 
-  Widget _buildGlassTextField(String hint, {bool isPassword = false}) {
+  Widget _buildGlassTextField(TextEditingController controller, String hint, {bool isPassword = false}) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.5), // Card-er bhetore field-ti ektu highlight korbe
+        fillColor: Colors.white.withOpacity(0.5),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
@@ -117,4 +149,4 @@ class SettingChangePasswordScreen extends StatelessWidget {
       ),
     );
   }
-}
+}

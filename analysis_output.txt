@@ -1,0 +1,4 @@
+Analyzing gogle_sign.dart...                                    
+
+   info - Type could be non-nullable - lib\services\gogle_sign.dart:23:34 - unnecessary_nullable_for_final_variable_declarations
+
