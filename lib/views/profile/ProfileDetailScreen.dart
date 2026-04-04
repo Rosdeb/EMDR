@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/views/profile/EditProfile.dart';
 import 'package:jonssony/utils/app_text.dart';
 
@@ -9,13 +10,13 @@ class ProfileDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
     const double appBarImageHeight = 170;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
             top: 0,
             left: 0,
@@ -26,12 +27,9 @@ class ProfileDetailScreen extends StatelessWidget {
               fit: BoxFit.fill,
             ),
           ),
-
           Column(
             children: [
-
               _buildAppBar(context),
-
               Expanded(
                 child: Stack(
                   children: [
@@ -49,7 +47,6 @@ class ProfileDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     Positioned.fill(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
@@ -57,41 +54,49 @@ class ProfileDetailScreen extends StatelessWidget {
                         child: Column(
                           children: [
                             const SizedBox(height: 30),
-
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(30),
-                              child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                                child: Container(
-                                  padding: const EdgeInsets.all(25),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.4),
-                                    borderRadius: BorderRadius.circular(30),
-                                    border: Border.all(color: Colors.white.withOpacity(0.3)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const AppText(
-                                        "Personal Details",
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF2E3E32),
-                                      ),
-                                      const SizedBox(height: 25),
-                                      _buildInfoRow(Icons.person_outline, "User Name", "Anaya Sharma"),
-                                      const SizedBox(height: 20),
-                                      _buildInfoRow(Icons.email_outlined, "Email", "willie.jennings@example.com"),
-                                      const SizedBox(height: 20),
-                                      _buildInfoRow(Icons.phone_android_outlined, "Phone Number", "(808) 555-0111"),
-                                    ],
+                            Obx(() {
+                              final profile = profileController.userProfile;
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(30),
+                                child: BackdropFilter(
+                                  filter:
+                                      ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(25),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.4),
+                                      borderRadius: BorderRadius.circular(30),
+                                      border: Border.all(
+                                          color: Colors.white.withOpacity(0.3)),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const AppText(
+                                          "Personal Details",
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF2E3E32),
+                                        ),
+                                        const SizedBox(height: 25),
+                                        _buildInfoRow(Icons.person_outline,
+                                            "Full Name", profile['fullName'] ?? 'N/A'),
+                                        const SizedBox(height: 20),
+                                        _buildInfoRow(Icons.email_outlined,
+                                            "Email", profile['email'] ?? 'N/A'),
+                                        const SizedBox(height: 20),
+                                        _buildInfoRow(
+                                            Icons.phone_android_outlined,
+                                            "Phone Number",
+                                            profile['phoneNumber']?.toString() ?? 'N/A'),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
-
+                              );
+                            }),
                             const SizedBox(height: 30),
-
                             SizedBox(
                               width: double.infinity,
                               height: 55,
@@ -162,10 +167,13 @@ class ProfileDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppText(label, fontSize: 12, color: Colors.black54),
-            AppText(value, fontSize: 15, fontWeight: FontWeight.w500, color: Color(0xFF2E3E32)),
+            AppText(value,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF2E3E32)),
           ],
         ),
       ],
     );
   }
-}
+}

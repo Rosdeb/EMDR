@@ -6,6 +6,7 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/profile/PrivacyPolicyScreen.dart';
 import 'package:jonssony/views/profile/TermsOfServiceScreen.dart';
+import 'package:jonssony/controller/auth_controller.dart';
 import '../../healper/route.dart';
 
 class AuthWelcomeScreen extends StatelessWidget {
@@ -13,6 +14,7 @@ class AuthWelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final AuthController authController = Get.put(AuthController());
     final double screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
@@ -120,13 +122,14 @@ class AuthWelcomeScreen extends StatelessWidget {
                   const SizedBox(height: 20),
 
                   // Google Button with SVG
-                  _buildSocialButton(
+                  Obx(() => _buildSocialButton(
                     "Google",
-                    'assets/icons/google.svg', // Verify your path here
-                        () {
-                      // Handle Google Login logic
-                    },
-                  ),
+                    'assets/icons/google.svg',
+                    tap: authController.isLoading.value
+                        ? null
+                        : () => authController.signInWithGoogle(),
+                    isLoading: authController.isLoading.value,
+                  )),
 
                   const SizedBox(height: 25),
 
@@ -180,7 +183,7 @@ class AuthWelcomeScreen extends StatelessWidget {
   }
 
   // Helper for the Google Button
-  Widget _buildSocialButton(String text, String iconPath, VoidCallback tap) {
+  Widget _buildSocialButton(String text, String iconPath, {required VoidCallback? tap, bool isLoading = false}) {
     return SizedBox(
       width: double.infinity,
       height: 58,
@@ -192,25 +195,31 @@ class AuthWelcomeScreen extends StatelessWidget {
           elevation: 0,
         ),
         onPressed: tap,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              iconPath,
-              height: 24,
-              width: 24,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              text,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    iconPath,
+                    height: 24,
+                    width: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
