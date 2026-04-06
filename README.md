@@ -1,29 +1,36 @@
 # jonssony
 
-EMDR Psychology App
+🧠 Jonssony: EMDR Psychology App
+A powerful Flutter-based EMDR (Eye Movement Desensitization & Reprocessing) therapy support app. Designed to help users manage trauma and anxiety through guided bilateral stimulation.
 
-A Flutter-based EMDR (Eye Movement Desensitization & Reprocessing) therapy support app.
-Users can practice basic EMDR tasks for free and unlock advanced therapy tools through subscription.
+Users can practice basic EMDR tasks for free and unlock advanced professional therapy tools through a premium subscription.
 
-🆓 Free Features
-🌐 Basic guided EMDR light movement
-🧘 Breathing exercises
-📌 Grounding & focus practices
-📊 Simple progress history
-🎯 Daily mental health tasks
-💎 Premium Subscription Features
-🔥 Full EMDR bilateral stimulation
-Visual
-Audio
-Vibration
-⚙️ Custom session controls
-Speed
-Color
-Motion patterns
-📈 Detailed session analytics
-🎧 Background calming audio
-🧠 Mood tracking insights
+✨ Features
+🆓 Free Tier
+Basic Guided EMDR: Standard horizontal light movement.
 
+Breathing Exercises: Guided pacing for relaxation.
+
+Grounding Practices: Tools to stay present and focused.
+
+Progress History: Simple tracking of your sessions.
+
+Daily Tasks: Small mental health goals to keep you on track.
+
+💎 Premium Subscription
+Full Bilateral Stimulation: * Visual: Advanced light bar patterns.
+
+Audio: 3D spatial bilateral sounds.
+
+Vibration: Haptic feedback for tactile stimulation.
+
+Custom Session Controls: * Adjustable Speed, Color, and Motion Patterns.
+
+Detailed Analytics: Deep dive into session frequency and mood trends.
+
+Calming Background Audio: High-quality ambient sounds.
+
+Mood Insights: AI-driven tracking of your emotional journey.
 ## Getting Started
 
 This project is a starting point for a Flutter application.
