@@ -16,8 +16,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inject Controller
-    final profileController = Get.put(ProfileController());
+    // HomeScreen already puts ProfileController; reuse it here
+    final profileController = Get.find<ProfileController>();
     const double appBarImageHeight = 150;
 
     return Scaffold(

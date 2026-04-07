@@ -122,17 +122,38 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       child: Obx(() {
                         String buttonText = "Get Started";
                         bool isFree = false;
+                        bool isCurrentPlan = false;
                         
                         if (_selectedIndex != null && _selectedIndex! < _controller.plans.length) {
                            final selectedPlan = _controller.plans[_selectedIndex!];
                            isFree = selectedPlan['price'] == 0 || selectedPlan['price'] == "0" || selectedPlan['price'].toString().toLowerCase() == "free";
-                           buttonText = isFree ? "Apply for Access" : "Subscribe Now";
+                           
+                           final String name = (selectedPlan['name'] ?? "").toString().toLowerCase();
+                           final String tagline = (selectedPlan['tagline'] ?? "").toString().toLowerCase();
+                           bool isCommunity = name.contains('community') || tagline.contains('community');
+                           
+                           // Check if this plan matches the user's active subscription
+                           if (_controller.mySubscription.isNotEmpty) {
+                              final activePlan = _controller.mySubscription['plan'];
+                              final activePlanId = _controller.mySubscription['planId'];
+                              final planId = selectedPlan['_id'];
+                              
+                              if (planId != null && (activePlan?['_id'] == planId || activePlanId == planId || _controller.mySubscription['_id'] == planId)) {
+                                 isCurrentPlan = true;
+                              }
+                           }
+                           
+                           if (isCurrentPlan) {
+                              buttonText = "Current Plan";
+                           } else {
+                              buttonText = (isFree && isCommunity) ? "Apply for Access" : (isFree ? "Get Free" : "Subscribe Now");
+                           }
                         }
 
                         return SizedBox(
                           height: 55,
                           child: ElevatedButton(
-                            onPressed: (_selectedIndex != null && !_controller.isSubscribing.value) 
+                            onPressed: (_selectedIndex != null && !_controller.isSubscribing.value && !isCurrentPlan) 
                                 ? () => _handleSubscriptionAction()
                                 : null,
                             style: ElevatedButton.styleFrom(
@@ -244,6 +265,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     } else {
       priceDisplay = "$currency$rawPrice";
     }
+    
+    bool isCurrentPlan = false;
+    if (_controller.mySubscription.isNotEmpty) {
+      final activePlan = _controller.mySubscription['plan'];
+      final activePlanId = _controller.mySubscription['planId'];
+      final planId = plan['_id'];
+      
+      if (planId != null && (activePlan?['_id'] == planId || activePlanId == planId || _controller.mySubscription['_id'] == planId)) {
+         isCurrentPlan = true;
+      }
+    }
 
     return GestureDetector(
       onTap: () {
@@ -274,11 +306,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppText(
-                          name,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF2E3E32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: AppText(
+                                name,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF2E3E32),
+                              ),
+                            ),
+                            if (isCurrentPlan)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4F7957),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const AppText(
+                                  "Active",
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 15),
                         const Divider(color: Colors.black12),

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:jonssony/services/app_url.dart';
 
 class StaticContentService {
-  static const String _baseUrl = 'https://peaceful-johnny-lip-caught.trycloudflare.com/api';
+  static const String _baseUrl = AppUrl.baseUrl;
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',

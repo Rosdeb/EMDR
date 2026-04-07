@@ -26,7 +26,7 @@ class AboutUsScreen extends StatelessWidget {
           Column(
             children: [
               Custom_AppBar(context, title),
-              const SizedBox(height: 120),
+              const SizedBox(height: 30),
               Expanded(
                 child: Obx(() {
                   if (controller.isAboutUsLoading.value) {

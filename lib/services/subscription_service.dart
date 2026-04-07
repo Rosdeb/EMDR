@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:jonssony/services/app_url.dart';
 
 class SubscriptionService {
-  static const String _baseUrl = 'https://peaceful-johnny-lip-caught.trycloudflare.com/api/subscriptions';
+  static const String _baseUrl = '${AppUrl.baseUrl}/subscriptions';
 
   static Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',
@@ -29,11 +30,14 @@ class SubscriptionService {
   }
 
   // 3. Subscribe to a plan (Standard/Premium)
-  static Future<Map<String, dynamic>> subscribe(String token, String planId) async {
+  static Future<Map<String, dynamic>> subscribe(String token, String planId, {String? paymentId}) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/subscribe'),
       headers: _headers(token),
-      body: jsonEncode({'planId': planId}),
+      body: jsonEncode({
+        'planId': planId,
+        if (paymentId != null) 'transactionId': paymentId, // Assuming backend uses transactionId
+      }),
     );
     return _handleResponse(response);
   }

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:jonssony/services/app_url.dart';
 
 class AuthService {
-  static const String _baseUrl = 'https://people-exception-cod-plug.trycloudflare.com/api/auth';
+  static const String _baseUrl = '${AppUrl.baseUrl}/auth';
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',

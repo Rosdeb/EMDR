@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/healper/route.dart';
+import 'package:jonssony/utils/app_constant.dart';
 
 Future<void> main() async {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
+  
+  // Initialize Stripe
+  Stripe.publishableKey = AppConstants.Publishable_key;
+  await Stripe.instance.applySettings();
+
   await GetStorage.init();
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

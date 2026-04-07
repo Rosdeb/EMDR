@@ -58,7 +58,7 @@ class SubscriptionController extends GetxController {
     }
   }
 
-  Future<bool> subscribe(Map<String, dynamic> plan) async {
+  Future<bool> subscribe(Map<String, dynamic> plan, {String? paymentId}) async {
     final token = _authController.token;
     final planId = plan['_id'];
     
@@ -75,20 +75,29 @@ class SubscriptionController extends GetxController {
     isSubscribing.value = true;
     try {
       Map<String, dynamic> result;
-      // Determine if it's a paid plan or free community access based on price
-      // This assumes price is 0 or "Free" or similar for free plans.
-      bool isFree = plan['price'] == 0 || plan['price'] == "0" || plan['price'].toString().toLowerCase() == "free";
+      // Determine if it's a paid plan or free community access application. 
+      // The /apply endpoint is specifically for Community Access.
+      final String name = (plan['name'] ?? "").toString().toLowerCase();
+      final String tagline = (plan['tagline'] ?? "").toString().toLowerCase();
+      
+      bool isCommunityPlan = name.contains('community') || tagline.contains('community');
+      bool isFreePrice = plan['price'] == 0 || plan['price'] == "0" || plan['price']?.toString().toLowerCase() == "free";
 
-      if (isFree) {
+      if (isCommunityPlan && isFreePrice) {
         result = await SubscriptionService.applyForCommunityAccess(token, planId);
       } else {
-        result = await SubscriptionService.subscribe(token, planId);
+        result = await SubscriptionService.subscribe(token, planId, paymentId: paymentId);
       }
 
       if (result['success'] == true) {
+        final String name = (plan['name'] ?? "").toString().toLowerCase();
+        final String tagline = (plan['tagline'] ?? "").toString().toLowerCase();
+        bool isCommunity = name.contains('community') || tagline.contains('community');
+        bool isFree = plan['price'] == 0 || plan['price'] == "0" || plan['price']?.toString().toLowerCase() == "free";
+
         Get.snackbar(
           "Success", 
-          isFree ? "Application submitted successfully." : "Subscribed successfully.",
+          (isCommunity && isFree) ? "Application submitted successfully." : "Subscribed successfully.",
           backgroundColor: const Color(0xFF4F7957).withOpacity(0.7),
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
