@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart';
 import '../../healper/route.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -17,7 +18,16 @@ class _SplashScreenState extends State<SplashScreen> {
 
     Future.delayed(
       const Duration(seconds: 5),
-          () => Get.offNamed(RouteHelper.authWelcome),
+      () {
+        final authController = Get.find<AuthController>();
+        if (authController.isLoggedIn) {
+          // Token already saved → skip login, go to home
+          Get.offAllNamed(RouteHelper.main);
+        } else {
+          // No token → show welcome/login screen
+          Get.offNamed(RouteHelper.authWelcome);
+        }
+      },
     );
   }
 
@@ -25,7 +35,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(

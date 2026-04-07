@@ -5,14 +5,28 @@ import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final AuthController authController = Get.find<AuthController>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AuthController authController = Get.find<AuthController>();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
     const Color primaryButtonColor = Color(0xFF4C6D4D);
     const Color forgotPassColor = Color(0xFFE57373);
     final double screenHeight = MediaQuery.of(context).size.height;
@@ -53,7 +67,8 @@ class LoginScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: screenHeight * 0.38),
+                  // Reduced height to move Sign-In section higher (changed from 0.38)
+                  SizedBox(height: screenHeight * 0.20),
 
                   Image.asset(
                     'assets/images/splash_log.png',
@@ -82,7 +97,7 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 15),
 
                   _textField(
-                    controller: emailController,
+                    controller: _emailController,
                     icon: Icons.email_outlined,
                     hint: "Enter Your Email",
                     keyboardType: TextInputType.emailAddress,
@@ -91,10 +106,22 @@ class LoginScreen extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   _textField(
-                    controller: passwordController,
+                    controller: _passwordController,
                     icon: Icons.lock_outline,
                     hint: "Enter Your Password",
-                    isObscure: true,
+                    isObscure: !_isPasswordVisible,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey.shade600,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
 
                   // Forgot Password
@@ -127,8 +154,8 @@ class LoginScreen extends StatelessWidget {
                         onPressed: authController.isLoading.value
                             ? null
                             : () {
-                                final email = emailController.text.trim();
-                                final password = passwordController.text.trim();
+                                final email = _emailController.text.trim();
+                                final password = _passwordController.text.trim();
                                 if (email.isEmpty || password.isEmpty) {
                                   Get.snackbar(
                                     'Error',
@@ -202,6 +229,7 @@ class LoginScreen extends StatelessWidget {
     required IconData icon,
     required String hint,
     bool isObscure = false,
+    Widget? suffixIcon,
     TextInputType keyboardType = TextInputType.text,
   }) {
     return TextField(
@@ -212,6 +240,7 @@ class LoginScreen extends StatelessWidget {
         hintText: hint,
         hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 15),
         prefixIcon: Icon(icon, color: Colors.grey.shade600, size: 22),
+        suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(vertical: 20),
         filled: true,
         fillColor: const Color(0xFFFBFBFC),

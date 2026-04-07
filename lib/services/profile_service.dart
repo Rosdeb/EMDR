@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'dart:io';
+import 'package:jonssony/services/app_url.dart';
 
 class ProfileService {
-  static const String _baseUrl = 'https://people-exception-cod-plug.trycloudflare.com/api/profile';
+  static const String _baseUrl = '${AppUrl.baseUrl}/profile';
 
   static Map<String, String> _headers(String token) => {
         'Content-Type': 'application/json',

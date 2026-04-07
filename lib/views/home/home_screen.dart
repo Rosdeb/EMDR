@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/home/homework.dart';
@@ -15,6 +17,8 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure ProfileController is available and fetch profile data
+    final profileController = Get.put(ProfileController());
 
     const double appBarImageHeight = 170;
     const double overlapAmount = 1;
@@ -142,6 +146,7 @@ class HomeScreen extends StatelessWidget {
 
 
   Widget _buildAppBarContent(BuildContext context) {
+    final profileController = Get.find<ProfileController>();
     return Padding(
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 5,
@@ -152,30 +157,40 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(2),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF81C784), width: 2),
+          Obx(() {
+            final profile = profileController.userProfile;
+            final name = profile['fullName']?.toString() ?? 'User';
+            final avatarUrl = profile['avatar']?.toString();
+            final hour = DateTime.now().hour;
+            final greeting = hour < 12 ? 'Good morning,' : (hour < 17 ? 'Good afternoon,' : 'Good evening,');
+
+            return Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFF81C784), width: 2),
+                  ),
+                  child: CircleAvatar(
+                    radius: 20,
+                    backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                        ? NetworkImage(avatarUrl) as ImageProvider
+                        : const AssetImage('assets/images/home_profile.png'),
+                  ),
                 ),
-                child: const CircleAvatar(
-                  radius: 20,
-                  backgroundImage: AssetImage('assets/images/home_profile.png'),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(greeting, fontSize: 13, color: Colors.black87),
+                    AppText(name, fontSize: 19, fontWeight: FontWeight.bold, color: const Color(0xFF2E3E32)),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 12),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AppText("Good morning,", fontSize: 13, color: Colors.black87),
-                  AppText("Shuvo Paul", fontSize: 19, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
-                ],
-              ),
-            ],
-          ),
+              ],
+            );
+          }),
           GestureDetector(
             onTap: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationPage()));

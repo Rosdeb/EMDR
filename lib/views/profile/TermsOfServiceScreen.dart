@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/static_content_controller.dart';
-import '../../widets/Custom_BackgroundDesign.dart';
-import '../../widets/custom_appbar.dart';
+import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
+import 'package:jonssony/widets/custom_appbar.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class TermsOfServiceScreen extends StatefulWidget {
@@ -19,6 +19,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
   @override
   void initState() {
     super.initState();
+    // Fetch latest active terms
     _controller.fetchTermsOfService();
   }
 
@@ -30,14 +31,14 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
           BackgroundDesign(),
           Column(
             children: [
-              Custom_AppBar(context, "Terms of service"),
+              Custom_AppBar(context, "Terms of Service"),
               Expanded(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 30),
                   child: Column(
                     children: [
-                      const SizedBox(height: 100),
+                      const SizedBox(height: 120),
                       Obx(() {
                         if (_controller.isTermsLoading.value) {
                           return const Center(
@@ -51,6 +52,7 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                               children: [
                                 AppText(_controller.termsError.value,
                                     color: Colors.red),
+                                const SizedBox(height: 10),
                                 TextButton(
                                   onPressed: () =>
                                       _controller.fetchTermsOfService(),
@@ -62,9 +64,8 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                         }
 
                         final terms = _controller.termsData;
-                        final String content = terms['content'] ??
-                            terms['description'] ??
-                            'No terms available.';
+                        final String content = terms['content'] ?? 'No terms available.';
+                        final String version = terms['version'] ?? '';
 
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(25),
@@ -82,6 +83,15 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (version.isNotEmpty) ...[
+                                    AppText(
+                                      "Version: $version",
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
+                                    const SizedBox(height: 15),
+                                  ],
                                   AppText(
                                     content,
                                     fontSize: 14,

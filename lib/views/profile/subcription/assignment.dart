@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/subscription_controller.dart';
+import 'package:jonssony/services/stripe_service.dart';
 import '../../home/my_homework.dart';
-import 'payment.dart';
 
 class FullAssessmentFlow extends StatefulWidget {
   const FullAssessmentFlow({super.key});
@@ -82,15 +84,86 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
   void _handleNext() {
     if (_currentStep == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CompletePaymentSheet()),
-      );
+      final controller = Get.find<SubscriptionController>();
+      final plan = controller.selectedPlanForCheckout.value;
+      
+      if (plan == null) {
+        Get.snackbar("Error", "No plan selected. Please go back and select a plan.");
+        return;
+      }
+
+      final rawPrice = plan['price'];
+      bool isFree = rawPrice == 0 || rawPrice == "0" || rawPrice.toString().toLowerCase() == "free";
+
+      if (isFree) {
+         controller.subscribe(plan).then((success) {
+            if (success) {
+               Navigator.of(context).pushAndRemoveUntil(
+                 MaterialPageRoute(builder: (_) => const MyHomeworkPri()),
+                 (route) => false,
+               );
+            }
+         });
+      } else {
+        // Paid Plan: Trigger Stripe Payment
+        _processStripePayment(plan, controller);
+      }
       return;
     }
     setState(() {
       _currentStep++;
     });
+  }
+
+  /// Maps currency symbols (£, $, €) to Stripe ISO codes (gbp, usd, eur)
+  String _currencyToIso(String? rawCurrency) {
+    final Map<String, String> symbolMap = {
+      '£': 'gbp',
+      '\$': 'usd',
+      '€': 'eur',
+      'GBP': 'gbp',
+      'USD': 'usd',
+      'EUR': 'eur',
+    };
+    final raw = (rawCurrency ?? '').trim();
+    return symbolMap[raw] ?? raw.toLowerCase();
+  }
+
+  Future<void> _processStripePayment(Map<String, dynamic> plan, SubscriptionController controller) async {
+    final double amount = double.tryParse(plan['price'].toString()) ?? 0.0;
+    final String currency = _currencyToIso(plan['currency']?.toString());
+
+    print('💳 Plan price: ${plan['price']}, currency raw: ${plan['currency']}, ISO: $currency');
+
+    if (amount <= 0) {
+      Get.snackbar("Error", "Invalid payment amount.");
+      return;
+    }
+
+    // Show loading? The Stripe Service handles the sheet presentation.
+    final response = await StripeService.instance.makePayment(
+      amount: amount,
+      currency: currency,
+    );
+
+    if (response.result == PaymentResult.success) {
+      // Payment Done -> Subscribe on Backend
+      final success = await controller.subscribe(plan, paymentId: response.paymentIntentId);
+      if (success) {
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const MyHomeworkPri()),
+            (route) => false,
+          );
+        }
+      }
+    } else if (response.result == PaymentResult.failed) {
+      Get.snackbar("Payment Failed", "Something went wrong with the payment transaction.", 
+        backgroundColor: Colors.redAccent, colorText: Colors.white);
+    } else if (response.result == PaymentResult.canceled) {
+       // User simply closed the sheet, no snackbar needed usually
+       print("Payment canceled by user.");
+    }
   }
 
   void _handleBack() {

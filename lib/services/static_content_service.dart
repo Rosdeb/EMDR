@@ -1,18 +1,28 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:jonssony/services/app_url.dart';
 
 class StaticContentService {
-  static const String _baseUrl = 'https://people-exception-cod-plug.trycloudflare.com/api';
+  static const String _baseUrl = AppUrl.baseUrl;
 
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };
 
+  // 1. Get About Us
+  static Future<Map<String, dynamic>> getAboutUs() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/about'),
+      headers: _headers,
+    );
+    return _handleResponse(response);
+  }
+
   // 1. Get Privacy Policy
   static Future<Map<String, dynamic>> getPrivacyPolicy() async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/privacy'),
+      Uri.parse('$_baseUrl/privacy/active'),
       headers: _headers,
     );
     return _handleResponse(response);
@@ -21,8 +31,33 @@ class StaticContentService {
   // 2. Get Terms of Service
   static Future<Map<String, dynamic>> getTermsOfService() async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/terms'),
+      Uri.parse('$_baseUrl/terms/active'),
       headers: _headers,
+    );
+    return _handleResponse(response);
+  }
+
+  // 2.1 Accept Terms
+  static Future<Map<String, dynamic>> acceptTerms(String token, String termsId) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/terms/accept'),
+      headers: {
+        ..._headers,
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'termsId': termsId}),
+    );
+    return _handleResponse(response);
+  }
+
+  // 2.2 Get Acceptance Status
+  static Future<Map<String, dynamic>> getTermsAcceptanceStatus(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/terms/acceptance/status'),
+      headers: {
+        ..._headers,
+        'Authorization': 'Bearer $token',
+      },
     );
     return _handleResponse(response);
   }

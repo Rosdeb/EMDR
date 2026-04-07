@@ -2,9 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/subscription_controller.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/profile/subcription/EMDRConsentForm.dart';
-import 'package:jonssony/views/profile/subcription/assignment.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -15,39 +15,11 @@ class SubscriptionScreen extends StatefulWidget {
 
 class _SubscriptionScreenState extends State<SubscriptionScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.85);
+  final SubscriptionController _controller = Get.put(SubscriptionController());
 
   int? _selectedIndex;
 
-  final List<Map<String, dynamic>> plans = [
-    {
-      "title": "Community Access",
-      "price": "Free",
-      "subtitle": "12 Spots Available",
-      "features": ["Includes Prime Plan program", "Limited availability"],
-      "button": "Apply for Access"
-    },
-    {
-      "title": "The Main Plan",
-      "price": "£45",
-      "subtitle": "Affordable entry to virtual EMDR therapy",
-      "features": ["4 sessions/month", "Get Started"],
-      "button": "Get Started"
-    },
-    {
-      "title": "Prime Plan",
-      "price": "£75",
-      "subtitle": "Best value for consistent healing",
-      "features": ["Includes homework", "Progress tracking", "Full program access"],
-      "button": "Get Started"
-    },
-    {
-      "title": "Hero Plan",
-      "price": "£120",
-      "subtitle": "Support yourself and someone in need",
-      "features": ["Funds 1 Community Access monthly", "Full Prime Plan access"],
-      "button": "Get Started"
-    },
-  ];
+  // Static plans removed, data now comes from SubscriptionController
 
   @override
   Widget build(BuildContext context) {
@@ -119,13 +91,23 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
                           // Horizontal Plan Cards
                           Expanded(
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: plans.length,
-                              itemBuilder: (context, index) {
-                                return _buildPlanCard(plans[index], index);
-                              },
-                            ),
+                            child: Obx(() {
+                              if (_controller.isLoadingPlans.value) {
+                                return const Center(child: CircularProgressIndicator(color: Color(0xFF4F7957)));
+                              }
+                              
+                              if (_controller.plans.isEmpty) {
+                                return const Center(child: AppText("No plans available."));
+                              }
+
+                              return PageView.builder(
+                                controller: _pageController,
+                                itemCount: _controller.plans.length,
+                                itemBuilder: (context, index) {
+                                  return _buildPlanCard(_controller.plans[index], index);
+                                },
+                              );
+                            }),
                           ),
                           const SizedBox(height: 100), // Space for the floating button
                         ],
@@ -137,28 +119,60 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                       bottom: 40, // Moved up as requested
                       left: 20,
                       right: 20,
-                      child: SizedBox(
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed: _selectedIndex != null 
-                              ? () {
-                            Get.to(() => ConsentFormScreen());
-                                } 
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF4F7957),
-                            disabledBackgroundColor: Colors.grey,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                            elevation: 5,
-                            shadowColor: Colors.black26,
+                      child: Obx(() {
+                        String buttonText = "Get Started";
+                        bool isFree = false;
+                        bool isCurrentPlan = false;
+                        
+                        if (_selectedIndex != null && _selectedIndex! < _controller.plans.length) {
+                           final selectedPlan = _controller.plans[_selectedIndex!];
+                           isFree = selectedPlan['price'] == 0 || selectedPlan['price'] == "0" || selectedPlan['price'].toString().toLowerCase() == "free";
+                           
+                           final String name = (selectedPlan['name'] ?? "").toString().toLowerCase();
+                           final String tagline = (selectedPlan['tagline'] ?? "").toString().toLowerCase();
+                           bool isCommunity = name.contains('community') || tagline.contains('community');
+                           
+                           // Check if this plan matches the user's active subscription
+                           if (_controller.mySubscription.isNotEmpty) {
+                              final activePlan = _controller.mySubscription['plan'];
+                              final activePlanId = _controller.mySubscription['planId'];
+                              final planId = selectedPlan['_id'];
+                              
+                              if (planId != null && (activePlan?['_id'] == planId || activePlanId == planId || _controller.mySubscription['_id'] == planId)) {
+                                 isCurrentPlan = true;
+                              }
+                           }
+                           
+                           if (isCurrentPlan) {
+                              buttonText = "Current Plan";
+                           } else {
+                              buttonText = (isFree && isCommunity) ? "Apply for Access" : (isFree ? "Get Free" : "Subscribe Now");
+                           }
+                        }
+
+                        return SizedBox(
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: (_selectedIndex != null && !_controller.isSubscribing.value && !isCurrentPlan) 
+                                ? () => _handleSubscriptionAction()
+                                : null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4F7957),
+                              disabledBackgroundColor: Colors.grey,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              elevation: 5,
+                              shadowColor: Colors.black26,
+                            ),
+                            child: _controller.isSubscribing.value 
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : AppText(
+                                  buttonText,
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                           ),
-                          child: AppText(
-                            _selectedIndex != null ? plans[_selectedIndex!]['button'] : "Get Started",
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -167,6 +181,50 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _handleSubscriptionAction() {
+    if (_selectedIndex == null || _selectedIndex! >= _controller.plans.length) return;
+    
+    final selectedPlan = _controller.plans[_selectedIndex!];
+    
+    if (selectedPlan['name']?.toString().toLowerCase().contains('hero') == true) {
+      _showHeroPlanConfirmation(selectedPlan);
+    } else {
+      _controller.selectedPlanForCheckout.value = selectedPlan;
+      Get.to(() => const ConsentFormScreen());
+    }
+  }
+
+  void _showHeroPlanConfirmation(Map<String, dynamic> plan) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const AppText("Confirm Subscription", fontWeight: FontWeight.bold),
+          content: AppText("You are about to subscribe to the ${plan['name']} for ${plan['currency'] ?? '£'}${plan['price']}/month. Do you wish to proceed?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const AppText("Cancel", color: Colors.grey),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _controller.selectedPlanForCheckout.value = plan;
+                Get.to(() => const ConsentFormScreen());
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F7957),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const AppText("Confirm", color: Colors.white),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -192,6 +250,32 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   Widget _buildPlanCard(Map<String, dynamic> plan, int index) {
     bool isSelected = _selectedIndex == index;
+    final String name = plan['name'] ?? "Unknown Plan";
+    final String tagline = plan['tagline'] ?? "";
+    final List<dynamic> features = plan['features'] ?? [];
+    
+    // Formatting price
+    final dynamic rawPrice = plan['price'];
+    final String currency = plan['currency'] ?? "£";
+    String priceDisplay = "Free";
+    bool isFree = false;
+    
+    if (rawPrice == 0 || rawPrice == "0" || rawPrice.toString().toLowerCase() == "free") {
+      isFree = true;
+    } else {
+      priceDisplay = "$currency$rawPrice";
+    }
+    
+    bool isCurrentPlan = false;
+    if (_controller.mySubscription.isNotEmpty) {
+      final activePlan = _controller.mySubscription['plan'];
+      final activePlanId = _controller.mySubscription['planId'];
+      final planId = plan['_id'];
+      
+      if (planId != null && (activePlan?['_id'] == planId || activePlanId == planId || _controller.mySubscription['_id'] == planId)) {
+         isCurrentPlan = true;
+      }
+    }
 
     return GestureDetector(
       onTap: () {
@@ -222,11 +306,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        AppText(
-                          plan['title'],
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF2E3E32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: AppText(
+                                name,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF2E3E32),
+                              ),
+                            ),
+                            if (isCurrentPlan)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4F7957),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const AppText(
+                                  "Active",
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
                         ),
                         const SizedBox(height: 15),
                         const Divider(color: Colors.black12),
@@ -236,11 +342,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             AppText(
-                              plan['price'],
+                              priceDisplay,
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
-                            if (plan['price'] != "Free")
+                            if (!isFree)
                               const AppText(
                                 "/Month",
                                 fontSize: 14,
@@ -249,19 +355,12 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                           ],
                         ),
                         AppText(
-                          plan['subtitle'],
+                          tagline,
                           fontSize: 13,
                           color: Colors.black54,
-                          // FontStyle not supported in AppText directly based on my update, will remove italic or keep Text?
-                          // Let's assume user wants AppText style regardless of italic or I missed adding fontStyle to AppText. 
-                          // I'll keep Text for subtitle if fontStyle is critical, or update AppText. 
-                          // The instruction says "use koro full project e". I will use AppText and omit italic if not supported, or add it.
-                          // I'll add fontStyle to AppText in next step if needed. For now, I'll use it without italic or use TextStyle inside if possible? 
-                          // AppText doesn't expose style merge. I'll omit italic for standardized look or use Text if I must.
-                          // I'll use AppText and skip fontStyle for now to follow instruction strictly.
                         ),
                         const SizedBox(height: 25),
-                        ...plan['features'].map<Widget>((feature) => Padding(
+                        ...features.map<Widget>((feature) => Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Row(
                             children: [
@@ -269,7 +368,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                               const SizedBox(width: 10),
                               Expanded(
                                 child: AppText(
-                                  feature,
+                                  feature.toString(),
                                   fontSize: 14,
                                 ),
                               ),
@@ -287,4 +386,5 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       ),
     );
   }
+
 }

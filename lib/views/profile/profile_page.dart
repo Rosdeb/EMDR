@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/auth_controller.dart'; // Added missing import
 import 'package:jonssony/controller/profile_controller.dart';
@@ -15,8 +16,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Inject Controller
-    final profileController = Get.put(ProfileController());
+    // HomeScreen already puts ProfileController; reuse it here
+    final profileController = Get.find<ProfileController>();
     const double appBarImageHeight = 150;
 
     return Scaffold(
@@ -94,7 +95,7 @@ class ProfilePage extends StatelessWidget {
                             // Account Deletion Option
                             const SizedBox(height: 20),
                             _buildSettingsGroup([
-                              _settingsTile(Icons.delete_forever_outlined,
+                              _settingsTile('assets/icons/delete.svg',
                                   "Delete Account", () {
                                 _showDeleteDialog(context, profileController);
                               }),
@@ -224,7 +225,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _settingsTile(IconData icon, String title, VoidCallback onTap) {
+  Widget _settingsTile(dynamic icon, String title, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -234,7 +235,18 @@ class ProfilePage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.black87, size: 24),
+            if (icon is IconData)
+              Icon(icon, color: Colors.black87, size: 24)
+            else if (icon is String)
+              SvgPicture.asset(
+                icon,
+                colorFilter:
+                    const ColorFilter.mode(Colors.black87, BlendMode.srcIn),
+                height: 24,
+                width: 24,
+              )
+            else
+              const SizedBox(width: 24, height: 24),
             const SizedBox(width: 15),
             Expanded(
               child: AppText(
@@ -286,4 +298,4 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-}
+}
