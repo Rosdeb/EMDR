@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/static_content_controller.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
-import '../../widets/Custom_BackgroundDesign.dart';
+import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class HelpScreen extends StatefulWidget {
@@ -19,6 +19,7 @@ class _HelpScreenState extends State<HelpScreen> {
   @override
   void initState() {
     super.initState();
+    // Fetch FAQs on init
     _controller.fetchFaqs();
   }
 
@@ -33,6 +34,7 @@ class _HelpScreenState extends State<HelpScreen> {
               Custom_AppBar(context, "Help"),
               Expanded(
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
@@ -50,6 +52,7 @@ class _HelpScreenState extends State<HelpScreen> {
                               children: [
                                 AppText(_controller.faqError.value,
                                     color: Colors.red),
+                                const SizedBox(height: 10),
                                 TextButton(
                                   onPressed: () => _controller.fetchFaqs(),
                                   child: const Text("Retry"),
@@ -78,46 +81,52 @@ class _HelpScreenState extends State<HelpScreen> {
                                 ),
                               ),
                               child: Column(
-                                children: faqs.map((faq) {
-                                  int index = faqs.indexOf(faq);
-                                  return Column(
-                                    children: [
-                                      Theme(
-                                        data: Theme.of(context).copyWith(
-                                          dividerColor: Colors.transparent,
-                                        ),
-                                        child: ExpansionTile(
-                                          iconColor: const Color(0xFF2E3E32),
-                                          collapsedIconColor: Colors.black54,
-                                          title: AppText(
-                                            "${index + 1}. ${faq['question'] ?? faq['title'] ?? ''}",
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w500,
-                                            color: const Color(0xFF2E3E32),
+                                children: [
+                                  ...faqs.asMap().entries.map((entry) {
+                                    final int index = entry.key;
+                                    final faq = entry.value;
+                                    final String question = faq['question'] ?? faq['title'] ?? '';
+                                    final String answer = faq['answer'] ?? faq['content'] ?? '';
+                                    
+                                    return Column(
+                                      children: [
+                                        Theme(
+                                          data: Theme.of(context).copyWith(
+                                            dividerColor: Colors.transparent,
                                           ),
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.fromLTRB(
-                                                  20, 0, 20, 15),
-                                              child: AppText(
-                                                faq['answer'] ?? faq['content'] ?? '',
-                                                fontSize: 14,
-                                                color: Colors.black87,
-                                              ),
-                                            )
-                                          ],
+                                          child: ExpansionTile(
+                                            iconColor: const Color(0xFF2E3E32),
+                                            collapsedIconColor: Colors.black54,
+                                            title: AppText(
+                                              "${index + 1}. $question",
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: const Color(0xFF2E3E32),
+                                            ),
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.fromLTRB(
+                                                    20, 0, 20, 15),
+                                                child: AppText(
+                                                  answer,
+                                                  fontSize: 14,
+                                                  color: Colors.black87,
+                                                ),
+                                              )
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      if (index != faqs.length - 1)
-                                        Divider(
-                                          color: Colors.white.withOpacity(0.2),
-                                          indent: 20,
-                                          endIndent: 20,
-                                          height: 1,
-                                        ),
-                                    ],
-                                  );
-                                }).toList(),
+                                        if (index != faqs.length - 1)
+                                          Divider(
+                                            color: Colors.white.withOpacity(0.2),
+                                            indent: 20,
+                                            endIndent: 20,
+                                            height: 1,
+                                          ),
+                                      ],
+                                    );
+                                  }),
+                                ],
                               ),
                             ),
                           ),

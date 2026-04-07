@@ -14,7 +14,7 @@ class LibraryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double appBarImageHeight = 150;
+    const double appBarImageHeight = 170;
 
     return Scaffold(
       backgroundColor: Colors.white,

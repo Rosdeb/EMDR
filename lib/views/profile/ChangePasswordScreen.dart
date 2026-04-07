@@ -89,7 +89,17 @@ class _SettingChangePasswordScreenState extends State<SettingChangePasswordScree
                                 confirmPassword: _confirmPasswordController.text,
                               );
                               if (success) {
-                                Get.back();
+                                Get.snackbar(
+                                  "Success",
+                                  "Password changed successfully",
+                                  snackPosition: SnackPosition.TOP,
+                                  backgroundColor: const Color(0xFF4F7957).withOpacity(0.7),
+                                  colorText: Colors.white,
+                                  margin: const EdgeInsets.all(15),
+                                  borderRadius: 15,
+                                  duration: const Duration(seconds: 3),
+                                );
+                                Navigator.pop(context);
                               }
                             },
                             style: ElevatedButton.styleFrom(

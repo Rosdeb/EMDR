@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/subscription_controller.dart';
 import 'package:jonssony/views/home/my_homework.dart';
 
 class CompletePaymentSheet extends StatefulWidget {
@@ -93,16 +95,31 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
   }
 
   Future<void> _handlePay() async {
+    if (!_validate()) return;
+    
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    setState(() {
-      _isLoading = false;
-      _isSuccess = true;
-    });
-    // Replace below with your actual navigation:
-    // Navigator.of(context).pushReplacement(
-    //   MaterialPageRoute(builder: (_) => MyHomePage()),
-    // );
+    
+    final controller = Get.find<SubscriptionController>();
+    final plan = controller.selectedPlanForCheckout.value;
+
+    if (plan != null) {
+      final success = await controller.subscribe(plan);
+      if (success) {
+        setState(() {
+          _isLoading = false;
+          _isSuccess = true;
+        });
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } else {
+      // Fallback
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+    }
   }
 
   void _reset() {
@@ -146,6 +163,10 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
   }
 
   Widget _buildSuccess() {
+    final controller = Get.find<SubscriptionController>();
+    final plan = controller.selectedPlanForCheckout.value;
+    final planName = plan?['name'] ?? "Subscription Plan";
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -165,9 +186,9 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Thank you for subscribing to Hero Plan',
-          style: TextStyle(fontSize: 14, color: _hintColor),
+        Text(
+          'Thank you for subscribing to $planName',
+          style: const TextStyle(fontSize: 14, color: _hintColor),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -203,6 +224,11 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
   }
 
   Widget _buildForm() {
+    final controller = Get.find<SubscriptionController>();
+    final plan = controller.selectedPlanForCheckout.value;
+    final planName = plan?['name'] ?? "Subscription Plan";
+    final planPrice = plan != null ? "${plan['currency'] ?? '£'}${plan['price']}" : "£0";
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,16 +268,16 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Text(
-                    'Hero Plan',
-                    style: TextStyle(
+                    planName,
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     'Billed monthly',
                     style: TextStyle(
                       fontSize: 14,
@@ -260,9 +286,9 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                   ),
                 ],
               ),
-              const Text(
-                '£120/mo',
-                style: TextStyle(
+              Text(
+                '$planPrice/mo',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w500,
                 ),
@@ -378,9 +404,9 @@ class _CompletePaymentSheetState extends State<CompletePaymentSheet> {
                     strokeWidth: 2.5,
                   ),
                 )
-                    : const Text(
-                  'Pay £120',
-                  style: TextStyle(
+                    : Text(
+                  'Pay $planPrice',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,

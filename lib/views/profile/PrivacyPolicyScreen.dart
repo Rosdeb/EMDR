@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:jonssony/controller/static_content_controller.dart';
 import 'package:jonssony/widets/Custom_BackgroundDesign.dart';
 import 'package:jonssony/widets/custom_appbar.dart';
@@ -19,7 +20,18 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
   @override
   void initState() {
     super.initState();
+    // Fetch active privacy policy on screen load
     _controller.fetchPrivacyPolicy();
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty) return '';
+    try {
+      final DateTime date = DateTime.parse(dateStr);
+      return DateFormat('MMMM dd, yyyy').format(date);
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   @override
@@ -40,14 +52,18 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                       const SizedBox(height: 120),
                       Obx(() {
                         if (_controller.isPrivacyLoading.value) {
-                          return const Center(child: CircularProgressIndicator(color: Color(0xFF4F7957)));
+                          return const Center(
+                              child: CircularProgressIndicator(
+                                  color: Color(0xFF4F7957)));
                         }
 
                         if (_controller.privacyError.isNotEmpty) {
                           return Center(
                             child: Column(
                               children: [
-                                AppText(_controller.privacyError.value, color: Colors.red),
+                                AppText(_controller.privacyError.value,
+                                    color: Colors.red),
+                                const SizedBox(height: 10),
                                 TextButton(
                                   onPressed: () => _controller.fetchPrivacyPolicy(),
                                   child: const Text("Retry"),
@@ -58,8 +74,9 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                         }
 
                         final privacy = _controller.privacyData;
-                        final String content = privacy['content'] ?? privacy['description'] ?? 'No policy content available.';
-                        final String lastUpdated = privacy['updatedAt'] ?? privacy['lastUpdated'] ?? '';
+                        final String content = privacy['content'] ?? 'No policy content available.';
+                        final String version = privacy['version'] ?? '';
+                        final String lastUpdated = _formatDate(privacy['updatedAt']);
 
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(25),
@@ -77,6 +94,15 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  if (version.isNotEmpty) ...[
+                                    AppText(
+                                      "Version: $version",
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
+                                    const SizedBox(height: 10),
+                                  ],
                                   AppText(
                                     content,
                                     fontSize: 14,
@@ -84,10 +110,13 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                   ),
                                   if (lastUpdated.isNotEmpty) ...[
                                     const SizedBox(height: 20),
-                                    AppText(
-                                      "Last updated: $lastUpdated",
-                                      fontSize: 12,
-                                      color: Colors.black54,
+                                    Align(
+                                      alignment: Alignment.bottomRight,
+                                      child: AppText(
+                                        "Last updated: $lastUpdated",
+                                        fontSize: 12,
+                                        color: Colors.black54,
+                                      ),
                                     ),
                                   ],
                                 ],

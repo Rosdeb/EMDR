@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/subscription_controller.dart';
 import '../../home/my_homework.dart';
 import 'payment.dart';
 
@@ -82,10 +84,30 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
   void _handleNext() {
     if (_currentStep == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CompletePaymentSheet()),
-      );
+      final controller = Get.find<SubscriptionController>();
+      final plan = controller.selectedPlanForCheckout.value;
+      bool isFree = false;
+      
+      if (plan != null) {
+         final rawPrice = plan['price'];
+         isFree = rawPrice == 0 || rawPrice == "0" || rawPrice.toString().toLowerCase() == "free";
+      }
+
+      if (isFree && plan != null) {
+         controller.subscribe(plan).then((success) {
+            if (success) {
+               Navigator.of(context).pushAndRemoveUntil(
+                 MaterialPageRoute(builder: (_) => const MyHomeworkPri()),
+                 (route) => false,
+               );
+            }
+         });
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CompletePaymentSheet()),
+        );
+      }
       return;
     }
     setState(() {

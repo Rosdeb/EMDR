@@ -87,31 +87,31 @@ SizedBox(height: 20),
                 ),
               ),
 
-              // Delete Account Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Delete account logic ba dialog
-                    },
-                    icon: SvgPicture.asset(
-                      'assets/icons/delete.svg',
-                      color: Colors.white,
-                      height: 24,
-                      width: 24,
-                    ),
-                    label: const AppText("Delete Account", color: Colors.white),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4F7957),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
-                    ),
-                  ),
-                ),
-              )
+              // // Delete Account Button
+              // Padding(
+              //   padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
+              //   child: SizedBox(
+              //     width: double.infinity,
+              //     height: 55,
+              //     child: ElevatedButton.icon(
+              //       onPressed: () {
+              //         // Delete account logic ba dialog
+              //       },
+              //       icon: SvgPicture.asset(
+              //         'assets/icons/delete.svg',
+              //         color: Colors.white,
+              //         height: 24,
+              //         width: 24,
+              //       ),
+              //       label: const AppText("Delete Account", color: Colors.white),
+              //       style: ElevatedButton.styleFrom(
+              //           backgroundColor: const Color(0xFF4F7957),
+              //           elevation: 0,
+              //           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))
+              //       ),
+              //     ),
+              //   ),
+              // )
             ],
           ),
         ],
