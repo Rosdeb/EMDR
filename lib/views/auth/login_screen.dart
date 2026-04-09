@@ -72,25 +72,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   Image.asset(
                     'assets/images/splash_log.png',
-                    height: 90,
+                    height: 140,
                     fit: BoxFit.contain,
                   ),
-
-                  const SizedBox(height: 10),
-
+                  const SizedBox(height: 20),
                   const AppText(
                     "Sign in",
-                    fontSize: 42,
+                    fontSize: 40,
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF0F1912),
                   ),
 
-                  SizedBox(height: screenHeight * 0.035),
-
+                  SizedBox(height: screenHeight * 0.050),
+SizedBox(height: 40,),
                   const AppText(
                     "Sign in with email address",
                     color: Color(0xFF0F1912),
-                    fontSize: 14,
+                    fontSize: 20,
                     fontWeight: FontWeight.w500,
                   ),
 
@@ -103,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 15),
 
                   _textField(
                     controller: _passwordController,
@@ -186,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       )),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 25),
 
                   Center(
                     child: GestureDetector(

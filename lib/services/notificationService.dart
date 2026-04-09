@@ -1,332 +1,332 @@
-// // import 'dart:io';
-// //
-// // import 'package:firebase_messaging/firebase_messaging.dart';
-// // import 'package:flutter/widgets.dart';
-// // import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-// // import 'package:pagedrop/utils/app_contants.dart';
-// // import 'package:shared_preferences/shared_preferences.dart';
-// //
-// // class NotificationService {
-// //   static const String _channelId = 'app_notifications';
-// //   static const String _channelName = 'App Notifications';
-// //   static const String _channelDescription = 'General notifications';
-// //   static const String _prefNotificationsEnabled = 'notifications_enabled';
-// //
-// //   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-// //   static final FlutterLocalNotificationsPlugin _localNotifications =
-// //   FlutterLocalNotificationsPlugin();
-// //
-// //   static bool _isNotificationsEnabled = true;
-// //
-// //   static Future<void> initialize() async {
-// //     await _initializeFirebase();
-// //     await _initializeLocalNotifications();
-// //     await _loadNotificationPreferences();
-// //     await _setupFirebaseListeners();
-// //   }
-// //
-// //   static Future<void> getFcmToken() async {
-// //        try {
-// //            // Wait a bit to ensure all services are initialized (especially on iOS)
-// //            await Future.delayed(const Duration(seconds: 2));
-// //
-// //            final NotificationSettings settings = await _firebaseMessaging.requestPermission(
-// //                  alert: true,
-// //                  badge: true,
-// //                  sound: true,
-// //                  provisional: true,
-// //                );
-// //
-// //            if (settings.authorizationStatus == AuthorizationStatus.denied) {
-// //                    debugPrint('Notification permission denied');
-// //                return;
-// //              }
-// //
-// //            // Try to get token with retry mechanism
-// //            String? fcmToken;
-// //            int attempts = 0;
-// //            const maxAttempts = 3;
-// //
-// //            while (fcmToken == null && attempts < maxAttempts) {
-// //                attempts++;
-// //                try {
-// //                    debugPrint('Attempting to get FCM token (attempt $attempts)');
-// //                    fcmToken = await _firebaseMessaging.getToken();
-// //
-// //                    if (fcmToken != null) {
-// //                        await PrefsHelper.setString(AppConstants.fcmToken, fcmToken);
-// //                        debugPrint('✅ FCM Token successfully retrieved: $fcmToken');
-// //
-// //                        // Subscribe to general topic
-// //                        await _firebaseMessaging.subscribeToTopic('signedInUsers');
-// //                        break; // Exit loop if successful
-// //                      }
-// //                  } catch (error) {
-// //                    debugPrint('Failed to get FCM token on attempt $attempts: $error');
-// //                    if (attempts < maxAttempts) {
-// //                        await Future.delayed(Duration(seconds: attempts)); // Exponential backoff
-// //                      }
-// //                  }
-// //              }
-// //
-// //            if (fcmToken == null) {
-// //                debugPrint('❌ Failed to get FCM token after $maxAttempts attempts');
-// //              } else {
-// //                debugPrint('✅ FCM Token saved: $fcmToken');
-// //              }
-// //          } catch (error) {
-// //            debugPrint('Error getting FCM token: $error');
-// //          }
-// //      }
-// //
-// //   /// Load notification preferences from storage
-// //   static Future<void> _loadNotificationPreferences() async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     _isNotificationsEnabled = prefs.getBool(_prefNotificationsEnabled) ?? true;
-// //   }
-// //
-// //   /// Save notification preference to storage
-// //   static Future<void> _saveNotificationPreference(bool isEnabled) async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     await prefs.setBool(_prefNotificationsEnabled, isEnabled);
-// //     _isNotificationsEnabled = isEnabled;
-// //   }
-// //
-// //   /// Toggle notifications on/off
-// //   static Future<void> toggleNotifications(bool isEnabled) async {
-// //     if (isEnabled) {
-// //       debugPrint('Notifications enabled');
-// //     } else {
-// //       await _localNotifications.cancelAll();
-// //       debugPrint('Notifications disabled and cleared');
-// //     }
-// //     await _saveNotificationPreference(isEnabled);
-// //   }
-// //
-// //   /// Get current notification preference
-// //   static Future<bool> getNotificationPreference() async {
-// //     await _loadNotificationPreferences();
-// //     return _isNotificationsEnabled;
-// //   }
-// //
-// //   static Future<void> _initializeFirebase() async {
-// //     try {
-// //       if (Platform.isIOS) {
-// //                await Future.delayed(const Duration(seconds: 3));
-// //              }
-// //
-// //       final NotificationSettings settings = await _firebaseMessaging.requestPermission(
-// //         alert: true,
-// //         badge: true,
-// //         sound: true,
-// //         provisional: true,
-// //       );
-// //
-// //       debugPrint('Notification permission: ${settings.authorizationStatus}');
-// //
-// //       await Future.delayed(const Duration(seconds: 1));
-// //
-// //       // Only proceed if permission granted
-// //       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-// //           settings.authorizationStatus == AuthorizationStatus.provisional) {
-// //
-// //         // Check if token already exists
-// //         final savedToken = await PrefsHelper.getString(AppConstants.fcmToken);
-// //
-// //         if (savedToken == null) {
-// //           debugPrint("No saved token → getting new one");
-// //           await getFcmToken();  // Get token only if not saved
-// //         } else {
-// //           debugPrint("Saved FCM Token: $savedToken");
-// //           // Optional: Verify token is still valid by subscribing to topic
-// //           await _firebaseMessaging.subscribeToTopic('signedInUsers');
-// //         }
-// //       } else {
-// //         debugPrint('Notification permission denied or not determined');
-// //       }
-// //
-// //       // Listen for token refresh (regardless of permission)
-// //       _firebaseMessaging.onTokenRefresh.listen((newToken) async {
-// //         debugPrint('FCM Token refreshed: $newToken');
-// //         await PrefsHelper.setString(AppConstants.fcmToken, newToken);
-// //         // Re-subscribe after token refresh
-// //         await _firebaseMessaging.subscribeToTopic('signedInUsers');
-// //       });
-// //     } catch (error) {
-// //       debugPrint('Firebase initialization error: $error');
-// //     }
-// //   }
-// //
-// //   static Future<void> _initializeLocalNotifications() async {
-// //     const AndroidInitializationSettings androidSettings =
-// //     AndroidInitializationSettings('@mipmap/ic_launcher');
-// //     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
-// //       requestAlertPermission: true,
-// //       requestBadgePermission: true,
-// //       requestSoundPermission: true,
-// //     );
-// //
-// //     const InitializationSettings initializationSettings = InitializationSettings(
-// //       android: androidSettings,
-// //       iOS: iosSettings,
-// //     );
-// //
-// //     // Request Android permissions
-// //     await _localNotifications
-// //         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-// //         ?.requestNotificationsPermission();
-// //
-// //     await _localNotifications.initialize(
-// //       initializationSettings,
-// //       onDidReceiveNotificationResponse: _handleNotificationTap,
-// //     );
-// //
-// //     // Create notification channel for Android
-// //     await _createNotificationChannel();
-// //   }
-// //
-// //   static Future<void> _createNotificationChannel() async {
-// //     const AndroidNotificationChannel channel = AndroidNotificationChannel(
-// //       _channelId,
-// //       _channelName,
-// //       description: _channelDescription,
-// //       importance: Importance.high,
-// //       playSound: true,
-// //       enableVibration: true,
-// //       showBadge: true,
-// //     );
-// //
-// //     await _localNotifications
-// //         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-// //         ?.createNotificationChannel(channel);
-// //   }
-// //
-// //   /// Set up all Firebase message listeners
-// //   static Future<void> _setupFirebaseListeners() async {
-// //     // Listen for foreground messages
-// //     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-// //       debugPrint('Foreground message received: ${message.messageId}');
-// //       _handleForegroundMessage(message);
-// //     });
-// //
-// //     // Listen for background/opened app messages
-// //     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-// //       debugPrint('App opened from notification');
-// //     });
-// //
-// //     // Handle terminated state messages
-// //     final RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
-// //     if (initialMessage != null) {
-// //       debugPrint('App opened from terminated state via notification');
-// //     }
-// //
-// //     // Set background message handler
-// //     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
-// //   }
-// //
-// //   static void _handleForegroundMessage(RemoteMessage message) {
-// //     if (!_isNotificationsEnabled) return;
-// //
-// //     final notification = message.notification;
-// //     if (notification != null) {
-// //       _showLocalNotification(
-// //         title: notification.title ?? 'Notification',
-// //         body: notification.body ?? '',
-// //       );
-// //     }
-// //   }
-// //
-// //   /// Background message handler (must be top-level)
-// //   @pragma('vm:entry-point')
-// //   static Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
-// //     debugPrint('Background message handled: ${message.messageId}');
-// //
-// //     // Show notification in background
-// //     final notification = message.notification;
-// //     if (notification != null) {
-// //       await _showLocalNotification(
-// //         title: notification.title ?? 'Notification',
-// //         body: notification.body ?? '',
-// //       );
-// //     }
-// //   }
-// //
-// //   /// Show local notification
-// //   static Future<void> _showLocalNotification({
-// //     required String title,
-// //     required String body,
-// //   }) async {
-// //     if (!_isNotificationsEnabled) return;
-// //
-// //     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-// //       _channelId,
-// //       _channelName,
-// //       channelDescription: _channelDescription,
-// //       importance: Importance.high,
-// //       priority: Priority.high,
-// //       playSound: true,
-// //       enableVibration: true,
-// //       showWhen: true,
-// //     );
-// //
-// //     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
-// //       presentAlert: true,
-// //       presentBadge: true,
-// //       presentSound: true,
-// //     );
-// //
-// //     const NotificationDetails platformDetails = NotificationDetails(
-// //       android: androidDetails,
-// //       iOS: iosDetails,
-// //     );
-// //
-// //     try {
-// //       await _localNotifications.show(
-// //         DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
-// //         title,
-// //         body,
-// //         platformDetails,
-// //       );
-// //
-// //       debugPrint('Local notification shown: $title');
-// //     } catch (error) {
-// //       debugPrint('Error showing local notification: $error');
-// //     }
-// //   }
-// //
-// //   /// Handle notification tap - just opens the app
-// //   static void _handleNotificationTap(NotificationResponse response) {
-// //     debugPrint('Notification tapped - app opened');
-// //   }
-// //
-// //   static bool get isNotificationsEnabled => _isNotificationsEnabled;
-// // }
-// //
-// // class PrefsHelper {
-// //   // Save string value
-// //   static Future<void> setString(String key, String value) async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     await prefs.setString(key, value);
-// //   }
-// //
-// //   // Get string value
-// //   static Future<String?> getString(String key) async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     return prefs.getString(key);
-// //   }
-// //
-// //   // Remove key
-// //   static Future<void> remove(String key) async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     await prefs.remove(key);
-// //   }
-// //
-// //   // Clear all keys
-// //   static Future<void> clear() async {
-// //     final prefs = await SharedPreferences.getInstance();
-// //     await prefs.clear();
-// //   }
-// // }
+// // // import 'dart:io';
+// // //
+// // // import 'package:firebase_messaging/firebase_messaging.dart';
+// // // import 'package:flutter/widgets.dart';
+// // // import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+// // // import 'package:pagedrop/utils/app_contants.dart';
+// // // import 'package:shared_preferences/shared_preferences.dart';
+// // //
+// // // class NotificationService {
+// // //   static const String _channelId = 'app_notifications';
+// // //   static const String _channelName = 'App Notifications';
+// // //   static const String _channelDescription = 'General notifications';
+// // //   static const String _prefNotificationsEnabled = 'notifications_enabled';
+// // //
+// // //   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+// // //   static final FlutterLocalNotificationsPlugin _localNotifications =
+// // //   FlutterLocalNotificationsPlugin();
+// // //
+// // //   static bool _isNotificationsEnabled = true;
+// // //
+// // //   static Future<void> initialize() async {
+// // //     await _initializeFirebase();
+// // //     await _initializeLocalNotifications();
+// // //     await _loadNotificationPreferences();
+// // //     await _setupFirebaseListeners();
+// // //   }
+// // //
+// // //   static Future<void> getFcmToken() async {
+// // //        try {
+// // //            // Wait a bit to ensure all services are initialized (especially on iOS)
+// // //            await Future.delayed(const Duration(seconds: 2));
+// // //
+// // //            final NotificationSettings settings = await _firebaseMessaging.requestPermission(
+// // //                  alert: true,
+// // //                  badge: true,
+// // //                  sound: true,
+// // //                  provisional: true,
+// // //                );
+// // //
+// // //            if (settings.authorizationStatus == AuthorizationStatus.denied) {
+// // //                    debugPrint('Notification permission denied');
+// // //                return;
+// // //              }
+// // //
+// // //            // Try to get token with retry mechanism
+// // //            String? fcmToken;
+// // //            int attempts = 0;
+// // //            const maxAttempts = 3;
+// // //
+// // //            while (fcmToken == null && attempts < maxAttempts) {
+// // //                attempts++;
+// // //                try {
+// // //                    debugPrint('Attempting to get FCM token (attempt $attempts)');
+// // //                    fcmToken = await _firebaseMessaging.getToken();
+// // //
+// // //                    if (fcmToken != null) {
+// // //                        await PrefsHelper.setString(AppConstants.fcmToken, fcmToken);
+// // //                        debugPrint('✅ FCM Token successfully retrieved: $fcmToken');
+// // //
+// // //                        // Subscribe to general topic
+// // //                        await _firebaseMessaging.subscribeToTopic('signedInUsers');
+// // //                        break; // Exit loop if successful
+// // //                      }
+// // //                  } catch (error) {
+// // //                    debugPrint('Failed to get FCM token on attempt $attempts: $error');
+// // //                    if (attempts < maxAttempts) {
+// // //                        await Future.delayed(Duration(seconds: attempts)); // Exponential backoff
+// // //                      }
+// // //                  }
+// // //              }
+// // //
+// // //            if (fcmToken == null) {
+// // //                debugPrint('❌ Failed to get FCM token after $maxAttempts attempts');
+// // //              } else {
+// // //                debugPrint('✅ FCM Token saved: $fcmToken');
+// // //              }
+// // //          } catch (error) {
+// // //            debugPrint('Error getting FCM token: $error');
+// // //          }
+// // //      }
+// // //
+// // //   /// Load notification preferences from storage
+// // //   static Future<void> _loadNotificationPreferences() async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     _isNotificationsEnabled = prefs.getBool(_prefNotificationsEnabled) ?? true;
+// // //   }
+// // //
+// // //   /// Save notification preference to storage
+// // //   static Future<void> _saveNotificationPreference(bool isEnabled) async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     await prefs.setBool(_prefNotificationsEnabled, isEnabled);
+// // //     _isNotificationsEnabled = isEnabled;
+// // //   }
+// // //
+// // //   /// Toggle notifications on/off
+// // //   static Future<void> toggleNotifications(bool isEnabled) async {
+// // //     if (isEnabled) {
+// // //       debugPrint('Notifications enabled');
+// // //     } else {
+// // //       await _localNotifications.cancelAll();
+// // //       debugPrint('Notifications disabled and cleared');
+// // //     }
+// // //     await _saveNotificationPreference(isEnabled);
+// // //   }
+// // //
+// // //   /// Get current notification preference
+// // //   static Future<bool> getNotificationPreference() async {
+// // //     await _loadNotificationPreferences();
+// // //     return _isNotificationsEnabled;
+// // //   }
+// // //
+// // //   static Future<void> _initializeFirebase() async {
+// // //     try {
+// // //       if (Platform.isIOS) {
+// // //                await Future.delayed(const Duration(seconds: 3));
+// // //              }
+// // //
+// // //       final NotificationSettings settings = await _firebaseMessaging.requestPermission(
+// // //         alert: true,
+// // //         badge: true,
+// // //         sound: true,
+// // //         provisional: true,
+// // //       );
+// // //
+// // //       debugPrint('Notification permission: ${settings.authorizationStatus}');
+// // //
+// // //       await Future.delayed(const Duration(seconds: 1));
+// // //
+// // //       // Only proceed if permission granted
+// // //       if (settings.authorizationStatus == AuthorizationStatus.authorized ||
+// // //           settings.authorizationStatus == AuthorizationStatus.provisional) {
+// // //
+// // //         // Check if token already exists
+// // //         final savedToken = await PrefsHelper.getString(AppConstants.fcmToken);
+// // //
+// // //         if (savedToken == null) {
+// // //           debugPrint("No saved token → getting new one");
+// // //           await getFcmToken();  // Get token only if not saved
+// // //         } else {
+// // //           debugPrint("Saved FCM Token: $savedToken");
+// // //           // Optional: Verify token is still valid by subscribing to topic
+// // //           await _firebaseMessaging.subscribeToTopic('signedInUsers');
+// // //         }
+// // //       } else {
+// // //         debugPrint('Notification permission denied or not determined');
+// // //       }
+// // //
+// // //       // Listen for token refresh (regardless of permission)
+// // //       _firebaseMessaging.onTokenRefresh.listen((newToken) async {
+// // //         debugPrint('FCM Token refreshed: $newToken');
+// // //         await PrefsHelper.setString(AppConstants.fcmToken, newToken);
+// // //         // Re-subscribe after token refresh
+// // //         await _firebaseMessaging.subscribeToTopic('signedInUsers');
+// // //       });
+// // //     } catch (error) {
+// // //       debugPrint('Firebase initialization error: $error');
+// // //     }
+// // //   }
+// // //
+// // //   static Future<void> _initializeLocalNotifications() async {
+// // //     const AndroidInitializationSettings androidSettings =
+// // //     AndroidInitializationSettings('@mipmap/ic_launcher');
+// // //     const DarwinInitializationSettings iosSettings = DarwinInitializationSettings(
+// // //       requestAlertPermission: true,
+// // //       requestBadgePermission: true,
+// // //       requestSoundPermission: true,
+// // //     );
+// // //
+// // //     const InitializationSettings initializationSettings = InitializationSettings(
+// // //       android: androidSettings,
+// // //       iOS: iosSettings,
+// // //     );
+// // //
+// // //     // Request Android permissions
+// // //     await _localNotifications
+// // //         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+// // //         ?.requestNotificationsPermission();
+// // //
+// // //     await _localNotifications.initialize(
+// // //       initializationSettings,
+// // //       onDidReceiveNotificationResponse: _handleNotificationTap,
+// // //     );
+// // //
+// // //     // Create notification channel for Android
+// // //     await _createNotificationChannel();
+// // //   }
+// // //
+// // //   static Future<void> _createNotificationChannel() async {
+// // //     const AndroidNotificationChannel channel = AndroidNotificationChannel(
+// // //       _channelId,
+// // //       _channelName,
+// // //       description: _channelDescription,
+// // //       importance: Importance.high,
+// // //       playSound: true,
+// // //       enableVibration: true,
+// // //       showBadge: true,
+// // //     );
+// // //
+// // //     await _localNotifications
+// // //         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+// // //         ?.createNotificationChannel(channel);
+// // //   }
+// // //
+// // //   /// Set up all Firebase message listeners
+// // //   static Future<void> _setupFirebaseListeners() async {
+// // //     // Listen for foreground messages
+// // //     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+// // //       debugPrint('Foreground message received: ${message.messageId}');
+// // //       _handleForegroundMessage(message);
+// // //     });
+// // //
+// // //     // Listen for background/opened app messages
+// // //     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+// // //       debugPrint('App opened from notification');
+// // //     });
+// // //
+// // //     // Handle terminated state messages
+// // //     final RemoteMessage? initialMessage = await _firebaseMessaging.getInitialMessage();
+// // //     if (initialMessage != null) {
+// // //       debugPrint('App opened from terminated state via notification');
+// // //     }
+// // //
+// // //     // Set background message handler
+// // //     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+// // //   }
+// // //
+// // //   static void _handleForegroundMessage(RemoteMessage message) {
+// // //     if (!_isNotificationsEnabled) return;
+// // //
+// // //     final notification = message.notification;
+// // //     if (notification != null) {
+// // //       _showLocalNotification(
+// // //         title: notification.title ?? 'Notification',
+// // //         body: notification.body ?? '',
+// // //       );
+// // //     }
+// // //   }
+// // //
+// // //   /// Background message handler (must be top-level)
+// // //   @pragma('vm:entry-point')
+// // //   static Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+// // //     debugPrint('Background message handled: ${message.messageId}');
+// // //
+// // //     // Show notification in background
+// // //     final notification = message.notification;
+// // //     if (notification != null) {
+// // //       await _showLocalNotification(
+// // //         title: notification.title ?? 'Notification',
+// // //         body: notification.body ?? '',
+// // //       );
+// // //     }
+// // //   }
+// // //
+// // //   /// Show local notification
+// // //   static Future<void> _showLocalNotification({
+// // //     required String title,
+// // //     required String body,
+// // //   }) async {
+// // //     if (!_isNotificationsEnabled) return;
+// // //
+// // //     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+// // //       _channelId,
+// // //       _channelName,
+// // //       channelDescription: _channelDescription,
+// // //       importance: Importance.high,
+// // //       priority: Priority.high,
+// // //       playSound: true,
+// // //       enableVibration: true,
+// // //       showWhen: true,
+// // //     );
+// // //
+// // //     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+// // //       presentAlert: true,
+// // //       presentBadge: true,
+// // //       presentSound: true,
+// // //     );
+// // //
+// // //     const NotificationDetails platformDetails = NotificationDetails(
+// // //       android: androidDetails,
+// // //       iOS: iosDetails,
+// // //     );
+// // //
+// // //     try {
+// // //       await _localNotifications.show(
+// // //         DateTime.now().millisecondsSinceEpoch ~/ 1000, // Unique ID
+// // //         title,
+// // //         body,
+// // //         platformDetails,
+// // //       );
+// // //
+// // //       debugPrint('Local notification shown: $title');
+// // //     } catch (error) {
+// // //       debugPrint('Error showing local notification: $error');
+// // //     }
+// // //   }
+// // //
+// // //   /// Handle notification tap - just opens the app
+// // //   static void _handleNotificationTap(NotificationResponse response) {
+// // //     debugPrint('Notification tapped - app opened');
+// // //   }
+// // //
+// // //   static bool get isNotificationsEnabled => _isNotificationsEnabled;
+// // // }
+// // //
+// // // class PrefsHelper {
+// // //   // Save string value
+// // //   static Future<void> setString(String key, String value) async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     await prefs.setString(key, value);
+// // //   }
+// // //
+// // //   // Get string value
+// // //   static Future<String?> getString(String key) async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     return prefs.getString(key);
+// // //   }
+// // //
+// // //   // Remove key
+// // //   static Future<void> remove(String key) async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     await prefs.remove(key);
+// // //   }
+// // //
+// // //   // Clear all keys
+// // //   static Future<void> clear() async {
+// // //     final prefs = await SharedPreferences.getInstance();
+// // //     await prefs.clear();
+// // //   }
+// // // }
 //
 // import 'dart:io';
 //

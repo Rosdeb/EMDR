@@ -27,7 +27,6 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
             top: 0,
             left: 0,
