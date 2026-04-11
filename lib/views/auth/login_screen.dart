@@ -62,160 +62,167 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
 
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Reduced height to move Sign-In section higher (changed from 0.38)
-                  SizedBox(height: screenHeight * 0.20),
-
-                  Image.asset(
-                    'assets/images/splash_log.png',
-                    height: 90,
-                    fit: BoxFit.contain,
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  const AppText(
-                    "Sign in",
-                    fontSize: 42,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF0F1912),
-                  ),
-
-                  SizedBox(height: screenHeight * 0.035),
-
-                  const AppText(
-                    "Sign in with email address",
-                    color: Color(0xFF0F1912),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  _textField(
-                    controller: _emailController,
-                    icon: Icons.email_outlined,
-                    hint: "Enter Your Email",
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _textField(
-                    controller: _passwordController,
-                    icon: Icons.lock_outline,
-                    hint: "Enter Your Password",
-                    isObscure: !_isPasswordVisible,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                        color: Colors.grey.shade600,
-                        size: 20,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(25, 20, 25, 30),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/images/splash_log.png',
+                      height: 90,
+                      fit: BoxFit.contain,
                     ),
-                  ),
-
-                  // Forgot Password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        Get.toNamed(RouteHelper.forget);
-                      },
-                      child: const AppText(
-                        "Forgot Password?",
-                        color: forgotPassColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                    const SizedBox(height: 25),
+                    
+                    const AppText(
+                      "Sign in",
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F1912),
                     ),
-                  ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    const AppText(
+                      "Sign in with email address",
+                      color: Colors.black54,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                    ),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 25),
 
-                  Obx(() => ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryButtonColor,
-                          minimumSize: const Size(double.infinity, 56),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          elevation: 0,
+                    _textField(
+                      controller: _emailController,
+                      icon: Icons.email_outlined,
+                      hint: "Enter Your Email",
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    _textField(
+                      controller: _passwordController,
+                      icon: Icons.lock_outline,
+                      hint: "Enter Your Password",
+                      isObscure: !_isPasswordVisible,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.grey.shade600,
+                          size: 20,
                         ),
-                        onPressed: authController.isLoading.value
-                            ? null
-                            : () {
-                                final email = _emailController.text.trim();
-                                final password = _passwordController.text.trim();
-                                if (email.isEmpty || password.isEmpty) {
-                                  Get.snackbar(
-                                    'Error',
-                                    'Please enter email and password',
-                                    snackPosition: SnackPosition.BOTTOM,
-                                  );
-                                  return;
-                                }
-                                authController.login(
-                                  email: email,
-                                  password: password,
-                                );
-                              },
-                        child: authController.isLoading.value
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : const AppText(
-                                "Sign In",
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                      )),
+                        onPressed: () {
+                          setState(() {
+                            _isPasswordVisible = !_isPasswordVisible;
+                          });
+                        },
+                      ),
+                    ),
 
-                  const SizedBox(height: 30),
+                    const SizedBox(height: 8),
 
-                  Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Get.toNamed(RouteHelper.signup);
-                      },
-                      child: RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                              fontFamily: 'Serif'),
-                          children: [
-                            TextSpan(text: "Dont have an account? "),
-                            TextSpan(
-                              text: "Sign up",
-                              style: TextStyle(
-                                color: Color(0xFF0F1912),
-                                fontFamily: 'Serif',
-                                fontWeight: FontWeight.bold,
-                              ),
+                    // Forgot Password
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          Get.toNamed(RouteHelper.forget);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(50, 30),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const AppText(
+                          "Forgot Password?",
+                          color: forgotPassColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Obx(() => ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryButtonColor,
+                            minimumSize: const Size(double.infinity, 56),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
                             ),
-                          ],
+                            elevation: 0,
+                          ),
+                          onPressed: authController.isLoading.value
+                              ? null
+                              : () {
+                                  final email = _emailController.text.trim();
+                                  final password = _passwordController.text.trim();
+                                  if (email.isEmpty || password.isEmpty) {
+                                    Get.snackbar(
+                                      'Error',
+                                      'Please enter email and password',
+                                      snackPosition: SnackPosition.BOTTOM,
+                                    );
+                                    return;
+                                  }
+                                  authController.login(
+                                    email: email,
+                                    password: password,
+                                  );
+                                },
+                          child: authController.isLoading.value
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : const AppText(
+                                  "Sign In",
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                        )),
+
+                    const SizedBox(height: 25),
+
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          Get.toNamed(RouteHelper.signup);
+                        },
+                        child: RichText(
+                          text: const TextSpan(
+                            style: TextStyle(
+                                color: Colors.black54,
+                                fontSize: 14,
+                                fontFamily: 'Serif'),
+                            children: [
+                              TextSpan(text: "Don't have an account? "),
+                              TextSpan(
+                                text: "Sign up",
+                                style: TextStyle(
+                                  color: Color(0xFF0F1912),
+                                  fontFamily: 'Serif',
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
             ),
           )

@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/views/profile/ProfileDetailScreen.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -141,7 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                             profilePic: _selectedImage,
                                           );
                                           if (success) {
-                                            Get.back();
+                                            Get.off(() => const ProfileDetailScreen());
                                           }
                                         },
                                   style: ElevatedButton.styleFrom(

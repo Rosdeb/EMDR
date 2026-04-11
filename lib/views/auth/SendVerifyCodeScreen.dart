@@ -80,8 +80,8 @@ class _VerificationState extends State<Verification> {
                     const SizedBox(height: 20),
 
                     const AppText(
-                      "Verification",
-                      fontSize: 22,
+                      "Forgot Password Verification",
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                     const SizedBox(height: 12),
@@ -199,7 +199,7 @@ class _VerificationState extends State<Verification> {
                         const AppText("Didn't receive the code? ", fontSize: 13, color: Colors.black54),
                         GestureDetector(
                           onTap: () {
-                            authController.sendVerificationOtp(email: authController.pendingEmail.value);
+                            authController.resendForgotPasswordOtp();
                           },
                           child: const AppText(
                             "Resend",

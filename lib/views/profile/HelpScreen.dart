@@ -23,6 +23,11 @@ class _HelpScreenState extends State<HelpScreen> {
     _controller.fetchFaqs();
   }
 
+  String _stripHtml(String text) {
+    String html = text.replaceAll(RegExp(r'<br>|</p>|</li>'), '\n');
+    return html.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,7 +113,7 @@ class _HelpScreenState extends State<HelpScreen> {
                                                 padding: const EdgeInsets.fromLTRB(
                                                     20, 0, 20, 15),
                                                 child: AppText(
-                                                  answer,
+                                                  _stripHtml(answer),
                                                   fontSize: 14,
                                                   color: Colors.black87,
                                                 ),

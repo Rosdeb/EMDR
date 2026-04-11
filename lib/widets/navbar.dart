@@ -24,8 +24,8 @@ class CustomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Positioned(
       bottom: 25,
-      left: 15,
-      right: 15,
+      left: 10,
+      right: 10,
       child: Row(
         children: [
           Expanded(
@@ -77,7 +77,7 @@ class CustomNavBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           GestureDetector(
             onTap: () {
               Get.to(() =>  CreateJourneyPage());

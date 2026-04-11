@@ -34,6 +34,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
     }
   }
 
+  String _stripHtml(String text) {
+    String html = text.replaceAll(RegExp(r'<br>|</p>|</li>'), '\n');
+    return html.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,7 +79,8 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                         }
 
                         final privacy = _controller.privacyData;
-                        final String content = privacy['content'] ?? 'No policy content available.';
+                        final String overview = privacy['overview'] ?? '';
+                        final List sections = privacy['sections'] is List ? privacy['sections'] : [];
                         final String version = privacy['version'] ?? '';
                         final String lastUpdated = _formatDate(privacy['updatedAt']);
 
@@ -103,11 +109,48 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                     ),
                                     const SizedBox(height: 10),
                                   ],
-                                  AppText(
-                                    content,
-                                    fontSize: 14,
-                                    color: const Color(0xFF2E3E32),
-                                  ),
+                                  if (overview.isNotEmpty) ...[
+                                    AppText(
+                                      _stripHtml(overview),
+                                      fontSize: 14,
+                                      color: const Color(0xFF2E3E32),
+                                    ),
+                                    const SizedBox(height: 15),
+                                  ],
+                                  if (sections.isEmpty && overview.isEmpty)
+                                    AppText(
+                                      'No policy content available.',
+                                      fontSize: 14,
+                                      color: const Color(0xFF2E3E32),
+                                    )
+                                  else
+                                    ...sections.map((section) {
+                                      final title = section['title'] ?? '';
+                                      final content = section['content'] ?? '';
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 15),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            if (title.isNotEmpty)
+                                              AppText(
+                                                title,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: const Color(0xFF2E3E32),
+                                              ),
+                                            if (content.isNotEmpty) ...[
+                                              const SizedBox(height: 5),
+                                              AppText(
+                                                _stripHtml(content),
+                                                fontSize: 14,
+                                                color: const Color(0xFF2E3E32),
+                                              ),
+                                            ]
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
                                   if (lastUpdated.isNotEmpty) ...[
                                     const SizedBox(height: 20),
                                     Align(

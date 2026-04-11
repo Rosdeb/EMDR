@@ -18,6 +18,10 @@ class _SettingChangePasswordScreenState extends State<SettingChangePasswordScree
   final TextEditingController _currentPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  
+  bool _isCurrentPasswordObscure = true;
+  bool _isNewPasswordObscure = true;
+  bool _isConfirmPasswordObscure = true;
 
   @override
   void dispose() {
@@ -59,15 +63,33 @@ class _SettingChangePasswordScreenState extends State<SettingChangePasswordScree
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _buildLabel("Current Password"),
-                                _buildGlassTextField(_currentPasswordController, "Enter old password", isPassword: true),
+                                _buildGlassTextField(
+                                  _currentPasswordController, 
+                                  "Enter old password", 
+                                  isPassword: true, 
+                                  obscure: _isCurrentPasswordObscure,
+                                  onToggle: () => setState(() => _isCurrentPasswordObscure = !_isCurrentPasswordObscure),
+                                ),
                                 const SizedBox(height: 20),
 
                                 _buildLabel("New Password"),
-                                _buildGlassTextField(_newPasswordController, "Enter new password", isPassword: true),
+                                _buildGlassTextField(
+                                  _newPasswordController, 
+                                  "Enter new password", 
+                                  isPassword: true,
+                                  obscure: _isNewPasswordObscure,
+                                  onToggle: () => setState(() => _isNewPasswordObscure = !_isNewPasswordObscure),
+                                ),
                                 const SizedBox(height: 20),
 
                                 _buildLabel("Confirm Password"),
-                                _buildGlassTextField(_confirmPasswordController, "Re-enter new password", isPassword: true),
+                                _buildGlassTextField(
+                                  _confirmPasswordController, 
+                                  "Re-enter new password", 
+                                  isPassword: true,
+                                  obscure: _isConfirmPasswordObscure,
+                                  onToggle: () => setState(() => _isConfirmPasswordObscure = !_isConfirmPasswordObscure),
+                                ),
                                 const SizedBox(height: 10),
                               ],
                             ),
@@ -142,15 +164,31 @@ class _SettingChangePasswordScreenState extends State<SettingChangePasswordScree
     );
   }
 
-  Widget _buildGlassTextField(TextEditingController controller, String hint, {bool isPassword = false}) {
+  Widget _buildGlassTextField(
+    TextEditingController controller, 
+    String hint, {
+    bool isPassword = false, 
+    bool obscure = false, 
+    VoidCallback? onToggle,
+  }) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText: isPassword ? obscure : false,
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(color: Colors.black.withOpacity(0.3), fontSize: 14),
         filled: true,
         fillColor: Colors.white.withOpacity(0.5),
+        suffixIcon: isPassword 
+          ? IconButton(
+              icon: Icon(
+                obscure ? Icons.visibility_off : Icons.visibility,
+                color: const Color(0xFF2E3E32).withOpacity(0.5),
+                size: 20,
+              ),
+              onPressed: onToggle,
+            )
+          : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
