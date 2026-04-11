@@ -1,4 +1,5 @@
+
 class AppUrl {
 
-  static const String baseUrl = 'https://crafts-mit-slots-airplane.trycloudflare.com/api';
+  static const String baseUrl = 'https://sheet-informed-transcript-phones.trycloudflare.com/api';
 }

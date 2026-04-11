@@ -12,14 +12,15 @@ class SignUpScreen extends StatelessWidget {
   final RxBool _isConfirmPasswordHidden = true.obs;
   final RxBool _isPrivacyAccepted = false.obs;
 
+  final firstNameController = TextEditingController();
+  final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     final AuthController authController = Get.find<AuthController>();
-    final firstNameController = TextEditingController();
-    final lastNameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
 
     const Color primaryGreen = AppColors.mainAppColor;
     final double screenHeight = MediaQuery.of(context).size.height;

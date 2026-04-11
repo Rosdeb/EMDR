@@ -5,17 +5,29 @@ import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-class ChangePasswordScreen extends StatelessWidget {
-  ChangePasswordScreen({super.key});
+class ChangePasswordScreen extends StatefulWidget {
+  const ChangePasswordScreen({super.key});
 
+  @override
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final AuthController authController = Get.find<AuthController>();
+  final newPasswordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final RxBool _isNewPasswordHidden = true.obs;
   final RxBool _isConfirmPasswordHidden = true.obs;
 
   @override
+  void dispose() {
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AuthController authController = Get.find<AuthController>();
-    final newPasswordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
 
     const Color primaryGreen = Color(0xFF537E5D);
     final double screenHeight = MediaQuery.of(context).size.height;

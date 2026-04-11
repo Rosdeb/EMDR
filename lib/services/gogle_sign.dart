@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -57,28 +56,8 @@ class GoogleSignInService {
 
       // Once signed in, return the UserCredential
       final UserCredential userCredential = await _auth.signInWithCredential(credential);
-      final User? user = userCredential.user;
-
-      if (user != null) {
-        // Update user data in Firestore
-        final userDoc = FirebaseFirestore.instance.collection('users').doc(user.uid);
-        final docSnapshot = await userDoc.get();
-
-        if (!docSnapshot.exists) {
-          await userDoc.set({
-            'uid': user.uid,
-            'name': user.displayName ?? '',
-            'email': user.email ?? '',
-            'photoURL': user.photoURL ?? '',
-            'provider': 'google',
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-        }
-      }
-
-      return user;
+      return userCredential.user;
     } catch (e) {
-      // Re-throw so the controller can catch it
       rethrow;
     }
   }

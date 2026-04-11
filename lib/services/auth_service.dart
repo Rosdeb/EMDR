@@ -15,7 +15,7 @@ class AuthService {
         'Authorization': 'Bearer $token',
       };
 
-  // ─── 1. Signup ────────────────────────────────────────────
+  // ─── 1. Signup ─────────────────────────────────────────────
   // POST /api/auth/signup
   static Future<Map<String, dynamic>> signup({
     required String firstName,
@@ -40,8 +40,11 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 2. Verify OTP (signup verification) ─────────────────
+  // ─── 2. Verify OTP ─────────────────────────────────────────
   // POST /api/auth/verify-otp
+  // Used for: Signup verification AND Forgot Password OTP verification
+  // Body: {email, otp}
+  // Returns: {success: true, data: {accessToken: "eyJ..."}}
   static Future<Map<String, dynamic>> verifyOtp({
     required String email,
     required String otp,
@@ -54,8 +57,9 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 3. Resend OTP ────────────────────────────────────────
+  // ─── 3. Resend OTP ─────────────────────────────────────────
   // POST /api/auth/resend-otp
+  // Body: {email}
   static Future<Map<String, dynamic>> resendOtp({
     required String email,
   }) async {
@@ -67,8 +71,9 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 4. Login ─────────────────────────────────────────────
+  // ─── 4. Login ──────────────────────────────────────────────
   // POST /api/auth/login
+  // Body: {email, password}
   static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -81,22 +86,25 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 5. Send Verification OTP (password recovery) ────────
-  // POST /api/auth/send-verification-otp
-  static Future<Map<String, dynamic>> sendVerificationOtp({
+  // ─── 5. Forgot Password ────────────────────────────────────
+  // POST /api/auth/forgot-password
+  // Body: {email} — sends OTP to email (no token returned)
+  static Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/send-verification-otp'),
+      Uri.parse('$_baseUrl/forgot-password'),
       headers: _headers,
       body: jsonEncode({'email': email}),
     );
     return _handleResponse(response);
   }
 
-  // ─── 5.1. Verify Reset OTP (Postman Step 6) ───────────────
+  // ─── 6. Send Verification OTP (Forgot Password Step 2) ───
   // POST /api/auth/send-verification-otp
-  static Future<Map<String, dynamic>> verifyResetOtp({
+  // Body: {email, otp}
+  // Returns: {success: true, data: {accessToken: "eyJ..."}}
+  static Future<Map<String, dynamic>> sendVerificationOtp({
     required String email,
     required String otp,
   }) async {
@@ -108,8 +116,10 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 6. Recover Account (reset password) ─────────────────
+  // ─── 7. Recover Account ────────────────────────────────────
   // POST /api/auth/recover-account
+  // Body: {newPassword, confirmPassword}
+  // Requires: Bearer token from send-verification-otp response
   static Future<Map<String, dynamic>> recoverAccount({
     required String token,
     required String newPassword,
@@ -126,8 +136,26 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── 7. Logout ────────────────────────────────────────────
+  // ─── 7. Verify Email With Token ────────────────────────────
+  // POST /api/auth/verify-email-with-token
+  // Body: {otp} — Requires: Bearer token
+  // Used for: Email verification when user already has a session
+  static Future<Map<String, dynamic>> verifyEmailWithToken({
+    required String otp,
+    required String token,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/verify-email-with-token'),
+      headers: _headersWithToken(token),
+      body: jsonEncode({'otp': otp}),
+    );
+    return _handleResponse(response);
+  }
+
+  // ─── 8. Logout ─────────────────────────────────────────────
   // POST /api/auth/logout
+  // Body: {refreshToken}
+  // Requires: Bearer token
   static Future<Map<String, dynamic>> logout({
     required String token,
     required String refreshToken,
@@ -140,30 +168,41 @@ class AuthService {
     return _handleResponse(response);
   }
 
-  // ─── Response handler ─────────────────────────────────────
+  // ─── 9. Refresh Token ──────────────────────────────────────
+  // POST /api/auth/refresh-token
+  // Body: {refreshToken}
+  // Returns: {success: true, data: {accessToken: "eyJ..."}}
+  static Future<Map<String, dynamic>> refreshToken({
+    required String refreshToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/refresh-token'),
+      headers: _headers,
+      body: jsonEncode({'refreshToken': refreshToken}),
+    );
+    return _handleResponse(response);
+  }
+
+  // ─── Response Handler ──────────────────────────────────────
   static Map<String, dynamic> _handleResponse(http.Response response) {
     try {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final bool isSuccess =
           response.statusCode >= 200 && response.statusCode < 300;
 
-      // Debugging: Print response for troubleshooting
       print('API Response (${response.statusCode}): ${response.body}');
 
       if (isSuccess) {
         if (body.containsKey('data')) {
-          return {'success': true, ...body['data']};
+          return {'success': true, ...body['data'] as Map<String, dynamic>};
         }
         return {'success': true, ...body};
       }
 
-      // Improved error message extraction
       String? errorMessage;
       if (body['message'] != null) {
         errorMessage = body['message'].toString();
-      } else if (body['data'] != null &&
-          body['data'] is Map &&
-          body['data']['message'] != null) {
+      } else if (body['data'] is Map && body['data']['message'] != null) {
         errorMessage = body['data']['message'].toString();
       } else if (body['error'] != null) {
         errorMessage = body['error'].toString();

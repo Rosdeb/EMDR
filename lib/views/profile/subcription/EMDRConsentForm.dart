@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/profile_controller.dart';
 import 'assignment.dart'; // Assume this contains FullAssessmentFlow
 
 class ConsentFormScreen extends StatefulWidget {
@@ -56,6 +58,18 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         vsync: this, duration: const Duration(milliseconds: 700));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
+
+    // Auto-fill available user data from ProfileController
+    if (Get.isRegistered<ProfileController>()) {
+      final profileController = Get.find<ProfileController>();
+      final profile = profileController.userProfile;
+      if (profile.isNotEmpty) {
+        nameCtrl.text = profile['fullName'] ?? '';
+        emailCtrl.text = profile['email'] ?? '';
+        // If your API returns DOB, you can also fill it here:
+        // dobCtrl.text = profile['dob'] ?? '';
+      }
+    }
   }
 
   @override
@@ -98,7 +112,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                           children: [
                             _styledTextField('Full Name', nameCtrl, Icons.badge_outlined),
                             const SizedBox(height: 14),
-                            _styledTextField('Date of Birth', dobCtrl, Icons.calendar_today_outlined),
+                            _styledDateField('Date of Birth', dobCtrl, Icons.calendar_today_outlined),
                             const SizedBox(height: 14),
                             _styledDropdown(),
                             const SizedBox(height: 14),
@@ -563,6 +577,68 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
     );
   }
 
+  // ─── Date Field ───────────────────────────────────────────────────────────
+
+  Widget _styledDateField(String label, TextEditingController ctrl, IconData icon) {
+    return TextFormField(
+      controller: ctrl,
+      readOnly: true,
+      onTap: () async {
+        DateTime? pickedDate = await showDatePicker(
+          context: context,
+          initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+          firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: const ColorScheme.light(
+                  primary: _primary,
+                  onPrimary: Colors.white,
+                  onSurface: _textDark,
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (pickedDate != null) {
+          setState(() {
+            ctrl.text = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+          });
+        }
+      },
+      style: const TextStyle(fontSize: 14, color: _textDark),
+      validator: (v) => v!.isEmpty ? 'This field is required' : null,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: 'Select Date',
+        labelStyle: const TextStyle(fontSize: 13, color: _textMid),
+        prefixIcon: Icon(icon, size: 18, color: _primary),
+        suffixIcon: const Icon(Icons.calendar_month, color: _primary),
+        filled: true,
+        fillColor: _bg,
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: _primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
+      ),
+    );
+  }
+
   // ─── Dropdown ─────────────────────────────────────────────────────────────
 
   Widget _styledDropdown() {
@@ -837,13 +913,26 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         border: Border.all(color: Colors.red.shade100),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 16, color: const Color(0xFFE53935)),
-          const SizedBox(width: 12),
+          Padding(
+            padding: const EdgeInsets.only(top: 1.0),
+            child: Icon(icon, size: 16, color: const Color(0xFFE53935)),
+          ),
+          const SizedBox(width: 10),
           Expanded(
+            flex: 3,
             child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
           ),
-          Text(contact, style: const TextStyle(fontSize: 12, color: Color(0xFFE53935), fontWeight: FontWeight.w500)),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: Text(
+              contact,
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 12, color: Color(0xFFE53935), fontWeight: FontWeight.w500),
+            ),
+          ),
         ],
       ),
     );
