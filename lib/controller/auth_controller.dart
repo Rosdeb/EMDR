@@ -102,7 +102,8 @@ class AuthController extends GetxController {
       );
       if (result['success'] == true) {
         _saveSession(result);
-        Get.offAllNamed(RouteHelper.main);
+        Get.offAllNamed(RouteHelper.login);
+        Get.snackbar('Success', 'Verification successful! Please login.');
       } else {
         errorMessage.value = result['message'] ?? 'Invalid OTP';
         _showError(errorMessage.value);
@@ -188,14 +189,24 @@ class AuthController extends GetxController {
     }
   }
 
-  // ─── 5. Send verification OTP (forgot password) ────────────
+  // ─── 5. Forgot Password (sends reset OTP to email) ───────
   Future<void> sendVerificationOtp({required String email}) async {
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      final result = await AuthService.sendVerificationOtp(email: email);
+      final result = await AuthService.forgotPassword(email: email);
+      // DEBUG: Print full response to see what backend returns
+      print('🔑 forgot-password response: $result');
       if (result['success'] == true) {
         pendingEmail.value = email;
+        // Try multiple possible token key names from backend
+        final accessToken = (result['accessToken'] ?? result['token'] ?? result['sessionToken'] ?? result['resetToken']) as String?;
+        if (accessToken != null && accessToken.isNotEmpty) {
+          _box.write(_tokenKey, accessToken);
+          print('🔑 Token saved: $accessToken');
+        } else {
+          print('⚠️ No token in forgot-password response. Keys: ${result.keys.toList()}');
+        }
         Get.toNamed(RouteHelper.verify);
       } else {
         errorMessage.value = result['message'] ?? 'Failed to send OTP';
@@ -209,7 +220,27 @@ class AuthController extends GetxController {
     }
   }
 
-  // ─── 6. Verify OTP for password reset ──────────────────────
+  // ─── 5.1. Resend OTP on forgot password screen (no re-navigate) ───
+  Future<void> resendForgotPasswordOtp() async {
+    if (pendingEmail.isEmpty) return;
+    isLoading.value = true;
+    try {
+      final result = await AuthService.resendOtp(email: pendingEmail.value);
+      if (result['success'] == true) {
+        Get.snackbar('OTP Sent', 'A new code has been sent to your email.');
+      } else {
+        _showError(result['message'] ?? 'Failed to resend OTP');
+      }
+    } catch (e) {
+      _showError('Network error. Please try again.');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ─── 6. Verify OTP for password reset ──────────────
+  // Uses /api/auth/send-verification-otp with {email, otp}
+  // Returns accessToken used for recover-account
   Future<void> verifyPasswordOtp({required String otp}) async {
     if (pendingEmail.isEmpty) {
       _showError('Email not found. Please try again.');
@@ -218,15 +249,16 @@ class AuthController extends GetxController {
     isLoading.value = true;
     errorMessage.value = '';
     try {
-      final result = await AuthService.verifyResetOtp(
+      final result = await AuthService.sendVerificationOtp(
         email: pendingEmail.value,
         otp: otp,
       );
       if (result['success'] == true) {
         verifiedOtp.value = otp;
-        // Postman Step 6 returns an accessToken for the rest of the flow
-        if (result['accessToken'] != null) {
-          _box.write(_tokenKey, result['accessToken']);
+        // Save accessToken for recover-account Bearer header
+        final accessToken = result['accessToken'] as String?;
+        if (accessToken != null && accessToken.isNotEmpty) {
+          _box.write(_tokenKey, accessToken);
         }
         Get.toNamed(RouteHelper.changePassword);
       } else {

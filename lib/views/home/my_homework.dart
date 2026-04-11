@@ -1,11 +1,12 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/views/home/BehaviourScreen.dart';
 import 'package:jonssony/views/home/emdr2.dart';
 import 'package:jonssony/views/home/InKindChatBot.dart';
 import 'package:jonssony/views/home/Thoughts.dart';
 import 'package:jonssony/views/home/emotion_start.dart';
-import 'EmotionBodyMap.dart';
 
 class MyHomeworkPri extends StatelessWidget {
   const MyHomeworkPri({super.key});
@@ -19,7 +20,9 @@ class MyHomeworkPri extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Get.offAllNamed(RouteHelper.main);
+          },
         ),
         title: const Text(
           "My Resources",
