@@ -22,6 +22,12 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialize Firebase — must be done before using Auth, Firestore, etc.
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+
   // ✅ Firebase initialize
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -32,6 +38,8 @@ Future<void> main() async {
 
   // ✅ Load env
   await dotenv.load(fileName: ".env");
+
+  // Initialize Stripe
 
   // ✅ Stripe setup
   Stripe.publishableKey = AppConstants.Publishable_key;
