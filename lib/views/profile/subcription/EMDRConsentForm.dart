@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/profile_controller.dart';
+import 'package:jonssony/controller/onboarding_controller.dart';
 import 'assignment.dart'; // Assume this contains FullAssessmentFlow
 
 class ConsentFormScreen extends StatefulWidget {
@@ -22,6 +23,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
   final dobCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final signatureCtrl = TextEditingController();
+
+  final OnboardingController _onboardingController = Get.find<OnboardingController>();
 
   // Selections & States
   String? selectedSex;
@@ -978,31 +981,33 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
               ],
             ),
           ),
-        SizedBox(
+        Obx(() => SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: isLocked ? Colors.grey.shade300 : _primary,
+              backgroundColor: (isLocked || _onboardingController.isLoading.value) ? Colors.grey.shade300 : _primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: isLocked ? 0 : 4,
               shadowColor: _primary.withOpacity(0.4),
             ),
-            onPressed: isLocked ? null : _submit,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(isLocked ? Icons.lock_rounded : Icons.check_circle_rounded, size: 20),
-                const SizedBox(width: 10),
-                Text(
-                  isLocked ? 'SUBMISSION LOCKED' : 'SUBMIT CONSENT',
-                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 14),
+            onPressed: (isLocked || _onboardingController.isLoading.value) ? null : _submit,
+            child: _onboardingController.isLoading.value 
+              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(isLocked ? Icons.lock_rounded : Icons.check_circle_rounded, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      isLocked ? 'SUBMISSION LOCKED' : 'SUBMIT CONSENT',
+                      style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 14),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           ),
-        ),
+        )),
       ],
     );
   }
