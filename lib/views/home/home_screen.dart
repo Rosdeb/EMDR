@@ -2,15 +2,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/notification_controller.dart';
 import 'package:jonssony/controller/profile_controller.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/home/homework.dart';
-import 'package:jonssony/views/home/my_homework.dart';
-import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/healper/route.dart';
+
 import 'MyCalmSpace.dart';
-import 'Notification.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,7 +18,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Ensure ProfileController is available and fetch profile data
-    final profileController = Get.put(ProfileController());
+    Get.put(ProfileController());
+    Get.put(NotificationController());
+
+
 
     const double appBarImageHeight = 170;
     const double overlapAmount = 1;
@@ -156,55 +159,115 @@ class HomeScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Obx(() {
-            final profile = profileController.userProfile;
-            final name = profile['fullName']?.toString() ?? 'User';
-            final avatarUrl = profile['avatar']?.toString();
-            final hour = DateTime.now().hour;
-            final greeting = hour < 12 ? 'Good morning,' : (hour < 17 ? 'Good afternoon,' : 'Good evening,');
+          Expanded(
+            child: Obx(() {
+              final profile = profileController.userProfile;
+              final name = profile['fullName']?.toString() ?? 'User';
+              final avatarUrl = profile['avatar']?.toString();
+              final hour = DateTime.now().hour;
+              final greeting = hour < 12 ? 'Good morning,' : (hour < 17 ? 'Good afternoon,' : 'Good evening,');
 
-            return Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFF81C784), width: 2),
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFF81C784), width: 2),
+                    ),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                          ? NetworkImage(avatarUrl) as ImageProvider
+                          : const AssetImage('assets/images/home_profile.png'),
+                    ),
                   ),
-                  child: CircleAvatar(
-                    radius: 20,
-                    backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                        ? NetworkImage(avatarUrl) as ImageProvider
-                        : const AssetImage('assets/images/home_profile.png'),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AppText(greeting, fontSize: 13, color: Colors.black87, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        AppText(name, fontSize: 19, fontWeight: FontWeight.bold, color: const Color(0xFF2E3E32), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+          // ─── Notification Bell with Badge & Feedback ──────────
+          Obx(() {
+            final notifController = Get.find<NotificationController>();
+            final unread = notifController.unreadCount;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {
+                  notifController.reloadFromStorage();
+                  // GetX named route ব্যবহার করে নেভিগেশন
+                  Get.toNamed(RouteHelper.notifications);
+                  // পেজটি খুললে সব মার্ক অ্যাজ রিড করে দেওয়া
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    notifController.markAllAsRead();
+                  });
+                },
+                borderRadius: BorderRadius.circular(30),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0), // ট্যাপ এরিয়া বাড়ানোর জন্য
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFAD8C63),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 1.5),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black12, blurRadius: 5)
+                          ],
+                        ),
+                        child: SvgPicture.asset(
+                          AppIcons.notification,
+                          height: 16,
+                          colorFilter: const ColorFilter.mode(
+                              Colors.white, BlendMode.srcIn),
+                        ),
+                      ),
+                      if (unread > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE53935),
+                              shape: BoxShape.circle,
+                              boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              unread > 99 ? '99+' : '$unread',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AppText(greeting, fontSize: 13, color: Colors.black87),
-                    AppText(name, fontSize: 19, fontWeight: FontWeight.bold, color: const Color(0xFF2E3E32)),
-                  ],
-                ),
-              ],
+              ),
             );
           }),
-          GestureDetector(
-            onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationPage()));
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFAD8C63),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 1.5),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 5)],
-              ),
-              child: SvgPicture.asset(AppIcons.notification, height: 16, colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn)),
-            ),
-          ),
         ],
       ),
     );
@@ -220,10 +283,11 @@ class HomeScreen extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.4),
+              color: Colors.white.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -249,10 +313,11 @@ class HomeScreen extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.35),
+              color: Colors.white.withValues(alpha: 0.35),
               borderRadius: BorderRadius.circular(35),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
+
             child: Column(
               children: [
                 Row(
@@ -279,7 +344,8 @@ class HomeScreen extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: 0.95,
                     minHeight: 7,
-                    backgroundColor: Colors.white.withOpacity(0.3),
+                    backgroundColor: Colors.white.withValues(alpha: 0.3),
+
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),

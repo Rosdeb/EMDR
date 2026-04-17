@@ -1,5 +1,5 @@
 
 class AppUrl {
 
-  static const String baseUrl = 'https://note-interior-marvel-far.trycloudflare.com/api';
+  static const String baseUrl = 'https://cleared-ruling-chem-privileges.trycloudflare.com/api';
 }
