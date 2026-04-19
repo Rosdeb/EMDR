@@ -1,3 +1,4 @@
 class AppEnv {
-  static const String baseUrl = 'https://cleared-ruling-chem-privileges.trycloudflare.com/api';
+  // Update this single URL whenever your Cloudflare Tunnel changes.
+  static const String baseUrl = 'https://crafts-mit-slots-airplane.trycloudflare.com/api';
 }
