@@ -6,6 +6,7 @@ class SimulationSettings {
   final double speed;
   final String audioAsset;
   final AnimationDirection direction;
+  final bool isNetworkImage;
 
   SimulationSettings({
     required this.environmentImage,
@@ -13,5 +14,6 @@ class SimulationSettings {
     required this.speed,
     required this.audioAsset,
     required this.direction,
+    this.isNetworkImage = false,
   });
 }

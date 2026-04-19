@@ -1,6 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:jonssony/controller/bilateral_controller.dart';
+import 'package:jonssony/controller/media_controller.dart';
 import 'simulation_settings.dart';
 import 'simulation_screen.dart';
 import 'save_game.dart';
@@ -13,21 +17,76 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final BilateralController _bilateralController = Get.find<BilateralController>();
+  final MediaController _mediaController = Get.find<MediaController>();
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Color primaryGreen = const Color(0xFF5A7D63);
+
+  String? selectedEnvUrl;
+  String? selectedObjUrl;
+  String? selectedSoundUrl;
+  String selectedSoundName = "Silent";
+  double selectedSpeed = 4.0;
+  AnimationDirection selectedDir = AnimationDirection.horizontal;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSettings();
+  }
+
+  void _initSettings() {
+    final envs = _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
+    if (envs.isNotEmpty) {
+      selectedEnvUrl = envs.first['url'];
+    }
+    
+    final objs = _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ?? [];
+    if (objs.isNotEmpty) {
+      selectedObjUrl = objs.first['url'];
+    }
+    
+    // Check if user has saved settings
+    if (_bilateralController.userSettings.isNotEmpty) {
+      final userSettings = _bilateralController.userSettings;
+      selectedEnvUrl = userSettings['environmentId'] ?? selectedEnvUrl;
+      selectedObjUrl = userSettings['iconUrl'] ?? selectedObjUrl;
+      selectedSoundUrl = userSettings['soundId'];
+      
+      final speedStr = userSettings['speed'];
+      if (speedStr == 'slow') selectedSpeed = 8.0;
+      else if (speedStr == 'medium') selectedSpeed = 4.0;
+      else if (speedStr == 'fast') selectedSpeed = 2.0;
+
+      final dirStr = userSettings['direction'];
+      if (dirStr == 'left-right') selectedDir = AnimationDirection.horizontal;
+      else if (dirStr == 'top-bottom') selectedDir = AnimationDirection.vertical;
+      else if (dirStr == 'diagonal-down') selectedDir = AnimationDirection.diagonal;
+      else if (dirStr == 'diagonal-up') selectedDir = AnimationDirection.diagonalReverse;
+
+      if (selectedSoundUrl != null && selectedSoundUrl!.isNotEmpty) {
+        // Try to find the sound name from config
+        final sounds = _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [];
+        final soundObj = sounds.firstWhere(
+          (s) => s['url'] == selectedSoundUrl, 
+          orElse: () => null,
+        );
+        if (soundObj != null) {
+          selectedSoundName = soundObj['name'] ?? "Custom Sound";
+        } else {
+          selectedSoundName = "Selected Sound";
+        }
+      } else {
+        selectedSoundName = "Silent";
+      }
+    }
+  }
 
   @override
   void dispose() {
     _audioPlayer.dispose();
     super.dispose();
   }
-
-  // Default Selections
-  String selectedEnv = "assets/images/mountain.jpg";
-  String selectedObj = "assets/images/butterfly.png";
-  String selectedSound = "Gentle Tone";
-  double selectedSpeed = 4.0;
-  AnimationDirection selectedDir = AnimationDirection.horizontal;
 
   Widget _glassCard({required Widget child, bool isSelected = false, double borderRadius = 12, EdgeInsetsGeometry? padding}) {
     return ClipRRect(
@@ -81,7 +140,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: const Color(0xFFF2F1EC),
       body: Stack(
         children: [
-          // Background Texture
           Positioned.fill(
             child: Opacity(
               opacity: 0.4,
@@ -89,24 +147,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
-              child: Column(
-                children: [
-                  _buildHeader(),
-
-                  _buildSection(title: "Visual Environments", child: _buildEnvList()),
-                  _buildSection(title: "Visual Object", child: _buildObjectGrid()),
-                  _buildSection(title: "Sound", child: _buildSoundGrid()),
-                  _buildSection(title: "Direction", child: _buildDirectionGrid()),
-                  _buildSection(title: "Speed", child: _buildSpeedRow()),
-
-                  const SizedBox(height: 10),
-                  _buildActionButtons(),
-                  const SizedBox(height: 30),
-                ],
-              ),
-            ),
+            child: Obx(() {
+              if (_bilateralController.isLoading.value || _mediaController.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    _buildSection(title: "Visual Environments", child: _buildEnvList()),
+                    _buildSection(title: "Visual Object", child: _buildObjectGrid()),
+                    _buildSection(title: "Sound", child: _buildSoundGrid()),
+                    _buildSection(title: "Direction", child: _buildDirectionGrid()),
+                    _buildSection(title: "Speed", child: _buildSpeedRow()),
+                    const SizedBox(height: 10),
+                    _buildActionButtons(),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              );
+            }),
           ),
         ],
       ),
@@ -121,47 +182,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: Color(0xFF333333), size: 22),
-              onPressed: () => Navigator.of(context).pop(),
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(),
+              borderRadius: BorderRadius.circular(20),
+              child: const Padding(
+                padding: EdgeInsets.all(8.0),
+                child: Icon(Icons.arrow_back_ios_new_rounded,
+                    color: Color(0xFF333333), size: 22),
+              ),
             ),
           ),
-          SizedBox(width: 10,),
-          const Column(
-            children: [
-              Text("Bilateral Stimulation",
-                  style: TextStyle(
-                      fontSize: 28,
-                      fontFamily: 'Serif',
-                      fontWeight: FontWeight.w500)),
-              SizedBox(height: 4),
-              Text("Customise your calming experience",
-                  style: TextStyle(color: Colors.black54, fontSize: 14)),
-            ],
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Bilateral Stimulation",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 26,
+                        fontFamily: 'Serif',
+                        fontWeight: FontWeight.w500)),
+                SizedBox(height: 4),
+                Text("Customise your calming experience",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.black54, fontSize: 13)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  // 1. Environments Horizontal List
   Widget _buildEnvList() {
-    List<Map<String, String>> envs = [
-      {"name": "Mountain", "path": "assets/images/mountain.jpg"},
-      {"name": "Lake", "path": "assets/images/make_more.jpg"},
-      {"name": "Night", "path": "assets/images/night.jpg"},
-      {"name": "Ice", "path": "assets/images/borof.jpg"},
-      {"name": "Fire Night", "path": "assets/images/fire.jpg"},
-    ];
+    final envs = _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
+    if (envs.isEmpty) return const Text("No environments available");
+
+    if (selectedEnvUrl == null && envs.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => selectedEnvUrl = envs.first['url']);
+      });
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       physics: const BouncingScrollPhysics(),
       child: Row(
         children: envs.map((env) {
-          bool isSelected = selectedEnv == env['path'];
+          final String fileUrl = env['url'] ?? '';
+          bool isSelected = selectedEnvUrl == fileUrl;
           return GestureDetector(
-            onTap: () => setState(() => selectedEnv = env['path']!),
+            onTap: () => setState(() => selectedEnvUrl = fileUrl),
             child: Container(
               width: 120,
               height: 90,
@@ -172,7 +244,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.asset(env['path']!, fit: BoxFit.cover),
+                child: fileUrl.isNotEmpty 
+                  ? CachedNetworkImage(
+                      imageUrl: fileUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      errorWidget: (context, url, error) => const Icon(Icons.error),
+                    )
+                  : const Icon(Icons.broken_image),
               ),
             ),
           );
@@ -181,40 +260,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // 2. Objects Grid
   Widget _buildObjectGrid() {
-    List<Map<String, dynamic>> items = [
-      {"name": "Ball", "icon": "assets/images/ball.png"},
-      {"name": "Feather", "icon": "assets/images/feather.png"},
-      {"name": "Star", "icon": "assets/images/star.png"},
-      {"name": "Leaf", "icon": "assets/images/leaf.png"},
-      {"name": "Sun", "icon": "assets/images/sun.png"},
-      {"name": "Butterfly", "icon": "assets/images/butterfly.png"},
-    ];
+    final objects = _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ?? [];
+    if (objects.isEmpty) return const Text("No objects available");
+
+    if (selectedObjUrl == null && objects.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => selectedObjUrl = objects.first['url']);
+      });
+    }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2, childAspectRatio: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
-      itemCount: items.length,
+      itemCount: objects.length,
       itemBuilder: (context, index) {
-        String path = items[index]['icon'];
-        bool isSelected = selectedObj == path;
+        String path = objects[index]['url'] ?? '';
+        String name = objects[index]['name'] ?? "Object";
+        bool isSelected = selectedObjUrl == path;
         return InkWell(
-          onTap: () => setState(() => selectedObj = path),
+          onTap: () => setState(() => selectedObjUrl = path),
           child: _glassCard(
             isSelected: isSelected,
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Image.asset(
-                  items[index]['icon'], 
-                  width: 20, 
+                path.isNotEmpty ? CachedNetworkImage(
+                  imageUrl: path,
+                  width: 20,
                   height: 20,
                   fit: BoxFit.contain,
-                ),
+                  placeholder: (context, url) => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 1.5)),
+                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 20),
+                ) : const Icon(Icons.broken_image, size: 20),
                 const SizedBox(width: 8),
-                Text(items[index]['name'], style: TextStyle(fontSize: 13, color: isSelected ? primaryGreen : Colors.black87)),
+                Expanded(
+                  child: Text(name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: isSelected ? primaryGreen : Colors.black87)),
+                ),
               ],
             ),
           ),
@@ -223,16 +307,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // 3. Sound Grid
   Widget _buildSoundGrid() {
-    List<Map<String, dynamic>> sounds = [
-      {"name": "Gentle Tone", "icon": "assets/images/gentle.png", "audio": "assets/audio/calm place.wav"},
-      {"name": "Soft Chime", "icon": "assets/images/Soft.png", "audio": "assets/audio/puppies_v1.mp3"},
-      {"name": "Water Drop", "icon": "assets/images/water.png", "audio": "assets/audio/calm place.wav"}, // Placeholder
-      {"name": "Soft Breath", "icon": "assets/images/breath.png", "audio": "assets/audio/puppies_v1.mp3"}, // Placeholder
-      {"name": "Singing Bowl", "icon": "assets/images/bowl.png", "audio": "assets/audio/calm place.wav"}, // Placeholder
-      {"name": "Silent", "icon": "assets/images/silent.png", "audio": ""},
-    ];
+    final sounds = List<dynamic>.from(_mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? []);
+    sounds.add({"name": "Silent", "url": ""});
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -240,22 +318,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisCount: 2, childAspectRatio: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
       itemCount: sounds.length,
       itemBuilder: (context, index) {
-        String soundName = sounds[index]['name'];
-        bool isSelected = selectedSound == soundName;
+        String soundName = sounds[index]['name'] ?? "Sound";
+        String audioPath = sounds[index]['url'] ?? "";
+        bool isSelected = selectedSoundName == soundName;
         return InkWell(
           onTap: () async {
-            setState(() => selectedSound = soundName);
-            String audioPath = sounds[index]['audio'];
+            setState(() {
+              selectedSoundName = soundName;
+              selectedSoundUrl = audioPath.isEmpty ? null : audioPath;
+            });
+            
             if (audioPath.isNotEmpty) {
               await _audioPlayer.stop();
-              // Remove "assets/" prefix for DeviceFileSource if needed, or use AssetSource correctly
-              // audioplayers 4.x+ uses AssetSource which takes path inside assets/
-              // The path in map is full "assets/audio/...", AssetSource needs "audio/..."
-              if (audioPath.startsWith("assets/")) {
-                 await _audioPlayer.play(AssetSource(audioPath.substring(7)));
-              } else {
-                 await _audioPlayer.play(AssetSource(audioPath));
-              }
+              await _audioPlayer.play(UrlSource(audioPath));
             } else {
               await _audioPlayer.stop();
             }
@@ -265,14 +340,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Image.asset(
-                  sounds[index]['icon'], 
-                  width: 25, 
-                  height: 25,
-                  fit: BoxFit.contain,
+                Icon(
+                  audioPath.isEmpty ? Icons.volume_off : Icons.audiotrack,
+                  color: isSelected ? primaryGreen : Colors.black54,
+                  size: 20,
                 ),
                 const SizedBox(width: 8),
-                Text(soundName, style: TextStyle(fontSize: 12, color: isSelected ? primaryGreen : Colors.black87)),
+                Expanded(
+                  child: Text(soundName, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: isSelected ? primaryGreen : Colors.black87)),
+                ),
               ],
             ),
           ),
@@ -281,7 +357,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // 4. Direction
   Widget _buildDirectionGrid() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -326,7 +401,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // 5. Speed
   Widget _buildSpeedRow() {
     return Row(
       children: [
@@ -365,32 +439,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // Action Buttons
   Widget _buildActionButtons() {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SaveGame()),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.black12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.all(16),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset("assets/images/save.png", width: 20, height: 20, fit: BoxFit.contain),
-                const SizedBox(width: 8),
-                const Text("Save & Setting", style: TextStyle(color: Colors.black87)),
-              ],
-            ),
-          ),
+          child: Obx(() {
+            return OutlinedButton(
+              onPressed: _bilateralController.isSaving.value ? null : () async {
+                String speedStr = 'medium';
+                if (selectedSpeed == 8.0) speedStr = 'slow';
+                if (selectedSpeed == 2.0) speedStr = 'fast';
+
+                String dirStr = 'left-right';
+                if (selectedDir == AnimationDirection.vertical) dirStr = 'top-bottom';
+                if (selectedDir == AnimationDirection.diagonal) dirStr = 'diagonal-down';
+                if (selectedDir == AnimationDirection.diagonalReverse) dirStr = 'diagonal-up';
+
+                final success = await _bilateralController.saveSettings(
+                  environmentUrl: selectedEnvUrl ?? '',
+                  iconUrl: selectedObjUrl ?? '',
+                  soundUrl: selectedSoundUrl ?? '',
+                  speed: speedStr,
+                  direction: dirStr,
+                );
+
+                if (success && mounted) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SaveGame()),
+                  );
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.black12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.all(16),
+              ),
+              child: _bilateralController.isSaving.value 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset("assets/images/save.png", width: 20, height: 20, fit: BoxFit.contain),
+                        const SizedBox(width: 8),
+                        const Text("Save & Setting", style: TextStyle(color: Colors.black87)),
+                      ],
+                    ),
+            );
+          }),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -398,11 +494,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(builder: (context) => SimulationScreen(
                 settings: SimulationSettings(
-                  environmentImage: selectedEnv,
-                  visualObject: selectedObj,
+                  environmentImage: selectedEnvUrl ?? '',
+                  visualObject: selectedObjUrl ?? '',
                   speed: selectedSpeed,
-                  audioAsset: "assets/audio/calm_place.wav",
+                  audioAsset: selectedSoundUrl ?? '',
                   direction: selectedDir,
+                  isNetworkImage: true,
                 ),
               )));
             },

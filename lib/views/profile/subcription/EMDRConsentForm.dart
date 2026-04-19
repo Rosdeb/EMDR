@@ -1012,39 +1012,78 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
     );
   }
 
-  // UPDATED VALIDATION LOGIC
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
+  // Full API-connected submission (Step 1 → Profile, Step 2 → Safety Check, Step 3 → Consent)
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      // 1. Validate Consent Checkboxes
-      if (!understandsEMDR || !understandsGDPR || !isVoluntary || !knowsEmergency) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please confirm all required consent declarations.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+    // Validate Consent Checkboxes
+    if (!understandsEMDR || !understandsGDPR || !isVoluntary || !knowsEmergency) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please confirm all required consent declarations.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-      // 2. Validate Signature match
-      if (nameCtrl.text.trim().toLowerCase() != signatureCtrl.text.trim().toLowerCase()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Electronic signature must match your full name exactly.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+    // Validate Signature match
+    if (nameCtrl.text.trim().toLowerCase() != signatureCtrl.text.trim().toLowerCase()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Electronic signature must match your full name exactly.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-      // Proceed to Next Screen
+    // Call all 3 onboarding API steps via OnboardingController
+    final success = await _onboardingController.completeOnboardingSteps(
+      dob: dobCtrl.text.trim(),
+      sex: selectedSex ?? '',
+      safetyCheck: {
+        'activeSuicidalThoughts': isSuicidal,
+        'historyOfSeizures': isSeizures,
+        'pregnancy': isPregnancy,
+        'severeDissociativeDisorders': isDissociative,
+        'activePsychosis': isPsychosis,
+      },
+      consent: {
+        'understoodEMDRNatureAndRisks': understandsEMDR,
+        'agreedToGDPR': understandsGDPR,
+        'participatingVoluntarily': isVoluntary,
+        'savedCrisisSupportNumbers': knowsEmergency,
+        'optionalResearchParticipation': researchConsent,
+        'electronicSignature': signatureCtrl.text.trim(),
+      },
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      // All 3 steps succeeded → go to assessment
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const FullAssessmentFlow()),
       );
+    } else {
+      final msg = _onboardingController.errorMessage.value;
+      final isBlocked = _onboardingController.isBlocked.value;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isBlocked
+                ? 'You cannot continue due to one or more safety conditions. Please seek immediate professional support.'
+                : (msg.isNotEmpty ? msg : 'Something went wrong. Please try again.'),
+          ),
+          backgroundColor: isBlocked ? Colors.red.shade700 : Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
+      );
     }
   }
-}
+}

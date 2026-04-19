@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'simulation_settings.dart';
 
 class SimulationScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isPaused = false; // Track pause state
+  bool _isReversing = false; // Track animation direction
 
   @override
   void initState() {
@@ -29,23 +31,39 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
     _controller = AnimationController(
       duration: Duration(milliseconds: (widget.settings.speed * 1000).toInt()),
       vsync: this,
-    )..repeat(reverse: true);
+    );
+
+    _controller.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _isReversing = true;
+        _controller.reverse();
+      } else if (status == AnimationStatus.dismissed) {
+        _isReversing = false;
+        _controller.forward();
+      }
+    });
 
     _animation = Tween<double>(begin: -1.0, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
 
+    _controller.forward(); // Start animation
     _setupAudio();
   }
 
   Future<void> _setupAudio() async {
     try {
-      String assetPath = widget.settings.audioAsset;
-      if (assetPath.startsWith('assets/')) {
-        assetPath = assetPath.substring(7);
+      if (widget.settings.audioAsset.isEmpty) return;
+      
+      if (widget.settings.isNetworkImage || widget.settings.audioAsset.startsWith('http')) {
+        await _audioPlayer.setSource(UrlSource(widget.settings.audioAsset));
+      } else {
+        String assetPath = widget.settings.audioAsset;
+        if (assetPath.startsWith('assets/')) {
+          assetPath = assetPath.substring(7);
+        }
+        await _audioPlayer.setSource(AssetSource(assetPath));
       }
-
-      await _audioPlayer.setSource(AssetSource(assetPath));
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
 
       _controller.addListener(() {
@@ -64,7 +82,11 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
         _controller.stop();
         _audioPlayer.pause();
       } else {
-        _controller.repeat(reverse: true);
+        if (_isReversing) {
+          _controller.reverse();
+        } else {
+          _controller.forward();
+        }
         _audioPlayer.resume();
       }
     });
@@ -96,7 +118,16 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       body: Stack(
         children: [
           // Background
-          Positioned.fill(child: Image.asset(widget.settings.environmentImage, fit: BoxFit.cover)),
+          Positioned.fill(
+            child: widget.settings.environmentImage.startsWith('http')
+                ? CachedNetworkImage(
+                    imageUrl: widget.settings.environmentImage, 
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                    errorWidget: (context, url, error) => Container(color: Colors.grey),
+                  )
+                : Image.asset(widget.settings.environmentImage, fit: BoxFit.cover),
+          ),
 
           // Moving Object
           AnimatedBuilder(
@@ -104,7 +135,14 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
             builder: (context, child) {
               return Align(
                 alignment: _getAlignment(_animation.value),
-                child: Image.asset(widget.settings.visualObject, width: 70),
+                child: widget.settings.visualObject.startsWith('http')
+                    ? CachedNetworkImage(
+                        imageUrl: widget.settings.visualObject, 
+                        width: 70,
+                        placeholder: (context, url) => const SizedBox(width: 70, child: CircularProgressIndicator()),
+                        errorWidget: (context, url, error) => const Icon(Icons.error, size: 70),
+                      )
+                    : Image.asset(widget.settings.visualObject, width: 70),
               );
             },
           ),
