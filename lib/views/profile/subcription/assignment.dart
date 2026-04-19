@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/onboarding_controller.dart';
 import 'package:jonssony/controller/subscription_controller.dart';
 import 'package:jonssony/services/stripe_service.dart';
 import '../../home/my_homework.dart';
@@ -17,6 +18,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   Map<int, int> phq9Answers = {};
   Map<int, int> gad7Answers = {};
   Map<int, double> des2Answers = {};
+
+  final OnboardingController _onboardingController = Get.find<OnboardingController>();
+  bool _apiReportedNeedsSupport = false;
 
   final List<String> phq9Questions = [
     "Little interest or pleasure in doing things",
@@ -76,13 +80,22 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   }
 
   bool get _needsSupport {
+    if (_apiReportedNeedsSupport) return true;
     int phq = getTotalScore(phq9Answers);
     int gad = getTotalScore(gad7Answers);
     double des = getDesAverage();
     return phq >= 10 || gad >= 10 || des >= 30;
   }
 
-  void _handleNext() {
+  bool get _isScoreTooLow => getDesAverage() < 30;
+
+  void _handleNext() async {
+    if (_currentStep == 2) {
+      // Step 2 -> 3: Submit Assessment to API
+      final success = await _submitToApi();
+      if (!success) return; // Stay on current step if API fails
+    }
+
     if (_currentStep == 3) {
       final controller = Get.find<SubscriptionController>();
       final plan = controller.selectedPlanForCheckout.value;
@@ -113,6 +126,34 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     setState(() {
       _currentStep++;
     });
+  }
+
+  Future<bool> _submitToApi() async {
+    // Collect answers into ordered lists
+    List<int> phqList = List.generate(phq9Questions.length, (i) => phq9Answers[i] ?? 0);
+    List<int> gadList = List.generate(gad7Questions.length, (i) => gad7Answers[i] ?? 0);
+    List<double> desList = List.generate(des2Questions.length, (i) => des2Answers[i] ?? 0.0);
+
+    final result = await _onboardingController.submitAssessment(
+      phq9: phqList,
+      gad7: gadList,
+      des11: desList,
+    );
+
+    if (result['success']) {
+      setState(() {
+        _apiReportedNeedsSupport = result['data']?['requiresProfessionalSupport'] ?? false;
+      });
+      return true;
+    } else {
+      Get.snackbar(
+        "Error", 
+        result['message'] ?? "Failed to submit assessment. Please check your connection.",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      return false;
+    }
   }
 
   /// Maps currency symbols (£, $, €) to Stripe ISO codes (gbp, usd, eur)
@@ -448,6 +489,34 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
       children: [
         const SizedBox(height: 10),
 
+        if (_isScoreTooLow)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: const Border(
+                left: BorderSide(color: Colors.blueAccent, width: 4),
+              ),
+            ),
+            child: const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Assessment Result: Low Severity",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Based on your assessment, your symptoms are in the normal range. Our self-guided EMDR programme is specifically designed for individuals experiencing clinical levels of distress (Score 30+).\n\nSince your score is below 30, you cannot proceed to subscription at this time. We recommend continuing with healthy habits or consulting a professional if you have specific concerns.",
+                  style: const TextStyle(fontSize: 13, height: 1.6, color: Colors.black87),
+                ),
+              ],
+            ),
+          ),
+
         // ── Important Banner (always shown, but text changes based on severity) ──
         Container(
           width: double.infinity,
@@ -456,7 +525,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
           decoration: BoxDecoration(
             color: _needsSupport
                 ? Colors.red.withOpacity(0.04)
-                : const Color(0xFF52734D).withOpacity(0.05),
+                : _isScoreTooLow 
+                    ? Colors.blue.withOpacity(0.04)
+                    : const Color(0xFF52734D).withOpacity(0.05),
             borderRadius: BorderRadius.circular(14),
             border: Border(
               left: BorderSide(
@@ -471,7 +542,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               Text(
                 _needsSupport
                     ? "Important: Additional Support Recommended"
-                    : "Assessment Complete",
+                    : _isScoreTooLow ? "General Feedback" : "Assessment Complete",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -706,9 +777,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _handleNext,
+                onPressed: _isScoreTooLow ? null : _handleNext,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF52734D),
+                  backgroundColor: _isScoreTooLow ? Colors.grey : const Color(0xFF52734D),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
