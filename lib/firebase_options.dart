@@ -63,6 +63,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '920630961042',
     projectId: 'emdr-3f3f9',
     storageBucket: 'emdr-3f3f9.firebasestorage.app',
+    androidClientId: '920630961042-np10iuc0kbbog48hqje9099qhuj9ddaj.apps.googleusercontent.com',
+    iosClientId: '920630961042-t8um9ek3ioltmsqhdll89i6c2d3lakh5.apps.googleusercontent.com',
     iosBundleId: 'com.example.jonssony',
   );
+
 }

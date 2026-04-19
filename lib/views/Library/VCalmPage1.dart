@@ -5,6 +5,8 @@ import 'package:chewie/chewie.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/media_controller.dart';
 
 class VCalmPage1 extends StatefulWidget {
   const VCalmPage1({super.key});
@@ -18,6 +20,7 @@ class _VCalmPage1State extends State<VCalmPage1> {
   ChewieController? _chewieController;
   final box = GetStorage();
   final Set<int> _selectedIndices = {};
+  final MediaController _mediaController = Get.find<MediaController>();
 
   @override
   void initState() {
@@ -34,8 +37,21 @@ class _VCalmPage1State extends State<VCalmPage1> {
   }
 
   Future<void> _initializePlayer() async {
-    _videoPlayerController = VideoPlayerController.asset(
-        'assets/video/spiral_technique.mp4');
+    // Wait briefly if media is still loading
+    if (_mediaController.isLoading.value) {
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    // Attempt to get a video from EMDR Therapy Sessions
+    final videoObj = _mediaController.getFirstMedia('EMDR Therapy Sessions', 'video');
+    
+    if (videoObj != null && videoObj['url'] != null) {
+      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoObj['url']));
+    } else {
+      // Fallback to local asset
+      _videoPlayerController = VideoPlayerController.asset('assets/video/spiral_technique.mp4');
+    }
+
     await _videoPlayerController.initialize();
     _chewieController = ChewieController(
       videoPlayerController: _videoPlayerController,
@@ -46,7 +62,7 @@ class _VCalmPage1State extends State<VCalmPage1> {
         handleColor: AppColors.mainAppColor,
       ),
     );
-    setState(() {});
+    if (mounted) setState(() {});
   }
 
   void _loadSavedData() {

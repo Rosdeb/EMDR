@@ -1,8 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
+import 'package:jonssony/controller/media_controller.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
@@ -20,16 +20,19 @@ class SessionThreePage extends StatefulWidget {
 }
 
 class _SessionThreePageState extends State<SessionThreePage> {
-  String currentAudio = "calm place.wav";
-  final List<String> audioList = [
-    "calm place.wav",
-    "puppies_v1.mp3",
-  ];
+  final MediaController _mediaController = Get.find<MediaController>();
+
+  // Current audio: name & url
+  String currentAudioName = "";
+  String currentAudioUrl = "";
+
   File? _pickedImage;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
+
+  static const _audCat = 'Bilateral Stimulation Sound';
 
   @override
   void initState() {
@@ -38,11 +41,19 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   void _initAudioPlayer() async {
-    // Ensure the file exists in assets. For now, we simulate loading or try to load if possible.
-    // Since assets are not files on disk directly easily without loading to cache, just_audio can load from asset.
-    // We will try to load the current audio.
+    // Load first audio from API if available, else fallback to local
+    final sounds = _mediaController.mediaByCategory[_audCat] ?? [];
+    if (sounds.isNotEmpty) {
+      currentAudioName = sounds.first['name'] ?? '';
+      currentAudioUrl  = sounds.first['url']  ?? '';
+    }
+
     try {
-      await _audioPlayer.setAsset('assets/audio/$currentAudio');
+      if (currentAudioUrl.isNotEmpty) {
+        await _audioPlayer.setUrl(currentAudioUrl);
+      } else {
+        await _audioPlayer.setAsset('assets/audio/calm place.wav');
+      }
     } catch (e) {
       print("Error loading audio: $e");
     }
@@ -98,6 +109,8 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   void _showAudioSelectionModal(BuildContext context) {
+    final sounds = _mediaController.mediaByCategory[_audCat] ?? [];
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -117,34 +130,73 @@ class _SessionThreePageState extends State<SessionThreePage> {
             children: [
               const AppText("Select Audio", fontSize: 18, fontWeight: FontWeight.bold),
               const SizedBox(height: 20),
-              ...audioList.map((audio) => ListTile(
-                leading: Icon(
-                  Icons.music_note,
-                  color: currentAudio == audio ? const Color(0xFF537E5D) : Colors.grey,
-                ),
-                title: AppText(
-                  audio,
-                  fontSize: 16,
-                  color: currentAudio == audio ? const Color(0xFF537E5D) : Colors.black87,
-                  fontWeight: currentAudio == audio ? FontWeight.bold : FontWeight.normal,
-                ),
-                trailing: currentAudio == audio
-                    ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
-                    : null,
-                onTap: () {
-                  setState(() {
-                    currentAudio = audio;
-                    // Reset player with new audio
-                    try {
-                      _audioPlayer.setAsset('assets/audio/$currentAudio');
-                      _audioPlayer.play();
-                    } catch (e) {
-                      print("Error playing new audio: $e");
-                    }
-                  });
-                  Navigator.pop(context);
-                },
-              )),
+              if (sounds.isEmpty)
+                // Fallback: show local audio list
+                ...['calm place.wav', 'puppies_v1.mp3'].map((audio) => ListTile(
+                  leading: Icon(
+                    Icons.music_note,
+                    color: currentAudioName == audio ? const Color(0xFF537E5D) : Colors.grey,
+                  ),
+                  title: AppText(
+                    audio,
+                    fontSize: 16,
+                    color: currentAudioName == audio ? const Color(0xFF537E5D) : Colors.black87,
+                    fontWeight: currentAudioName == audio ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  trailing: currentAudioName == audio
+                      ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
+                      : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      setState(() {
+                        currentAudioName = audio;
+                        currentAudioUrl  = '';
+                      });
+                      try {
+                        await _audioPlayer.stop();
+                        await _audioPlayer.setAsset('assets/audio/$audio');
+                        await _audioPlayer.play();
+                      } catch (e) {
+                        print("Error playing audio: $e");
+                      }
+                    },
+                ))
+              else
+                // API audio list
+                ...sounds.map((s) {
+                  final name = s['name'] ?? '';
+                  final url  = s['url']  ?? '';
+                  final isSelected = currentAudioUrl == url;
+                  return ListTile(
+                    leading: Icon(
+                      Icons.music_note,
+                      color: isSelected ? const Color(0xFF537E5D) : Colors.grey,
+                    ),
+                    title: AppText(
+                      name,
+                      fontSize: 16,
+                      color: isSelected ? const Color(0xFF537E5D) : Colors.black87,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                    trailing: isSelected
+                        ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      setState(() {
+                        currentAudioName = name;
+                        currentAudioUrl  = url;
+                      });
+                      try {
+                        await _audioPlayer.stop();
+                        await _audioPlayer.setUrl(url);
+                        await _audioPlayer.play();
+                      } catch (e) {
+                        print("Error playing audio: $e");
+                      }
+                    },
+                  );
+                }),
               const SizedBox(height: 20),
             ],
           ),
@@ -251,14 +303,12 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       children: [
                         const AppText("Set the mood", fontWeight: FontWeight.bold, fontSize: 16),
                         const SizedBox(height: 10),
-                        _buildAudioPlayer(context, currentAudio, true),
+                        _buildAudioPlayer(context, currentAudioName, true),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 15),
-
-
                   _buildGlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,7 +450,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText(title, fontSize: 13, fontWeight: FontWeight.bold),
+              AppText(
+                currentAudioName.isNotEmpty ? currentAudioName : title,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),

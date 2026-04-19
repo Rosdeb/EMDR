@@ -8,7 +8,18 @@ import 'package:get_storage/get_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/controller/onboarding_controller.dart';
+import 'package:jonssony/controller/profile_controller.dart';
+import 'package:jonssony/controller/static_content_controller.dart';
+import 'package:jonssony/controller/subscription_controller.dart';
+import 'package:jonssony/controller/support_controller.dart';
+import 'package:jonssony/controller/home_controller.dart';
+import 'package:jonssony/controller/navigation_controller.dart';
 import 'package:jonssony/controller/notification_controller.dart';
+import 'package:jonssony/controller/bilateral_controller.dart';
+import 'package:jonssony/controller/media_controller.dart';
+import 'package:jonssony/controller/category_controller.dart';
+import 'package:jonssony/controller/journey_controller.dart';
 import 'package:jonssony/firebase_options.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/notificationService.dart';
@@ -93,6 +104,17 @@ class _MyAppState extends State<MyApp> {
       initialRoute: RouteHelper.splash,
       initialBinding: BindingsBuilder(() {
         Get.put(AuthController());
+        Get.lazyPut(() => OnboardingController(), fenix: true);
+        Get.lazyPut(() => ProfileController(), fenix: true);
+        Get.lazyPut(() => StaticContentController(), fenix: true);
+        Get.lazyPut(() => SubscriptionController(), fenix: true);
+        Get.lazyPut(() => SupportController(), fenix: true);
+        Get.lazyPut(() => HomeController(), fenix: true);
+        Get.lazyPut(() => NavigationController(), fenix: true);
+        Get.lazyPut(() => BilateralController(), fenix: true);
+        Get.lazyPut(() => MediaController(), fenix: true);
+        Get.lazyPut(() => CategoryController(), fenix: true);
+        Get.lazyPut(() => JourneyController(), fenix: true);
       }),
       getPages: RouteHelper.routes,
       theme: ThemeData(fontFamily: 'Regular'),
