@@ -25,16 +25,17 @@ import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/notificationService.dart';
 import 'package:jonssony/utils/app_constant.dart';
 
-/// 🔥 Background message handler (top-level, required by FCM)
+/// 🔥 Background message handler (Top-level)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // সরাসরি GetStorage ব্যবহার করে ব্যাকগ্রাউন্ডে নোটিফিকেশন সেভ করা
   await GetStorage.init();
   final box = GetStorage();
+
   final String? raw = box.read('app_notifications');
   List<dynamic> list = [];
+
   if (raw != null) {
     try {
       list = jsonDecode(raw);
@@ -58,16 +59,20 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Firebase initialize (once)
+  // ✅ Firebase initialize
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // ✅ Register background handler before any other FCM call
+  // ✅ Register background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   // ✅ Load env
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Error loading .env file: $e");
+  }
 
   // ✅ Stripe setup
   Stripe.publishableKey = AppConstants.Publishable_key;
@@ -76,7 +81,7 @@ Future<void> main() async {
   // ✅ Local storage
   await GetStorage.init();
 
-  // ✅ Register controllers and initialize notifications
+  // ✅ Register essential controllers and initialize notifications
   Get.put(NotificationController(), permanent: true);
   await NotificationService.initialize();
 
@@ -95,6 +100,43 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    _initFCM();
+  }
+
+  /// 🔥 FCM Foreground & Token Setup
+  void _initFCM() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+
+    String? token = await messaging.getToken();
+    debugPrint("================ FCM TOKEN ================");
+    debugPrint(token);
+    debugPrint("===========================================");
+
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('Message received in foreground!');
+      if (message.notification != null) {
+
+        Get.snackbar(
+          message.notification!.title ?? "Notification",
+          message.notification!.body ?? "",
+          snackPosition: SnackPosition.TOP,
+          backgroundColor: Colors.white.withOpacity(0.9),
+          colorText: Colors.black,
+          margin: const EdgeInsets.all(10),
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.notifications_active, color: Colors.blue),
+        );
+      }
+    });
+
+
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      debugPrint('Notification clicked and app opened!');
+
+      // Get.toNamed(RouteHelper.notificationPage);
+    });
   }
 
   @override
@@ -103,7 +145,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       initialRoute: RouteHelper.splash,
       initialBinding: BindingsBuilder(() {
-        Get.put(AuthController());
+        Get.put(AuthController(), permanent: true);
         Get.lazyPut(() => OnboardingController(), fenix: true);
         Get.lazyPut(() => ProfileController(), fenix: true);
         Get.lazyPut(() => StaticContentController(), fenix: true);
@@ -117,7 +159,10 @@ class _MyAppState extends State<MyApp> {
         Get.lazyPut(() => JourneyController(), fenix: true);
       }),
       getPages: RouteHelper.routes,
-      theme: ThemeData(fontFamily: 'Regular'),
+      theme: ThemeData(
+        fontFamily: 'Regular',
+        useMaterial3: true,
+      ),
     );
   }
 }

@@ -46,7 +46,7 @@ class RouteHelper {
     GetPage(name: progress, page: () => const ProgressPage()),
     GetPage(name: profile, page: () => const ProfilePage()),
     GetPage(name: main, page: () => const MainScreen()),
-
+    GetPage(name: notifications, page: () => const NotificationScreen()),
   ];
 
 }
