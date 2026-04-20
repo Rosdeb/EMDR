@@ -34,7 +34,7 @@ class CustomNavBar extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  height: 75,
+                  height: 65,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(40),
@@ -83,8 +83,8 @@ class CustomNavBar extends StatelessWidget {
               Get.to(() =>  CreateJourneyPage());
             },
             child: Container(
-              height: 70,
-              width: 70,
+              height: 65,
+              width: 65,
               decoration: const BoxDecoration(
                 color: Color(0xFF537E5D),
                 shape: BoxShape.circle,
@@ -96,7 +96,7 @@ class CustomNavBar extends StatelessWidget {
                   )
                 ],
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 35),
+              child: const Icon(Icons.add, color: Colors.white, size: 30),
             ),
           )
         ],

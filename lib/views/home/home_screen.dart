@@ -206,16 +206,16 @@ class HomeScreen extends StatelessWidget {
               child: InkWell(
                 onTap: () {
                   notifController.reloadFromStorage();
-                  // GetX named route ব্যবহার করে নেভিগেশন
+
                   Get.toNamed(RouteHelper.notifications);
-                  // পেজটি খুললে সব মার্ক অ্যাজ রিড করে দেওয়া
+
                   Future.delayed(const Duration(milliseconds: 500), () {
                     notifController.markAllAsRead();
                   });
                 },
                 borderRadius: BorderRadius.circular(30),
                 child: Padding(
-                  padding: const EdgeInsets.all(4.0), // ট্যাপ এরিয়া বাড়ানোর জন্য
+                  padding: const EdgeInsets.all(4.0),
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [

@@ -14,6 +14,7 @@ class FullAssessmentFlow extends StatefulWidget {
 
 class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   int _currentStep = 0; // 0: PHQ9, 1: GAD7, 2: DES-II, 3: Result
+  final ScrollController _scrollController = ScrollController();
 
   Map<int, int> phq9Answers = {};
   Map<int, int> gad7Answers = {};
@@ -21,6 +22,8 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
   final OnboardingController _onboardingController = Get.find<OnboardingController>();
   bool _apiReportedNeedsSupport = false;
+  String _apiRecommendation = '';
+  Map<String, dynamic>? _apiScores; // Stores the full scores map from API
 
   final List<String> phq9Questions = [
     "Little interest or pleasure in doing things",
@@ -89,11 +92,14 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
   bool get _isScoreTooLow => getDesAverage() < 30;
 
+  /// Safe capitalize — avoids GetX's nullable .capitalize() getter
+  String _capitalizeFirst(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+
   void _handleNext() async {
     if (_currentStep == 2) {
-      // Step 2 -> 3: Submit Assessment to API
       final success = await _submitToApi();
-      if (!success) return; // Stay on current step if API fails
+      if (!success) return;
     }
 
     if (_currentStep == 3) {
@@ -118,7 +124,6 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             }
          });
       } else {
-        // Paid Plan: Trigger Stripe Payment
         _processStripePayment(plan, controller);
       }
       return;
@@ -126,10 +131,15 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     setState(() {
       _currentStep++;
     });
+    // Scroll back to top on step change
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
+      }
+    });
   }
 
   Future<bool> _submitToApi() async {
-    // Collect answers into ordered lists
     List<int> phqList = List.generate(phq9Questions.length, (i) => phq9Answers[i] ?? 0);
     List<int> gadList = List.generate(gad7Questions.length, (i) => gad7Answers[i] ?? 0);
     List<double> desList = List.generate(des2Questions.length, (i) => des2Answers[i] ?? 0.0);
@@ -140,15 +150,23 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
       des11: desList,
     );
 
-    if (result['success']) {
+    if (result['success'] == true) {
+      // OnboardingService._handleResponse wraps as {'success': true, 'data': fullBody}
+      // fullBody itself is {'success': true, 'data': { scores, recommendation, ... }}
+      // So the actual assessment data lives at result['data']['data']
+      final rawBody = result['data'] as Map<String, dynamic>? ?? {};
+      final data = (rawBody['data'] ?? rawBody) as Map<String, dynamic>;
+
       setState(() {
-        _apiReportedNeedsSupport = result['data']?['requiresProfessionalSupport'] ?? false;
+        _apiReportedNeedsSupport = data['requiresProfessionalSupport'] ?? false;
+        _apiRecommendation       = data['recommendation']?.toString() ?? '';
+        _apiScores               = data['scores'] as Map<String, dynamic>?;
       });
       return true;
     } else {
       Get.snackbar(
-        "Error", 
-        result['message'] ?? "Failed to submit assessment. Please check your connection.",
+        "Error",
+        result['message']?.toString() ?? "Failed to submit assessment. Please check your connection.",
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
@@ -213,6 +231,13 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
         _currentStep--;
       } else {
         Navigator.pop(context);
+        return;
+      }
+    });
+    // Scroll back to top on step change
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(0);
       }
     });
   }
@@ -229,6 +254,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             if (_currentStep < 3) _buildProgressBar(),
             Expanded(
               child: SingleChildScrollView(
+                controller: _scrollController,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: _buildBodyContent(),
@@ -251,7 +277,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             alignment: Alignment.centerLeft,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black54),
-              onPressed: () => Navigator.pop(context),
+              onPressed: _handleBack,
             ),
           ),
           Column(
@@ -406,6 +432,30 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                               ),
                             ),
                           ),
+                          // Score badge on the right
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xFF52734D)
+                                  : Colors.grey.shade100,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFF52734D) : Colors.black12,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$i',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected ? Colors.white : Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -517,7 +567,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             ),
           ),
 
-        // ── Important Banner (always shown, but text changes based on severity) ──
+        // ── Important Banner (API recommendation or fallback) ──
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(18),
@@ -525,7 +575,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
           decoration: BoxDecoration(
             color: _needsSupport
                 ? Colors.red.withOpacity(0.04)
-                : _isScoreTooLow 
+                : _isScoreTooLow
                     ? Colors.blue.withOpacity(0.04)
                     : const Color(0xFF52734D).withOpacity(0.05),
             borderRadius: BorderRadius.circular(14),
@@ -551,9 +601,12 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               ),
               const SizedBox(height: 10),
               Text(
-                _needsSupport
-                    ? "Thank you for completing the assessment. Based on your responses, we believe you would benefit from immediate professional support before beginning a self-guided EMDR program.\n\nYour wellbeing is our priority. The symptoms you're experiencing suggest that working with a mental health professional in person would be the safest and most effective approach at this time."
-                    : "Thank you for completing the assessment. Your responses suggest you may be a good candidate for self-guided EMDR. Please review your results below.",
+                // Show API recommendation if available, else fallback text
+                _apiRecommendation.isNotEmpty
+                    ? _apiRecommendation
+                    : _needsSupport
+                        ? "Thank you for completing the assessment. Based on your responses, we believe you would benefit from immediate professional support before beginning a self-guided EMDR program.\n\nYour wellbeing is our priority."
+                        : "Thank you for completing the assessment. Your responses suggest you may be a good candidate for self-guided EMDR.",
                 style: const TextStyle(fontSize: 13, height: 1.6, color: Colors.black87),
               ),
             ],
@@ -574,7 +627,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
           ),
         ),
 
-        // ── Score Cards ──
+        // ── Score Cards ── (API scores take priority over locally computed)
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -585,22 +638,34 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             children: [
               _resultRow(
                 label: "Depression (PHQ-9)",
-                interpretation: getPhqInterpretation(phq),
-                scoreText: "Score: $phq/27",
+                interpretation: _apiScores != null
+                    ? _capitalizeFirst(_apiScores!['depression']?['severity']?.toString() ?? getPhqInterpretation(phq))
+                    : getPhqInterpretation(phq),
+                scoreText: _apiScores != null
+                    ? "Score: ${_apiScores!['depression']?['score'] ?? phq}/${_apiScores!['depression']?['outOf'] ?? 27}"
+                    : "Score: $phq/27",
                 color: phq >= 10 ? Colors.redAccent : Colors.black54,
                 isLast: false,
               ),
               _resultRow(
                 label: "Anxiety (GAD-7)",
-                interpretation: getGadInterpretation(gad),
-                scoreText: "Score: $gad/21",
+                interpretation: _apiScores != null
+                    ? _capitalizeFirst(_apiScores!['anxiety']?['severity']?.toString() ?? getGadInterpretation(gad))
+                    : getGadInterpretation(gad),
+                scoreText: _apiScores != null
+                    ? "Score: ${_apiScores!['anxiety']?['score'] ?? gad}/${_apiScores!['anxiety']?['outOf'] ?? 21}"
+                    : "Score: $gad/21",
                 color: gad >= 10 ? Colors.redAccent : Colors.black54,
                 isLast: false,
               ),
               _resultRow(
                 label: "Dissociation (DES-II)",
-                interpretation: des >= 30 ? "Consultation Advised" : "Normal Range",
-                scoreText: "Score: ${des.toStringAsFixed(1)}%",
+                interpretation: _apiScores != null
+                    ? ((_apiScores!['dissociation']?['score'] ?? 0) >= 30 ? "Consultation Advised" : "Normal Range")
+                    : (des >= 30 ? "Consultation Advised" : "Normal Range"),
+                scoreText: _apiScores != null
+                    ? "Score: ${_apiScores!['dissociation']?['score']}%"
+                    : "Score: ${des.toStringAsFixed(1)}%",
                 color: des >= 30 ? Colors.redAccent : Colors.black54,
                 isLast: true,
               ),

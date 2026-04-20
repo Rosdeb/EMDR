@@ -4,16 +4,17 @@ import 'package:get/get.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'simulation_screen.dart';
 import 'simulation_settings.dart';
+import 'package:jonssony/controller/bilateral_controller.dart';
 
 class SaveGame extends StatefulWidget {
   const SaveGame({super.key});
 
   @override
-  State<SaveGame> createState() =>
-      _SaveGameState();
+  State<SaveGame> createState() => _SaveGameState();
 }
 
 class _SaveGameState extends State<SaveGame> {
+  final BilateralController _bilateralController = Get.find<BilateralController>();
   int? _playingIndex;
 
   final List<Map<String, String>> _tracks = [
@@ -56,16 +57,22 @@ class _SaveGameState extends State<SaveGame> {
                     ),
 
                     // Track list
-                    ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.only(
-                        left: 20, right: 20, top: 30, bottom: 30,
-                      ),
-                      itemCount: _tracks.length,
-                      itemBuilder: (context, index) {
-                        return _buildTrackCard(index);
-                      },
-                    ),
+                    Obx(() {
+                      if (_bilateralController.isLoading.value) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      return ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.only(
+                          left: 20, right: 20, top: 30, bottom: 30,
+                        ),
+                        itemCount: _tracks.length,
+                        itemBuilder: (context, index) {
+                          return _buildTrackCard(index);
+                        },
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -79,19 +86,36 @@ class _SaveGameState extends State<SaveGame> {
   Widget _buildTrackCard(int index) {
     final track = _tracks[index];
     final isPlaying = _playingIndex == index;
+    
+    // Convert backend formats to SimulationSettings
+    final settings = _bilateralController.userSettings;
+    final speedStr = settings['speed'] ?? 'medium';
+    double speed = 4.0;
+    if (speedStr == 'slow') speed = 8.0;
+    else if (speedStr == 'fast') speed = 2.0;
+
+    final dirStr = settings['direction'] ?? 'left-right';
+    AnimationDirection dir = AnimationDirection.horizontal;
+    if (dirStr == 'top-bottom') dir = AnimationDirection.vertical;
+    else if (dirStr == 'diagonal-down') dir = AnimationDirection.diagonal;
+    else if (dirStr == 'diagonal-up') dir = AnimationDirection.diagonalReverse;
 
     return GestureDetector(
       onTap: () {
+        setState(() {
+          _playingIndex = index;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => SimulationScreen(
               settings: SimulationSettings(
-                environmentImage: 'assets/images/mountain.jpg',
-                visualObject: 'assets/images/butterfly.png',
-                speed: 4.0,
-                audioAsset: 'assets/audio/calm_place.wav',
-                direction: AnimationDirection.horizontal,
+                environmentImage: settings['environmentId'] ?? 'assets/images/mountain.jpg',
+                visualObject: settings['iconUrl'] ?? 'assets/images/butterfly.png',
+                speed: speed,
+                audioAsset: settings['soundId'] ?? 'assets/audio/calm_place.wav',
+                direction: dir,
+                isNetworkImage: settings.isNotEmpty,
               ),
             ),
           ),
@@ -157,6 +181,8 @@ class _SaveGameState extends State<SaveGame> {
       ),
     );
   }
+
+
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
