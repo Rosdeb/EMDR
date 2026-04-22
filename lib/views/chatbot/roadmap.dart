@@ -4,6 +4,8 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/chatbot/SessionFourPage.dart';
 import 'package:jonssony/views/chatbot/session_three.dart';
 
+import 'ai_guide.dart';
+
 class CreateRoadmapPage extends StatelessWidget {
   const CreateRoadmapPage({super.key});
 
@@ -42,7 +44,7 @@ class CreateRoadmapPage extends StatelessWidget {
               buttonText: "View Assessments",
               buttonColor: AppColors.mainAppColor,
               onTap: () {
-                Get.to(() => SessionFourPage());
+                Get.to(() => EmdrCompanionPage());
               },
               // onTap: () {
               //   Get.to(() => SessionThreePage());
