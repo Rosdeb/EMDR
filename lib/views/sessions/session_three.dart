@@ -6,11 +6,14 @@ import 'package:jonssony/controller/media_controller.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/chatbot/journry_page.dart';
+
+import 'package:jonssony/views/sessions/SessionFourPage.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:just_audio/just_audio.dart';
+import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/services/calm_place_service.dart';
 
 class SessionThreePage extends StatefulWidget {
   const SessionThreePage({super.key});
@@ -27,6 +30,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
   String currentAudioUrl = "";
 
   File? _pickedImage;
+  final TextEditingController _descriptionController = TextEditingController();
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
   Duration duration = Duration.zero;
@@ -92,6 +96,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -322,9 +327,10 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: const TextField(
+                          child: TextField(
+                            controller: _descriptionController,
                             maxLines: 3,
-                            decoration: InputDecoration(
+                            decoration: const InputDecoration(
                               hintText: "Why does this place make you feel safe? E.g., 'The air is crisp...'",
                               border: InputBorder.none,
                               hintStyle: TextStyle(fontSize: 12),
@@ -379,8 +385,19 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            Get.to(() => CreateJourneyPage());
+                          onPressed: () async {
+                            final authController = Get.find<AuthController>();
+                            final token = authController.token;
+                            if (token != null) {
+                              final data = {
+                                "description": _descriptionController.text.trim(),
+                                "audioName": currentAudioName,
+                                "audioUrl": currentAudioUrl,
+                                "hasImage": _pickedImage != null,
+                              };
+                              await CalmPlaceService.saveCalmPlace(token, data);
+                            }
+                            Get.to(() => const SessionFourPage());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.mainAppColor,
