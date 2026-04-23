@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/journey_controller.dart';
 import 'package:jonssony/controller/media_controller.dart';
-import 'package:jonssony/views/chatbot/roadmap.dart';
+import 'package:jonssony/views/chatbot/session_one.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
 
 class CreateJourneyPage extends StatefulWidget {
@@ -61,7 +61,7 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
     if (result['success'] == true) {
       Get.snackbar('Success', 'Journey created!',
           backgroundColor: Colors.green.shade100, colorText: Colors.green.shade900);
-      Get.to(() => CreateRoadmapPage());
+      Get.to(() => const SessionOne());
     } else {
       Get.snackbar('Error', result['message'] ?? 'Something went wrong',
           backgroundColor: Colors.red.shade100, colorText: Colors.red.shade800);

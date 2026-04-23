@@ -11,7 +11,7 @@ class PatternMemoryGame extends StatefulWidget {
 }
 
 class _PatternMemoryGameState extends State<PatternMemoryGame> {
-  // গেমের কালার সেট
+
   final List<Color> colors = [
     const Color(0xFFC1475B),
     const Color(0xFF4A7C9E),
@@ -40,7 +40,7 @@ class _PatternMemoryGameState extends State<PatternMemoryGame> {
     });
   }
 
-  // গেম শুরু করার আগে পপআপ
+
   void showChallengeModal() {
     showDialog(
       context: context,

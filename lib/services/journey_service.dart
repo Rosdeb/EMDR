@@ -25,7 +25,6 @@ class JourneyService {
       if (isSuccess) {
         return {'success': true, 'data': body['data']};
       }
-
       return {
         'success': false,
         'message': body['message'] ?? 'Failed to load journeys',
@@ -38,7 +37,6 @@ class JourneyService {
       };
     }
   }
-
   // ─── Get Journey By ID ──────────────────────────────────────
   static Future<Map<String, dynamic>> getJourneyById(String token, String journeyId) async {
     try {
@@ -46,14 +44,12 @@ class JourneyService {
         Uri.parse('$_baseUrl/$journeyId'),
         headers: _headers(token),
       );
-
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final bool isSuccess = response.statusCode >= 200 && response.statusCode < 300;
 
       if (isSuccess) {
         return {'success': true, 'data': body['data']};
       }
-
       return {
         'success': false,
         'message': body['message'] ?? 'Failed to load journey details',
