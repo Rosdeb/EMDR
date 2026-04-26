@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:get_storage/get_storage.dart';
 
 class cbt extends StatefulWidget {
   const cbt({super.key});
@@ -11,6 +12,7 @@ class cbt extends StatefulWidget {
 }
 
 class _cbtState extends State<cbt> {
+  final box = GetStorage();
   // ── Sections from HTML (label, subtitle, answer) ──────────────────────
   final List<Map<String, String>> _sections = [
     {
@@ -20,9 +22,7 @@ class _cbtState extends State<cbt> {
       'Write about early memories & experiences that may have shaped who you are today.\n\n'
           'Float back in time — were there specific events or patterns in your family? '
           'What messages did you receive about yourself growing up?',
-      'answer':
-      'My parents were very critical and expected perfection. I learned to stay quiet to avoid conflict, '
-          'and I often felt I had to earn love by performing well at school and being "good" all the time.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'WHAT I LEARNED',
@@ -37,8 +37,7 @@ class _cbtState extends State<cbt> {
           '• I am alone\n'
           '• I have to be perfect / please everyone\n'
           '• I am powerless / helpless',
-      'answer':
-      'I am not good enough, I have to be perfect / please everyone.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'MY SURVIVAL GUIDE',
@@ -47,9 +46,7 @@ class _cbtState extends State<cbt> {
       'What "shoulds" or "musts" do you tell yourself that link to your situation and deep beliefs?\n\n'
           '• What do you believe you need to do to be accepted or safe?\n'
           '• What rules do you follow to avoid pain or anxiety?',
-      'answer':
-      'I must never show weakness. If I\'m not perfect, I\'m worthless. '
-          'I should always put others first — if I check everything, I will be in control.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'LIFE HAPPENS',
@@ -58,9 +55,7 @@ class _cbtState extends State<cbt> {
       'What has happened over the years that has triggered how you are feeling?\n\n'
           '• Was there a specific event, person, or place involved?\n'
           '• Have similar situations triggered you before?',
-      'answer':
-      'Being criticised by my manager, feeling ignored in group settings, '
-          'and loud or unpredictable environments.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'RIGHT NOW',
@@ -69,9 +64,7 @@ class _cbtState extends State<cbt> {
       'Write the situation where you last felt the feeling that brought you here today. '
           'We want an actual situation that happened.\n\n'
           'Example: "I had an argument with my partner" or "I had feedback from my boss"',
-      'answer':
-      'I had some critical feedback from my boss in front of the team during our weekly meeting. '
-          'I felt humiliated and immediately went quiet for the rest of the day.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'HOW I REACT — THOUGHTS',
@@ -81,9 +74,7 @@ class _cbtState extends State<cbt> {
           '• What was the first thought that popped into your head?\n'
           '• What were you telling yourself about the situation?\n'
           '• What did you think it meant about you or others?',
-      'answer':
-      '"They don\'t respect me." "I always mess things up." '
-          '"Everyone thinks I\'m incompetent — I should just quit."',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'HOW I REACT — FEELINGS',
@@ -91,8 +82,7 @@ class _cbtState extends State<cbt> {
       'question':
       'How did this situation make you feel negatively? '
           'Which emotions did you experience in your body?',
-      'answer':
-      'Ashamed, Anxious, Hurt, Stressed, Confused.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'HOW I REACT — BEHAVIOURS',
@@ -101,18 +91,14 @@ class _cbtState extends State<cbt> {
       'What did you do immediately after or in the moment?\n\n'
           '• Did you avoid anything or anyone?\n'
           '• How did you cope with these feelings?',
-      'answer':
-      'I went quiet and withdrew. I avoided speaking for the rest of the meeting and '
-          'spent the afternoon overthinking and drafting resignation emails I never sent.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'THE LOOP',
       'label': 'The Consequences',
       'question':
       'What are the consequences of the stuck loop you are in?',
-      'answer':
-      'Difficulty forming relationships, difficulty calming the body and mind, '
-          'avoidance of difficult thoughts or feelings, loss of meaning or hope.',
+      'answer': 'No answer provided yet.',
     },
     {
       'section': 'MY SUPERPOWERS',
@@ -121,11 +107,28 @@ class _cbtState extends State<cbt> {
       'What makes you strong, able to carry on, and resilient?\n\n'
           'It could even be something seen as a negative right now — like being very detailed or '
           'overthinking. Other ideas: kindness, warmth, intelligence, loyalty, creativity...',
-      'answer':
-      'I am highly empathetic, detail-oriented, and deeply loyal to the people I care about. '
-          'I never give up even when things are hard.',
+      'answer': 'No answer provided yet.',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAnswers();
+  }
+
+  void _loadAnswers() {
+    final savedAnswers = box.read('cbt_answers');
+    if (savedAnswers != null && savedAnswers is Map) {
+      setState(() {
+        for (var section in _sections) {
+          if (savedAnswers.containsKey(section['label'])) {
+            section['answer'] = savedAnswers[section['label']];
+          }
+        }
+      });
+    }
+  }
 
   final Color _green = const Color(0xFF537E5D);
 

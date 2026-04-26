@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
-import 'package:jonssony/views/chatbot/SessionFourPage.dart';
-import 'package:jonssony/views/chatbot/session_three.dart';
+
 
 import 'ai_guide.dart';
 

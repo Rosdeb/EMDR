@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/journey_controller.dart';
 import 'package:jonssony/controller/media_controller.dart';
-import 'package:jonssony/views/chatbot/session_one.dart';
+
+import 'package:jonssony/views/sessions/session_one.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
 
 class CreateJourneyPage extends StatefulWidget {
