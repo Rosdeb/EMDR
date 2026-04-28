@@ -100,43 +100,18 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initFCM();
+    _checkInitialMessage();
   }
 
-  /// 🔥 FCM Foreground & Token Setup
-  void _initFCM() async {
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-
-    String? token = await messaging.getToken();
-    debugPrint("================ FCM TOKEN ================");
-    debugPrint(token);
-    debugPrint("===========================================");
-
-
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      debugPrint('Message received in foreground!');
-      if (message.notification != null) {
-
-        Get.snackbar(
-          message.notification!.title ?? "Notification",
-          message.notification!.body ?? "",
-          snackPosition: SnackPosition.TOP,
-          backgroundColor: Colors.white.withOpacity(0.9),
-          colorText: Colors.black,
-          margin: const EdgeInsets.all(10),
-          duration: const Duration(seconds: 4),
-          icon: const Icon(Icons.notifications_active, color: Colors.blue),
-        );
-      }
-    });
-
-
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('Notification clicked and app opened!');
-
-      // Get.toNamed(RouteHelper.notificationPage);
-    });
+  void _checkInitialMessage() async {
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint('Notification clicked from terminated state and app opened!');
+      // Short delay to ensure GetMaterialApp has fully initialized navigation
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Get.toNamed(RouteHelper.notifications);
+      });
+    }
   }
 
   @override

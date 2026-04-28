@@ -9,6 +9,7 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/home/homework.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/healper/route.dart';
+import 'package:jonssony/controller/session_progress_controller.dart';
 
 import 'MyCalmSpace.dart';
 
@@ -17,10 +18,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure ProfileController is available and fetch profile data
     Get.put(ProfileController());
     Get.put(NotificationController());
-
+    final sessionProgressController = Get.put(SessionProgressController());
 
 
     const double appBarImageHeight = 170;
@@ -124,10 +124,39 @@ class HomeScreen extends StatelessWidget {
 
                             const SizedBox(height: 25),
 
+                            Obx(() {
+                              if (sessionProgressController.isLoading.value) {
+                                return const Center(
+                                  child: CircularProgressIndicator(color: AppColors.mainAppColor),
+                                );
+                              }
 
-                            _buildJourneyCard("Anxiety Management Journey", "20 sessions", "95/100", AppColors.mainAppColor),
-                            _buildJourneyCard("Mindfulness Practice", "15 sessions", "80/100", AppColors.mainAppColor),
-                            _buildJourneyCard("Focus Training", "10 sessions", "60/100", AppColors.mainAppColor),
+                              final progresses = sessionProgressController.progresses;
+                              if (progresses.isEmpty) {
+                                // Fallback / Empty state if no progress found from API
+                                return Column(
+                                  children: [
+                                    _buildJourneyCard("Anxiety Management Journey", "20 sessions", "95/100", 0.95, AppColors.mainAppColor),
+                                    _buildJourneyCard("Mindfulness Practice", "15 sessions", "80/100", 0.80, AppColors.mainAppColor),
+                                    _buildJourneyCard("Focus Training", "10 sessions", "60/100", 0.60, AppColors.mainAppColor),
+                                  ],
+                                );
+                              }
+
+                              return Column(
+                                children: progresses.map((p) {
+                                  // Parse API data safely based on standard JSON structure
+                                  final title = p['title'] ?? p['journeyName'] ?? p['name'] ?? 'EMDR Journey';
+                                  final total = p['totalSessions'] ?? 100;
+                                  final completed = p['completedSessions'] ?? p['progress'] ?? 0;
+                                  final percent = total > 0 ? (completed / total).toDouble() : 0.0;
+                                  final subTitle = "$total sessions";
+                                  final progressText = "$completed/$total";
+
+                                  return _buildJourneyCard(title, subTitle, progressText, percent, AppColors.mainAppColor);
+                                }).toList(),
+                              );
+                            }),
 
                             const SizedBox(height: 150),
                           ],
@@ -303,7 +332,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildJourneyCard(String title, String subTitle, String progress, Color color) {
+  Widget _buildJourneyCard(String title, String subTitle, String progress, double percent, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: ClipRRect(
@@ -342,7 +371,7 @@ class HomeScreen extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
-                    value: 0.95,
+                    value: percent,
                     minHeight: 7,
                     backgroundColor: Colors.white.withValues(alpha: 0.3),
 

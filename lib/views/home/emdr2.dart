@@ -24,7 +24,6 @@ class _emdrState extends State<emdr> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // ১. টপ হেডার ইমেজ
           Positioned(
             top: 0,
             left: 0,
@@ -202,8 +201,6 @@ class _emdrState extends State<emdr> {
       ),
     );
   }
-
-  // গ্লাস মরফিজম কার্ড ডিজাইন
   Widget _buildGlassItem(String title, String subtitle, String imagePath, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 18),

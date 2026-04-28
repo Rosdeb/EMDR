@@ -100,4 +100,22 @@ class JourneyService {
       return {'success': false, 'message': 'Network error. Please try again.'};
     }
   }
+
+  // ─── Delete Journey ──────────────────────────────────────
+  static Future<Map<String, dynamic>> deleteJourney(
+      String token, String journeyId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/$journeyId'),
+        headers: _headers(token),
+      );
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final bool isSuccess = response.statusCode >= 200 && response.statusCode < 300;
+      if (isSuccess) return {'success': true, 'data': body['data']};
+      return {'success': false, 'message': body['message'] ?? 'Failed to delete journey'};
+    } catch (e) {
+      print('JourneyService deleteJourney Error: $e');
+      return {'success': false, 'message': 'Network error. Please try again.'};
+    }
+  }
 }

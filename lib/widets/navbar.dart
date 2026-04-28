@@ -5,8 +5,8 @@ import 'package:get/get.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/chatbot/journry_page.dart';
-import 'package:jonssony/views/chatbot/SessionFourPage.dart';
+import 'package:jonssony/views/sessions/journry_page.dart';
+
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;

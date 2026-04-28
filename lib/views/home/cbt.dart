@@ -1,7 +1,11 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/services/cbt_service.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:get_storage/get_storage.dart';
+import 'package:jonssony/views/sessions/session_two.dart'; // For BubbleConfig, custom painters, etc.
 
 class cbt extends StatefulWidget {
   const cbt({super.key});
@@ -11,272 +15,387 @@ class cbt extends StatefulWidget {
 }
 
 class _cbtState extends State<cbt> {
-  // ── Sections from HTML (label, subtitle, answer) ──────────────────────
-  final List<Map<String, String>> _sections = [
-    {
-      'section': 'THE BEGINNING',
-      'label': 'When I Was Little',
-      'question':
-      'Write about early memories & experiences that may have shaped who you are today.\n\n'
-          'Float back in time — were there specific events or patterns in your family? '
-          'What messages did you receive about yourself growing up?',
-      'answer':
-      'My parents were very critical and expected perfection. I learned to stay quiet to avoid conflict, '
-          'and I often felt I had to earn love by performing well at school and being "good" all the time.',
-    },
-    {
-      'section': 'WHAT I LEARNED',
-      'label': 'Deep-Down Beliefs',
-      'question':
-      'These are deep beliefs about yourself that might have been activated.\n\n'
-          'Think carefully — which of these feel true to you right now?\n\n'
-          '• I am not good enough\n'
-          '• I am worthless / inadequate\n'
-          '• It\'s my fault\n'
-          '• I cannot trust myself\n'
-          '• I am alone\n'
-          '• I have to be perfect / please everyone\n'
-          '• I am powerless / helpless',
-      'answer':
-      'I am not good enough, I have to be perfect / please everyone.',
-    },
-    {
-      'section': 'MY SURVIVAL GUIDE',
-      'label': 'The Rules',
-      'question':
-      'What "shoulds" or "musts" do you tell yourself that link to your situation and deep beliefs?\n\n'
-          '• What do you believe you need to do to be accepted or safe?\n'
-          '• What rules do you follow to avoid pain or anxiety?',
-      'answer':
-      'I must never show weakness. If I\'m not perfect, I\'m worthless. '
-          'I should always put others first — if I check everything, I will be in control.',
-    },
-    {
-      'section': 'LIFE HAPPENS',
-      'label': 'Triggers',
-      'question':
-      'What has happened over the years that has triggered how you are feeling?\n\n'
-          '• Was there a specific event, person, or place involved?\n'
-          '• Have similar situations triggered you before?',
-      'answer':
-      'Being criticised by my manager, feeling ignored in group settings, '
-          'and loud or unpredictable environments.',
-    },
-    {
-      'section': 'RIGHT NOW',
-      'label': 'A Recent Happening',
-      'question':
-      'Write the situation where you last felt the feeling that brought you here today. '
-          'We want an actual situation that happened.\n\n'
-          'Example: "I had an argument with my partner" or "I had feedback from my boss"',
-      'answer':
-      'I had some critical feedback from my boss in front of the team during our weekly meeting. '
-          'I felt humiliated and immediately went quiet for the rest of the day.',
-    },
-    {
-      'section': 'HOW I REACT — THOUGHTS',
-      'label': 'My Thoughts',
-      'question':
-      'What was going on in your head in that moment?\n\n'
-          '• What was the first thought that popped into your head?\n'
-          '• What were you telling yourself about the situation?\n'
-          '• What did you think it meant about you or others?',
-      'answer':
-      '"They don\'t respect me." "I always mess things up." '
-          '"Everyone thinks I\'m incompetent — I should just quit."',
-    },
-    {
-      'section': 'HOW I REACT — FEELINGS',
-      'label': 'My Feelings',
-      'question':
-      'How did this situation make you feel negatively? '
-          'Which emotions did you experience in your body?',
-      'answer':
-      'Ashamed, Anxious, Hurt, Stressed, Confused.',
-    },
-    {
-      'section': 'HOW I REACT — BEHAVIOURS',
-      'label': 'What I Did',
-      'question':
-      'What did you do immediately after or in the moment?\n\n'
-          '• Did you avoid anything or anyone?\n'
-          '• How did you cope with these feelings?',
-      'answer':
-      'I went quiet and withdrew. I avoided speaking for the rest of the meeting and '
-          'spent the afternoon overthinking and drafting resignation emails I never sent.',
-    },
-    {
-      'section': 'THE LOOP',
-      'label': 'The Consequences',
-      'question':
-      'What are the consequences of the stuck loop you are in?',
-      'answer':
-      'Difficulty forming relationships, difficulty calming the body and mind, '
-          'avoidance of difficult thoughts or feelings, loss of meaning or hope.',
-    },
-    {
-      'section': 'MY SUPERPOWERS',
-      'label': 'Your Superpowers',
-      'question':
-      'What makes you strong, able to carry on, and resilient?\n\n'
-          'It could even be something seen as a negative right now — like being very detailed or '
-          'overthinking. Other ideas: kindness, warmth, intelligence, loyalty, creativity...',
-      'answer':
-      'I am highly empathetic, detail-oriented, and deeply loyal to the people I care about. '
-          'I never give up even when things are hard.',
-    },
-  ];
+  final box = GetStorage();
+  bool _isLoading = false;
 
-  final Color _green = const Color(0xFF537E5D);
+  final Map<String, String> _bubbleAnswers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromApi();
+  }
+
+  Future<void> _loadFromApi() async {
+    setState(() => _isLoading = true);
+
+    // First load from local storage for instant feedback
+    _loadAnswersFromLocal();
+
+    try {
+      final token = Get.isRegistered<AuthController>()
+          ? Get.find<AuthController>().token
+          : box.read<String>('auth_token');
+      if (token != null) {
+        final result = await CbtService.getAllFormulations(token);
+        if (result['success'] == true && result['data'] != null) {
+          final data = result['data'];
+          if (data is Map<String, dynamic>) {
+            _updateSectionsFromData(data);
+          } else if (data is List && data.isNotEmpty) {
+            // API returns newest first — pick index 0 for the latest
+            final latest = data.first;
+            if (latest is Map<String, dynamic>) {
+              _updateSectionsFromData(latest);
+            } else if (latest is Map) {
+              _updateSectionsFromData(Map<String, dynamic>.from(latest));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading CBT from API: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _updateSectionsFromData(Map<String, dynamic> data) {
+    setState(() {
+      _bubbleAnswers['childhood'] = _asAnswer(data['childhood']);
+      _bubbleAnswers['deep-beliefs'] = _asAnswer(data['deepBeliefs']);
+      _bubbleAnswers['rules'] = _asAnswer(data['rules']);
+      _bubbleAnswers['triggers'] = _asAnswer(data['triggers']);
+      _bubbleAnswers['recent-happening'] = _asAnswer(data['recentHappening']);
+      _bubbleAnswers['thoughts'] = _asAnswer(data['thoughts']);
+      _bubbleAnswers['feelings'] = _asAnswer(data['feelings']);
+      _bubbleAnswers['behaviors'] = _asAnswer(data['behaviors']);
+      
+      final cons = data['consequences'];
+      final other = data['consequencesOther'];
+      List<String> all = [];
+      if (cons is List) all.addAll(cons.map((e) => e.toString()));
+      if (other != null && other.toString().trim().isNotEmpty) all.add(other.toString().trim());
+      _bubbleAnswers['consequences'] = all.isNotEmpty ? all.join('; ') : '';
+      
+      _bubbleAnswers['superpowers'] = _asAnswer(data['superpowers']);
+    });
+  }
+
+  String _asAnswer(dynamic value) {
+    if (value is List) {
+      final text = value.map((item) => item.toString()).where((item) => item.trim().isNotEmpty).join(', ');
+      return text;
+    }
+    return value?.toString().trim() ?? '';
+  }
+
+  void _loadAnswersFromLocal() {
+    final savedAnswers = box.read('cbt_answers');
+    if (savedAnswers != null && savedAnswers is Map) {
+      setState(() {
+        _bubbleAnswers['childhood'] = savedAnswers['When I Was Little'] ?? '';
+        _bubbleAnswers['deep-beliefs'] = savedAnswers['Deep-Down Beliefs'] ?? '';
+        _bubbleAnswers['rules'] = savedAnswers['The Rules'] ?? '';
+        _bubbleAnswers['triggers'] = savedAnswers['Triggers'] ?? '';
+        _bubbleAnswers['recent-happening'] = savedAnswers['A Recent Happening'] ?? '';
+        _bubbleAnswers['thoughts'] = savedAnswers['My Thoughts'] ?? '';
+        _bubbleAnswers['feelings'] = savedAnswers['My Feelings'] ?? '';
+        _bubbleAnswers['behaviors'] = savedAnswers['What I Did'] ?? '';
+        _bubbleAnswers['consequences'] = savedAnswers['The Consequences'] ?? '';
+        _bubbleAnswers['superpowers'] = savedAnswers['Your Superpowers'] ?? '';
+      });
+    }
+  }
+
+  String _getBubbleDisplay(String id) {
+    return _bubbleAnswers[id] ?? '';
+  }
+
+  bool _isFilled(String id) => _getBubbleDisplay(id).isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
-    const double appBarImageHeight = 150;
-
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFAFAFA),
       body: Stack(
         children: [
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: appBarImageHeight,
-            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
-          ),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(35),
-                            topRight: Radius.circular(35),
-                          ),
-                          image: DecorationImage(
-                            image:
-                            AssetImage('assets/images/chatbot_bg.jpg'),
-                            fit: BoxFit.cover,
+          _buildLinedBackground(),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildAppBar(context),
+                Expanded(
+                  child: _isLoading 
+                      ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                          child: Column(
+                            children: [
+                              // Main flow bubbles
+                              ...mainBubbles.map((cfg) => Column(
+                                children: [
+                                  _buildSectionLabel(cfg.sectionTitle),
+                                  const SizedBox(height: 12),
+                                  _buildMainBubble(cfg),
+                                  const SizedBox(height: 8),
+                                  _buildWavyArrow(),
+                                ],
+                              )),
+                              // Response section
+                              _buildSectionLabel('How I React'),
+                              const SizedBox(height: 12),
+                              _buildResponseRow(),
+                              const SizedBox(height: 12),
+                              _buildCycleIndicator(),
+                              _buildWavyArrow(),
+                              // Bottom bubbles
+                              ...bottomBubbles.map((cfg) => Column(
+                                children: [
+                                  _buildSectionLabel(cfg.sectionTitle),
+                                  const SizedBox(height: 12),
+                                  _buildMainBubble(cfg),
+                                  if (cfg != bottomBubbles.last) ...[
+                                    const SizedBox(height: 8),
+                                    _buildWavyArrow(),
+                                  ],
+                                ],
+                              )),
+                              const SizedBox(height: 40),
+                            ],
                           ),
                         ),
-                      ),
-                    ),
-                    Positioned.fill(
-                      child: ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 30),
-                        itemCount: _sections.length,
-                        itemBuilder: (context, index) {
-                          final s = _sections[index];
-                          return _buildCard(
-                            sectionLabel: s['section']!,
-                            title: s['label']!,
-                            question: s['question']!,
-                            answer: s['answer']!,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          // Doodle decorations
+          const DoodleDecorations(),
         ],
       ),
     );
   }
 
-  Widget _buildCard({
-    required String sectionLabel,
-    required String title,
-    required String question,
-    required String answer,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(25),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
+  Widget _buildLinedBackground() {
+    return CustomPaint(
+      painter: LinedPaperPainter(),
+      size: Size.infinite,
+    );
+  }
+
+  Widget _buildSectionLabel(String label) {
+    if (label.isEmpty) return const SizedBox.shrink();
+    return Transform.rotate(
+      angle: -0.02,
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF2E7D32),
+          letterSpacing: 1.5,
+          fontFamily: 'Kalam',
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildMainBubble(BubbleConfig cfg) {
+    final filled = _isFilled(cfg.id);
+    final display = _getBubbleDisplay(cfg.id);
+    final isEven = mainBubbles.indexOf(cfg) % 2 == 1;
+
+    return Transform.rotate(
+      angle: isEven ? 0.035 : -0.035,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 420),
+        decoration: BoxDecoration(
+          gradient: filled
+              ? const LinearGradient(
+            colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+              : LinearGradient(
+            colors: [cfg.bgColor1, cfg.bgColor2],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: cfg.borderColor, width: 3),
+          borderRadius: isEven
+              ? const BorderRadius.only(
+            topLeft: Radius.circular(60),
+            topRight: Radius.circular(40),
+            bottomLeft: Radius.circular(60),
+            bottomRight: Radius.circular(40),
+          )
+              : const BorderRadius.only(
+            topLeft: Radius.circular(50),
+            topRight: Radius.circular(60),
+            bottomLeft: Radius.circular(40),
+            bottomRight: Radius.circular(50),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              offset: const Offset(4, 4),
+              blurRadius: 0,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Section badge
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _green.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(20),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          children: [
+            Text(
+              cfg.label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF2D3436),
+                fontFamily: 'Kalam',
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              filled
+                  ? display // Show full answer here as it's for display
+                  : 'No answer provided yet.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16, // slightly bigger since it's displaying the full text
+                color: filled ? const Color(0xFF2D3436) : const Color(0xFF636E72),
+                fontStyle: filled ? FontStyle.italic : FontStyle.normal,
+                fontWeight: filled ? FontWeight.w600 : FontWeight.normal,
+                fontFamily: 'Caveat',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResponseRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: responseBubbles.asMap().entries.map((entry) {
+        final i = entry.key;
+        final cfg = entry.value;
+        final filled = _isFilled(cfg.id);
+        final display = _getBubbleDisplay(cfg.id);
+        final angle = [-0.05, 0.05, -0.03][i];
+
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Transform.rotate(
+              angle: angle,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  gradient: filled
+                      ? const LinearGradient(
+                    colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                      : LinearGradient(
+                    colors: [cfg.bgColor1, cfg.bgColor2],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Text(
-                    sectionLabel,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1,
-                      color: _green,
+                  border: Border.all(color: cfg.borderColor, width: 3),
+                  borderRadius: [
+                    const BorderRadius.only(
+                      topLeft: Radius.circular(55),
+                      topRight: Radius.circular(45),
+                      bottomLeft: Radius.circular(45),
+                      bottomRight: Radius.circular(55),
                     ),
-                  ),
+                    const BorderRadius.only(
+                      topLeft: Radius.circular(45),
+                      topRight: Radius.circular(55),
+                      bottomLeft: Radius.circular(55),
+                      bottomRight: Radius.circular(45),
+                    ),
+                    const BorderRadius.only(
+                      topLeft: Radius.circular(50),
+                      topRight: Radius.circular(50),
+                      bottomLeft: Radius.circular(45),
+                      bottomRight: Radius.circular(55),
+                    ),
+                  ][i],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      offset: const Offset(3, 3),
+                      blurRadius: 0,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-
-                // Title
-                AppText(
-                  title,
-                  fontSize: 16,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w700,
-                ),
-                const SizedBox(height: 6),
-
-                // Question
-                AppText(
-                  question,
-                  fontSize: 13,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w400,
-                ),
-
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(color: Colors.black12, thickness: 1),
-                ),
-
-                // Answer
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.person_outline_outlined,
-                        size: 16, color: _green),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: AppText(
-                        answer,
+                    Text(
+                      cfg.label,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF2D3436),
+                        fontFamily: 'Kalam',
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      filled
+                          ? display
+                          : 'No answer',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
                         fontSize: 14,
-                        color: _green,
-                        fontWeight: FontWeight.w600,
+                        color: filled ? const Color(0xFF2D3436) : const Color(0xFF636E72),
+                        fontStyle: filled ? FontStyle.italic : FontStyle.normal,
+                        fontWeight: filled ? FontWeight.w600 : FontWeight.normal,
+                        fontFamily: 'Caveat',
                       ),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCycleIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        '↻  goes round and round  ↺',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          color: const Color(0xFFA29BFE).withOpacity(0.7),
+          fontFamily: 'Caveat',
         ),
+      ),
+    );
+  }
+
+  Widget _buildWavyArrow() {
+    return SizedBox(
+      height: 40,
+      child: CustomPaint(
+        painter: WavyArrowPainter(color: const Color(0xFF4CAF50)),
+        size: const Size(60, 40),
       ),
     );
   }
@@ -284,14 +403,26 @@ class _cbtState extends State<cbt> {
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-          top: MediaQuery.of(context).padding.top + 10, left: 10),
-      child: Row(children: [
-        IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Get.back()),
-        const AppText('CBT Formulation',
-            fontSize: 20, fontWeight: FontWeight.bold),
-      ]),
+          top: MediaQuery.of(context).padding.top + 10, left: 10, bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF2E7D32)),
+                onPressed: () => Get.back()
+              ),
+              const AppText(
+                'CBT Formulation',
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
