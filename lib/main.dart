@@ -20,6 +20,7 @@ import 'package:jonssony/controller/bilateral_controller.dart';
 import 'package:jonssony/controller/media_controller.dart';
 import 'package:jonssony/controller/category_controller.dart';
 import 'package:jonssony/controller/journey_controller.dart';
+import 'package:jonssony/controller/my_tests_controller.dart';
 import 'package:jonssony/firebase_options.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/notificationService.dart';
@@ -132,6 +133,7 @@ class _MyAppState extends State<MyApp> {
         Get.lazyPut(() => MediaController(), fenix: true);
         Get.lazyPut(() => CategoryController(), fenix: true);
         Get.lazyPut(() => JourneyController(), fenix: true);
+        Get.lazyPut(() => MyTestsController(), fenix: true);
       }),
       getPages: RouteHelper.routes,
       theme: ThemeData(

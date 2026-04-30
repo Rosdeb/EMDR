@@ -2,9 +2,10 @@ import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/controller/journey_controller.dart';
-import 'package:jonssony/controller/media_controller.dart';
-import 'package:jonssony/views/sessions/session_one.dart';
+import 'package:jonssony/services/media_service.dart';
+import 'package:jonssony/views/sessions/roadmap.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
 
 class CreateJourneyPage extends StatefulWidget {
@@ -16,17 +17,60 @@ class CreateJourneyPage extends StatefulWidget {
 
 class _CreateJourneyPageState extends State<CreateJourneyPage> {
   final JourneyController _journeyController = Get.find<JourneyController>();
-  final MediaController _mediaController = Get.find<MediaController>();
+  final AuthController _authController = Get.find<AuthController>();
 
   // User-typed journey name (POST body: journeyName)
   final _nameController = TextEditingController();
   final _descController = TextEditingController();
 
   int _selectedApiImageIndex = -1;
+  bool _isLoadingImages = true;
+  List<dynamic> _journeyImages = [];
 
-  static const _imgCat = 'Create Your Journey img';
+  // Category ID from GET /categories response
+  static const _imgCategoryId = '69e282eb81df778cf343922e';
 
+  @override
+  void initState() {
+    super.initState();
+    _loadJourneyImages();
+  }
 
+  Future<void> _loadJourneyImages() async {
+    setState(() {
+      _isLoadingImages = true;
+    });
+
+    final token = _authController.token;
+    if (token != null) {
+      try {
+        final result = await MediaService.getMediaByCategoryId(
+          token: token,
+          categoryId: _imgCategoryId,
+        );
+
+        if (result['success'] == true && result['data'] != null) {
+          final data = result['data'] as Map<String, dynamic>;
+          final media = data['media'] as Map<String, dynamic>?;
+          if (media != null) {
+            final apiImages = List<dynamic>.from(media['images'] ?? []);
+            setState(() {
+              _journeyImages = apiImages;
+              if (_journeyImages.isNotEmpty) {
+                _selectedApiImageIndex = 0;
+              }
+            });
+          }
+        }
+      } catch (e) {
+        print('CreateJourney image load error: $e');
+      }
+    }
+
+    setState(() {
+      _isLoadingImages = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -44,16 +88,14 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
       return;
     }
 
-    final imgs = _mediaController.mediaByCategory[_imgCat] ?? [];
-    if (_selectedApiImageIndex < 0) {
+    final imgs = _journeyImages;
+    if (_selectedApiImageIndex < 0 || _selectedApiImageIndex >= imgs.length) {
       Get.snackbar('Error', 'Please choose an image',
           backgroundColor: Colors.red.shade100, colorText: Colors.red.shade800);
       return;
     }
 
-    final imageUrl = _selectedApiImageIndex >= 0 && _selectedApiImageIndex < imgs.length
-        ? imgs[_selectedApiImageIndex]['url'] ?? ''
-        : '';
+    final imageUrl = imgs[_selectedApiImageIndex]['url'] ?? '';
 
     // POST /journeys  { journeyName, description, imageUrl }
     final result = await _journeyController.createJourney(
@@ -65,7 +107,7 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
     if (result['success'] == true) {
       Get.snackbar('Success', 'Journey created!',
           backgroundColor: Colors.green.shade100, colorText: Colors.green.shade900);
-      Get.to(() => const SessionOne());
+      Get.to(() => const CreateRoadmapPage());
     } else {
       Get.snackbar('Error', result['message'] ?? 'Something went wrong',
           backgroundColor: Colors.red.shade100, colorText: Colors.red.shade800);
@@ -174,46 +216,72 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 15),
 
-                  Obx(() {
-                    final imgs = _mediaController.mediaByCategory[_imgCat] ?? [];
+                  Builder(builder: (context) {
+                    final imgs = _journeyImages;
+
+                    if (!_isLoadingImages && imgs.isNotEmpty && _selectedApiImageIndex < 0) {
+                      Future.microtask(() {
+                        if (mounted) {
+                          setState(() {
+                            _selectedApiImageIndex = 0;
+                          });
+                        }
+                      });
+                    }
+
+                    if (_isLoadingImages) {
+                      return Column(
+                        children: [
+                          const Text(
+                            'Loading journey images...',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                            ),
+                            itemCount: 9,
+                            itemBuilder: (context, index) {
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: Image.asset(
+                                    'assets/images/journey_image.jpg',
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    }
 
                     if (imgs.isEmpty) {
-                      // Fallback: show placeholder tiles while images load
-                      return GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                        ),
-                        itemCount: 9,
-                        itemBuilder: (context, index) {
-                          bool isSelected = _selectedApiImageIndex == index;
-                          return GestureDetector(
-                            onTap: () =>
-                                setState(() => _selectedApiImageIndex = index),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: isSelected
-                                    ? Border.all(
-                                        color: const Color(0xFF5D7E5D),
-                                        width: 3)
-                                    : null,
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.asset(
-                                  'assets/images/journey_image.jpg',
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
+                      return Column(
+                        children: const [
+                          Text(
+                            'No journey images available yet.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
                             ),
-                          );
-                        },
+                          ),
+                          SizedBox(height: 12),
+                        ],
                       );
                     }
 
@@ -275,28 +343,30 @@ class _CreateJourneyPageState extends State<CreateJourneyPage> {
                   const SizedBox(height: 30),
 
                   // ─── Start Session Button ──────────────────────────
-                  Obx(() => SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          onPressed:
-                              _journeyController.isSaving.value ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF5D7E5D),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                  Builder(builder: (context) {
+                    final imgs = _journeyImages;
+                    final isDisabled = _journeyController.isSaving.value || _isLoadingImages || imgs.isEmpty;
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: ElevatedButton(
+                        onPressed: isDisabled ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF5D7E5D),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: _journeyController.isSaving.value
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white, strokeWidth: 2)
-                              : const Text(
-                                  "Start Session",
-                                  style: TextStyle(
-                                      fontSize: 18, color: Colors.white),
-                                ),
                         ),
-                      )),
+                        child: _journeyController.isSaving.value
+                            ? const CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2)
+                            : Text(
+                                _isLoadingImages ? 'Loading images...' : 'Start Session',
+                                style: const TextStyle(fontSize: 18, color: Colors.white),
+                              ),
+                      ),
+                    );
+                  }),
                   const SizedBox(height: 20),
                 ],
               ),

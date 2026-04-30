@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
-
-
-import 'ai_guide.dart';
+import 'package:jonssony/views/sessions/session_one.dart';
 
 class CreateRoadmapPage extends StatelessWidget {
   const CreateRoadmapPage({super.key});
@@ -38,16 +36,14 @@ class CreateRoadmapPage extends StatelessWidget {
               context,
               imagePath: 'assets/images/ai_guide_bg.jpg',
               icon: Icons.assignment_turned_in_outlined,
-              title: "AI Guide",
+              title: "Session",
               description: "Chat with our intelligent assistant to identify your target memory, negative beliefs, and emotions.",
               buttonText: "View Assessments",
               buttonColor: AppColors.mainAppColor,
               onTap: () {
-                Get.to(() => EmdrCompanionPage());
+                Get.to(() => SessionOne());
               },
-              // onTap: () {
-              //   Get.to(() => SessionThreePage());
-              // },
+
 
             ),
 

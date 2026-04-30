@@ -7,7 +7,7 @@ import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
 
-import 'package:jonssony/views/sessions/SessionFourPage.dart';
+import 'package:jonssony/views/sessions/SessionFourPage.dart' hide AppText;
 import 'package:jonssony/widets/custom_home_bg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -480,7 +480,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                 };
                                 await CalmPlaceService.saveCalmPlace(token, data);
                               }
-                              Get.to(() => const SessionFourPage());
+                              Get.to(() => Sessionfourpage());
                             } catch (e) {
                               print("Error saving: $e");
                             } finally {
