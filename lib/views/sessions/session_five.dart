@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jonssony/views/sessions/session_six.dart';
+import 'package:jonssony/views/sessions/session_bilateral_simulation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:jonssony/controller/media_controller.dart';
@@ -175,7 +175,7 @@ class _SessionFiveState extends State<SessionFive> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Get.to(() => const SessionSix());
+                          Get.to(() => const SessionBilateralSimulation());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF537E5D),

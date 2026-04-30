@@ -7,13 +7,14 @@ import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
 
-import 'package:jonssony/views/sessions/SessionFourPage.dart';
+import 'package:jonssony/views/sessions/SessionFourPage.dart' hide AppText;
 import 'package:jonssony/widets/custom_home_bg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:just_audio/just_audio.dart';
 import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/calm_place_service.dart';
+import 'package:get_storage/get_storage.dart';
 
 class SessionThreePage extends StatefulWidget {
   const SessionThreePage({super.key});
@@ -24,7 +25,7 @@ class SessionThreePage extends StatefulWidget {
 
 class _SessionThreePageState extends State<SessionThreePage> {
   // Current audio: name & url
-  String currentAudioName = "";
+  String currentAudioName = "calm place.wav";
   String currentAudioUrl = "";
 
   String selectedImageUrl = "";
@@ -40,6 +41,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
   List<dynamic> _apiImages = [];
   List<dynamic> _apiAudios = [];
+  static const List<String> _fallbackImages = [
+    'assets/images/comunity.jpg',
+    'assets/images/make_more.jpg',
+    'assets/images/night.jpg',
+  ];
 
   @override
   void initState() {
@@ -84,19 +90,17 @@ class _SessionThreePageState extends State<SessionThreePage> {
       print('SessionThree media load error: $e');
     }
 
+    if (mounted && _apiImages.isEmpty && selectedImageUrl.isEmpty) {
+      setState(() {
+        selectedImageUrl = _fallbackImages.first;
+      });
+    }
+
     await _initAudioPlayer();
   }
 
   Future<void> _initAudioPlayer() async {
-    try {
-      if (currentAudioUrl.isNotEmpty) {
-        await _audioPlayer.setUrl(currentAudioUrl);
-      } else {
-        await _audioPlayer.setAsset('assets/audio/calm place.wav');
-      }
-    } catch (e) {
-      print("Error loading audio: $e");
-    }
+    await _setAudioSource(name: currentAudioName, url: currentAudioUrl);
 
     _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
@@ -155,93 +159,94 @@ class _SessionThreePageState extends State<SessionThreePage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(30),
-              topRight: Radius.circular(30),
+        final audioItems = _apiAudios.isEmpty
+            ? [
+                {'name': 'calm place.wav', 'url': ''},
+                {'name': 'puppies_v1.mp3', 'url': ''},
+              ]
+            : _apiAudios;
+
+        return SafeArea(
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
             ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppText("Select Audio", fontSize: 18, fontWeight: FontWeight.bold),
-              const SizedBox(height: 20),
-              if (_apiAudios.isEmpty)
-                // Fallback: show local audio list
-                ...['calm place.wav', 'puppies_v1.mp3'].map((audio) => ListTile(
-                  leading: Icon(
-                    Icons.music_note,
-                    color: currentAudioName == audio ? const Color(0xFF537E5D) : Colors.grey,
-                  ),
-                  title: AppText(
-                    audio,
-                    fontSize: 16,
-                    color: currentAudioName == audio ? const Color(0xFF537E5D) : Colors.black87,
-                    fontWeight: currentAudioName == audio ? FontWeight.bold : FontWeight.normal,
-                  ),
-                  trailing: currentAudioName == audio
-                      ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
-                      : null,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      setState(() {
-                        currentAudioName = audio;
-                        currentAudioUrl  = '';
-                      });
-                      try {
-                        await _audioPlayer.stop();
-                        await _audioPlayer.setAsset('assets/audio/$audio');
-                        await _audioPlayer.play();
-                      } catch (e) {
-                        print("Error playing audio: $e");
-                      }
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppText("Select Audio", fontSize: 18, fontWeight: FontWeight.bold),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: audioItems.length,
+                    itemBuilder: (context, index) {
+                      final item = audioItems[index];
+                      final name = item['name']?.toString() ?? '';
+                      final url = item['url']?.toString() ?? '';
+                      final isSelected = url.isNotEmpty
+                          ? currentAudioUrl == url
+                          : currentAudioName == name && currentAudioUrl.isEmpty;
+
+                      return ListTile(
+                        leading: Icon(
+                          Icons.music_note,
+                          color: isSelected ? const Color(0xFF537E5D) : Colors.grey,
+                        ),
+                        title: AppText(
+                          name,
+                          fontSize: 16,
+                          color: isSelected ? const Color(0xFF537E5D) : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
+                            : null,
+                        onTap: () async {
+                          Navigator.pop(context);
+                          setState(() {
+                            currentAudioName = name;
+                            currentAudioUrl = url;
+                          });
+                          await _setAudioSource(name: name, url: url);
+                          await _audioPlayer.play();
+                        },
+                      );
                     },
-                ))
-              else
-                // API audio list
-                ..._apiAudios.map((s) {
-                  final name = s['name'] ?? '';
-                  final url  = s['url']  ?? '';
-                  final isSelected = currentAudioUrl == url;
-                  return ListTile(
-                    leading: Icon(
-                      Icons.music_note,
-                      color: isSelected ? const Color(0xFF537E5D) : Colors.grey,
-                    ),
-                    title: AppText(
-                      name,
-                      fontSize: 16,
-                      color: isSelected ? const Color(0xFF537E5D) : Colors.black87,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                    trailing: isSelected
-                        ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
-                        : null,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      setState(() {
-                        currentAudioName = name;
-                        currentAudioUrl  = url;
-                      });
-                      try {
-                        await _audioPlayer.stop();
-                        await _audioPlayer.setUrl(url);
-                        await _audioPlayer.play();
-                      } catch (e) {
-                        print("Error playing audio: $e");
-                      }
-                    },
-                  );
-                }),
-              const SizedBox(height: 20),
-            ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         );
       },
     );
+  }
+
+  Future<void> _setAudioSource({required String name, required String url}) async {
+    try {
+      await _audioPlayer.stop();
+      if (url.isNotEmpty) {
+        await _audioPlayer.setUrl(url);
+      } else {
+        final assetName = name.isNotEmpty ? name : 'calm place.wav';
+        await _audioPlayer.setAsset('assets/audio/$assetName');
+      }
+    } catch (e) {
+      print("Error loading audio: $e");
+      currentAudioName = 'calm place.wav';
+      currentAudioUrl = '';
+      await _audioPlayer.setAsset('assets/audio/calm place.wav');
+    }
   }
 
   @override
@@ -289,9 +294,9 @@ class _SessionThreePageState extends State<SessionThreePage> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildThumb('assets/images/comunity.jpg', selectedImageUrl == 'assets/images/comunity.jpg'),
-                              _buildThumb('assets/images/make_more.jpg', selectedImageUrl == 'assets/images/make_more.jpg'),
-                              _buildThumb('assets/images/night.jpg', selectedImageUrl == 'assets/images/night.jpg'),
+                              ..._fallbackImages.map(
+                                (path) => _buildThumb(path, selectedImageUrl == path),
+                              ),
                             ],
                           )
                         else
@@ -338,17 +343,17 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.withOpacity(0.5), style: BorderStyle.solid),
                               borderRadius: BorderRadius.circular(15),
-                              image: _pickedImage != null
-                                  ? DecorationImage(
-                                      image: FileImage(_pickedImage!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : selectedImageUrl.isNotEmpty
-                                      ? DecorationImage(
-                                          image: NetworkImage(selectedImageUrl),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
+                                      image: _pickedImage != null
+                                          ? DecorationImage(
+                                              image: FileImage(_pickedImage!),
+                                              fit: BoxFit.cover,
+                                            )
+                                          : selectedImageUrl.isNotEmpty
+                                              ? DecorationImage(
+                                                  image: _imageProvider(selectedImageUrl),
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : null,
                             ),
                             child: _pickedImage == null && selectedImageUrl.isEmpty
                                 ? Column(
@@ -471,16 +476,14 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             try {
                               final authController = Get.find<AuthController>();
                               final token = authController.token;
+                              final data = _buildCalmPlaceData();
                               if (token != null) {
-                              final data = {
-                                  "description": _descriptionController.text.trim(),
-                                  "audioName": currentAudioName,
-                                  "audioUrl": currentAudioUrl,
-                                  "imageUrl": selectedImageUrl,
-                                };
+                                _saveCalmPlaceLocally(data);
                                 await CalmPlaceService.saveCalmPlace(token, data);
+                              } else {
+                                _saveCalmPlaceLocally(data);
                               }
-                              Get.to(() => const SessionFourPage());
+                              Get.to(() => Sessionfourpage());
                             } catch (e) {
                               print("Error saving: $e");
                             } finally {
@@ -524,15 +527,49 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   Widget _buildThumb(String path, bool isSelected) {
-    return Container(
-      width: 90,
-      height: 70,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
-        image: DecorationImage(image: AssetImage(path), fit: BoxFit.cover),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedImageUrl = path;
+          _pickedImage = null;
+        });
+      },
+      child: Container(
+        width: 90,
+        height: 70,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
+          image: DecorationImage(image: AssetImage(path), fit: BoxFit.cover),
+        ),
       ),
     );
+  }
+
+  ImageProvider _imageProvider(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return NetworkImage(path);
+    }
+    return AssetImage(path);
+  }
+
+  Map<String, dynamic> _buildCalmPlaceData() {
+    final imagePath = _pickedImage?.path ?? selectedImageUrl;
+    return {
+      "description": _descriptionController.text.trim(),
+      "audioName": currentAudioName,
+      "audioUrl": currentAudioUrl,
+      "imageUrl": imagePath,
+    };
+  }
+
+  void _saveCalmPlaceLocally(Map<String, dynamic> data) {
+    final box = GetStorage();
+    box.write('calm_place_saved', true);
+    box.write('calm_place_description', data['description'] ?? '');
+    box.write('calm_place_audio_name', data['audioName'] ?? '');
+    box.write('calm_place_audio_url', data['audioUrl'] ?? '');
+    box.write('calm_place_image_url', data['imageUrl'] ?? '');
   }
 
   Widget _buildAudioPlayer(BuildContext context, String title, bool hasReplace) {
@@ -573,10 +610,20 @@ class _SessionThreePageState extends State<SessionThreePage> {
                 ),
                 child: Slider(
                   min: 0,
-                  max: duration.inSeconds.toDouble(),
-                  value: position.inSeconds.toDouble().clamp(0, duration.inSeconds.toDouble()),
+                  max: duration.inMilliseconds > 0
+                      ? duration.inMilliseconds.toDouble()
+                      : 1,
+                  value: position.inMilliseconds
+                      .toDouble()
+                      .clamp(
+                        0,
+                        duration.inMilliseconds > 0
+                            ? duration.inMilliseconds.toDouble()
+                            : 1,
+                      )
+                      .toDouble(),
                   onChanged: (value) async {
-                    final position = Duration(seconds: value.toInt());
+                    final position = Duration(milliseconds: value.toInt());
                     await _audioPlayer.seek(position);
                   },
                 ),

@@ -55,7 +55,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
     try {
       if (widget.settings.audioAsset.isEmpty) return;
       
-      if (widget.settings.isNetworkImage || widget.settings.audioAsset.startsWith('http')) {
+      if (widget.settings.audioAsset.startsWith('http')) {
         await _audioPlayer.setSource(UrlSource(widget.settings.audioAsset));
       } else {
         String assetPath = widget.settings.audioAsset;

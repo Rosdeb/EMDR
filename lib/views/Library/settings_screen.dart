@@ -6,8 +6,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:jonssony/controller/bilateral_controller.dart';
 import 'package:jonssony/controller/media_controller.dart';
 import 'simulation_settings.dart';
-import 'simulation_screen.dart';
-import 'save_game.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -60,7 +58,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       final dirStr = userSettings['direction'];
       if (dirStr == 'left-right') selectedDir = AnimationDirection.horizontal;
-      else if (dirStr == 'top-bottom') selectedDir = AnimationDirection.vertical;
       else if (dirStr == 'diagonal-down') selectedDir = AnimationDirection.diagonal;
       else if (dirStr == 'diagonal-up') selectedDir = AnimationDirection.diagonalReverse;
 
@@ -152,7 +149,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
+                padding: EdgeInsets.fromLTRB(
+                  15,
+                  0,
+                  15,
+                  MediaQuery.of(context).padding.bottom + 30,
+                ),
                 child: Column(
                   children: [
                     _buildHeader(),
@@ -163,7 +165,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildSection(title: "Speed", child: _buildSpeedRow()),
                     const SizedBox(height: 10),
                     _buildActionButtons(),
-                    const SizedBox(height: 30),
                   ],
                 ),
               );
@@ -270,38 +271,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, childAspectRatio: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
-      itemCount: objects.length,
-      itemBuilder: (context, index) {
-        String path = objects[index]['url'] ?? '';
-        String name = objects[index]['name'] ?? "Object";
-        bool isSelected = selectedObjUrl == path;
-        return InkWell(
-          onTap: () => setState(() => selectedObjUrl = path),
-          child: _glassCard(
-            isSelected: isSelected,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                path.isNotEmpty ? CachedNetworkImage(
-                  imageUrl: path,
-                  width: 20,
-                  height: 20,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 1.5)),
-                  errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 20),
-                ) : const Icon(Icons.broken_image, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(name, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: isSelected ? primaryGreen : Colors.black87)),
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 330 ? 1 : 2;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisExtent: 58,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
           ),
+          itemCount: objects.length,
+          itemBuilder: (context, index) {
+            String path = objects[index]['url'] ?? '';
+            String name = objects[index]['name'] ?? "Object";
+            bool isSelected = selectedObjUrl == path;
+            return InkWell(
+              onTap: () => setState(() => selectedObjUrl = path),
+              child: _glassCard(
+                isSelected: isSelected,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    path.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: path,
+                            width: 20,
+                            height: 20,
+                            fit: BoxFit.contain,
+                            placeholder: (context, url) => const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 1.5),
+                            ),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.broken_image, size: 20),
+                          )
+                        : const Icon(Icons.broken_image, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isSelected ? primaryGreen : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
@@ -311,64 +337,95 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final sounds = List<dynamic>.from(_mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? []);
     sounds.add({"name": "Silent", "url": ""});
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, childAspectRatio: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
-      itemCount: sounds.length,
-      itemBuilder: (context, index) {
-        String soundName = sounds[index]['name'] ?? "Sound";
-        String audioPath = sounds[index]['url'] ?? "";
-        bool isSelected = selectedSoundName == soundName;
-        return InkWell(
-          onTap: () async {
-            setState(() {
-              selectedSoundName = soundName;
-              selectedSoundUrl = audioPath.isEmpty ? null : audioPath;
-            });
-            
-            if (audioPath.isNotEmpty) {
-              await _audioPlayer.stop();
-              await _audioPlayer.play(UrlSource(audioPath));
-            } else {
-              await _audioPlayer.stop();
-            }
-          },
-          child: _glassCard(
-            isSelected: isSelected,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Icon(
-                  audioPath.isEmpty ? Icons.volume_off : Icons.audiotrack,
-                  color: isSelected ? primaryGreen : Colors.black54,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(soundName, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: isSelected ? primaryGreen : Colors.black87)),
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final crossAxisCount = constraints.maxWidth < 330 ? 1 : 2;
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            mainAxisExtent: 58,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
           ),
+          itemCount: sounds.length,
+          itemBuilder: (context, index) {
+            String soundName = sounds[index]['name'] ?? "Sound";
+            String audioPath = sounds[index]['url'] ?? "";
+            bool isSelected = selectedSoundName == soundName;
+            return InkWell(
+              onTap: () async {
+                setState(() {
+                  selectedSoundName = soundName;
+                  selectedSoundUrl = audioPath.isEmpty ? null : audioPath;
+                });
+
+                if (audioPath.isNotEmpty) {
+                  await _audioPlayer.stop();
+                  await _audioPlayer.play(UrlSource(audioPath));
+                } else {
+                  await _audioPlayer.stop();
+                }
+              },
+              child: _glassCard(
+                isSelected: isSelected,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      audioPath.isEmpty ? Icons.volume_off : Icons.audiotrack,
+                      color: isSelected ? primaryGreen : Colors.black54,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        soundName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected ? primaryGreen : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildDirectionGrid() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(child: _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal")),
-        const SizedBox(width: 8),
-        Expanded(child: _dirIcon("assets/images/vertical.png", AnimationDirection.vertical, "Vertical")),
-        const SizedBox(width: 8),
-        Expanded(child: _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down")),
-        const SizedBox(width: 8),
-        Expanded(child: _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up")),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 300) {
+          return Column(
+            children: [
+              _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal"),
+              const SizedBox(height: 8),
+              _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down"),
+              const SizedBox(height: 8),
+              _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up"),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal")),
+            const SizedBox(width: 8),
+            Expanded(child: _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down")),
+            const SizedBox(width: 8),
+            Expanded(child: _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up")),
+          ],
+        );
+      },
     );
   }
 
@@ -380,6 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         isSelected: isSelected,
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
               iconPath, 
@@ -402,117 +460,153 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSpeedRow() {
-    return Row(
-      children: [
-        _speedBox("Slow", 8.0, "assets/images/slow.png"),
-        const SizedBox(width: 10),
-        _speedBox("Medium", 4.0, "assets/images/medium.png"),
-        const SizedBox(width: 10),
-        _speedBox("Fast", 2.0, "assets/images/fast.png"),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 300) {
+          return Column(
+            children: [
+              _speedBox("Slow", 8.0, "assets/images/slow.png", expand: false),
+              const SizedBox(height: 8),
+              _speedBox("Medium", 4.0, "assets/images/medium.png", expand: false),
+              const SizedBox(height: 8),
+              _speedBox("Fast", 2.0, "assets/images/fast.png", expand: false),
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            _speedBox("Slow", 8.0, "assets/images/slow.png"),
+            const SizedBox(width: 10),
+            _speedBox("Medium", 4.0, "assets/images/medium.png"),
+            const SizedBox(width: 10),
+            _speedBox("Fast", 2.0, "assets/images/fast.png"),
+          ],
+        );
+      },
     );
   }
 
-  Widget _speedBox(String label, double speed, String iconPath) {
+  Widget _speedBox(
+    String label,
+    double speed,
+    String iconPath, {
+    bool expand = true,
+  }) {
     bool isSelected = selectedSpeed == speed;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => selectedSpeed = speed),
-        child: _glassCard(
-          isSelected: isSelected,
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          child: Column(
-            children: [
-              Image.asset(
-                iconPath,
-                width: 25, 
-                height: 25,
-                fit: BoxFit.contain,
+    final box = GestureDetector(
+      onTap: () => setState(() => selectedSpeed = speed),
+      child: _glassCard(
+        isSelected: isSelected,
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              iconPath,
+              width: 25,
+              height: 25,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
-              const SizedBox(height: 8),
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-              Text("${speed.toInt()}s", style: const TextStyle(fontSize: 9, color: Colors.black54)),
-            ],
-          ),
+            ),
+            Text("${speed.toInt()}s", style: const TextStyle(fontSize: 9, color: Colors.black54)),
+          ],
         ),
       ),
     );
+
+    if (!expand) return SizedBox(width: double.infinity, child: box);
+    return Expanded(child: box);
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: Obx(() {
-            return OutlinedButton(
-              onPressed: _bilateralController.isSaving.value ? null : () async {
-                String speedStr = 'medium';
-                if (selectedSpeed == 8.0) speedStr = 'slow';
-                if (selectedSpeed == 2.0) speedStr = 'fast';
+    return Obx(() {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _bilateralController.isSaving.value ? null : () async {
+            if (selectedEnvUrl == null || selectedEnvUrl!.trim().isEmpty) {
+              Get.snackbar(
+                'Error',
+                'Please select an environment',
+                backgroundColor: Colors.redAccent,
+                colorText: Colors.white,
+              );
+              return;
+            }
 
-                String dirStr = 'left-right';
-                if (selectedDir == AnimationDirection.vertical) dirStr = 'top-bottom';
-                if (selectedDir == AnimationDirection.diagonal) dirStr = 'diagonal-down';
-                if (selectedDir == AnimationDirection.diagonalReverse) dirStr = 'diagonal-up';
+            if (selectedObjUrl == null || selectedObjUrl!.trim().isEmpty) {
+              Get.snackbar(
+                'Error',
+                'Please select a visual object',
+                backgroundColor: Colors.redAccent,
+                colorText: Colors.white,
+              );
+              return;
+            }
 
-                final success = await _bilateralController.saveSettings(
-                  environmentUrl: selectedEnvUrl ?? '',
-                  iconUrl: selectedObjUrl ?? '',
-                  soundUrl: selectedSoundUrl ?? '',
-                  speed: speedStr,
-                  direction: dirStr,
-                );
+            String speedStr = 'medium';
+            if (selectedSpeed == 8.0) speedStr = 'slow';
+            if (selectedSpeed == 2.0) speedStr = 'fast';
 
-                if (success && mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SaveGame()),
-                  );
-                }
-              },
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.black12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.all(16),
-              ),
-              child: _bilateralController.isSaving.value 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset("assets/images/save.png", width: 20, height: 20, fit: BoxFit.contain),
-                        const SizedBox(width: 8),
-                        const Text("Save & Setting", style: TextStyle(color: Colors.black87)),
-                      ],
-                    ),
+            String dirStr = 'left-right';
+            if (selectedDir == AnimationDirection.diagonal) dirStr = 'diagonal-down';
+            if (selectedDir == AnimationDirection.diagonalReverse) dirStr = 'diagonal-up';
+
+            await _bilateralController.saveSettings(
+              environmentUrl: selectedEnvUrl!.trim(),
+              iconUrl: selectedObjUrl!.trim(),
+              soundUrl: selectedSoundUrl ?? '',
+              speed: speedStr,
+              direction: dirStr,
             );
-          }),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => SimulationScreen(
-                settings: SimulationSettings(
-                  environmentImage: selectedEnvUrl ?? '',
-                  visualObject: selectedObjUrl ?? '',
-                  speed: selectedSpeed,
-                  audioAsset: selectedSoundUrl ?? '',
-                  direction: selectedDir,
-                  isNetworkImage: true,
-                ),
-              )));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGreen,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              padding: const EdgeInsets.all(16),
-            ),
-            child: const Text("Begin Session", style: TextStyle(color: Colors.white, fontSize: 16)),
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: primaryGreen,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.all(16),
           ),
+          child: _bilateralController.isSaving.value
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/images/save.png",
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Text(
+                        "Save Settings",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
         ),
-      ],
-    );
+      );
+    });
   }
 }
