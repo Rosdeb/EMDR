@@ -261,21 +261,25 @@ class MyCalmSpace extends StatelessWidget {
                     child: Icon(icon, color: Colors.black87, size: 24),
                   ),
                   const SizedBox(width: 15),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AppText(
-                        title,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      const SizedBox(height: 4),
-                      AppText(
-                        type,
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
-                    ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          title,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        AppText(
+                          type,
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

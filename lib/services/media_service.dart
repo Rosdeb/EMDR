@@ -36,7 +36,19 @@ class MediaService {
     return _handleResponse(response);
   }
 
-  // ─── 3. Upload Media (Multipart) ───────────────────────────
+  // ─── 3. Get Media By Category ──────────────────────────────
+  static Future<Map<String, dynamic>> getMediaByCategoryId({
+    required String token,
+    required String categoryId,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${AppUrl.baseUrl}/categories/$categoryId/media'),
+      headers: _headers(token),
+    );
+    return _handleResponse(response);
+  }
+
+  // ─── 4. Upload Media (Multipart) ───────────────────────────
   static Future<Map<String, dynamic>> uploadMedia({
     required String token,
     required String categoryId,

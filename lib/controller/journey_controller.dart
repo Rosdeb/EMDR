@@ -111,4 +111,22 @@ class JourneyController extends GetxController {
       isSaving.value = false;
     }
   }
+
+  Future<Map<String, dynamic>> deleteJourney(String journeyId) async {
+    final token = _authController.token;
+    if (token == null) return {'success': false, 'message': 'Not authenticated'};
+
+    isSaving.value = true;
+    try {
+      final result = await JourneyService.deleteJourney(token, journeyId);
+      if (result['success'] == true) {
+        await fetchAllJourneys();
+      }
+      return result;
+    } catch (e) {
+      return {'success': false, 'message': 'Network error'};
+    } finally {
+      isSaving.value = false;
+    }
+  }
 }

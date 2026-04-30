@@ -2,12 +2,12 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jonssony/controller/media_controller.dart';
+import 'package:jonssony/services/media_service.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
 
-import 'package:jonssony/views/sessions/SessionFourPage.dart';
+import 'package:jonssony/views/sessions/SessionFourPage.dart' hide AppText;
 import 'package:jonssony/widets/custom_home_bg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -23,35 +23,71 @@ class SessionThreePage extends StatefulWidget {
 }
 
 class _SessionThreePageState extends State<SessionThreePage> {
-  final MediaController _mediaController = Get.find<MediaController>();
-
   // Current audio: name & url
   String currentAudioName = "";
   String currentAudioUrl = "";
 
+  String selectedImageUrl = "";
   File? _pickedImage;
   final TextEditingController _descriptionController = TextEditingController();
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool isPlaying = false;
+  bool _isSaving = false;
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
-  static const _audCat = 'Bilateral Stimulation Sound';
+  static const _mediaCategoryId = '69ebedf60bf438b36641eba1';
+
+  List<dynamic> _apiImages = [];
+  List<dynamic> _apiAudios = [];
 
   @override
   void initState() {
     super.initState();
-    _initAudioPlayer();
+    _loadMedia();
   }
 
-  void _initAudioPlayer() async {
-    // Load first audio from API if available, else fallback to local
-    final sounds = _mediaController.mediaByCategory[_audCat] ?? [];
-    if (sounds.isNotEmpty) {
-      currentAudioName = sounds.first['name'] ?? '';
-      currentAudioUrl  = sounds.first['url']  ?? '';
+  Future<void> _loadMedia() async {
+    try {
+      final authController = Get.find<AuthController>();
+      final token = authController.token;
+      if (token != null) {
+        final result = await MediaService.getMediaByCategoryId(
+          token: token,
+          categoryId: _mediaCategoryId,
+        );
+
+        if (result['success'] == true && result['data'] != null) {
+          final data = result['data'] as Map<String, dynamic>;
+          final media = data['media'] as Map<String, dynamic>?;
+          if (media != null) {
+            final apiImages = List<dynamic>.from(media['images'] ?? []);
+            final musics = List<dynamic>.from(media['musics'] ?? []);
+            final others = List<dynamic>.from(media['others'] ?? []);
+            final apiAudios = [...musics, ...others];
+
+            setState(() {
+              _apiImages = apiImages;
+              _apiAudios = apiAudios;
+              if (_apiImages.isNotEmpty && selectedImageUrl.isEmpty) {
+                selectedImageUrl = _apiImages.first['url'] ?? '';
+              }
+              if (_apiAudios.isNotEmpty) {
+                currentAudioName = _apiAudios.first['name'] ?? '';
+                currentAudioUrl = _apiAudios.first['url'] ?? '';
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('SessionThree media load error: $e');
     }
 
+    await _initAudioPlayer();
+  }
+
+  Future<void> _initAudioPlayer() async {
     try {
       if (currentAudioUrl.isNotEmpty) {
         await _audioPlayer.setUrl(currentAudioUrl);
@@ -114,8 +150,6 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   void _showAudioSelectionModal(BuildContext context) {
-    final sounds = _mediaController.mediaByCategory[_audCat] ?? [];
-
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -135,7 +169,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
             children: [
               const AppText("Select Audio", fontSize: 18, fontWeight: FontWeight.bold),
               const SizedBox(height: 20),
-              if (sounds.isEmpty)
+              if (_apiAudios.isEmpty)
                 // Fallback: show local audio list
                 ...['calm place.wav', 'puppies_v1.mp3'].map((audio) => ListTile(
                   leading: Icon(
@@ -168,7 +202,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
                 ))
               else
                 // API audio list
-                ...sounds.map((s) {
+                ..._apiAudios.map((s) {
                   final name = s['name'] ?? '';
                   final url  = s['url']  ?? '';
                   final isSelected = currentAudioUrl == url;
@@ -250,14 +284,50 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       children: [
                         const AppText("Visual", fontSize: 16, fontWeight: FontWeight.bold),
                         const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildThumb('assets/images/comunity.jpg', true),
-                            _buildThumb('assets/images/make_more.jpg', false),
-                            _buildThumb('assets/images/night.jpg', false),
-                          ],
-                        ),
+                        if (_apiImages.isEmpty)
+                          // Fallback to local images
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildThumb('assets/images/comunity.jpg', selectedImageUrl == 'assets/images/comunity.jpg'),
+                              _buildThumb('assets/images/make_more.jpg', selectedImageUrl == 'assets/images/make_more.jpg'),
+                              _buildThumb('assets/images/night.jpg', selectedImageUrl == 'assets/images/night.jpg'),
+                            ],
+                          )
+                        else
+                          // API images
+                          SizedBox(
+                            height: 80,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _apiImages.length,
+                              itemBuilder: (context, index) {
+                                final img = _apiImages[index];
+                                final url = img['url'] ?? '';
+                                final isSelected = selectedImageUrl == url;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedImageUrl = url;
+                                    });
+                                  },
+                                  child: Container(
+                                    width: 90,
+                                    height: 70,
+                                    margin: const EdgeInsets.only(right: 10),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
+                                      image: DecorationImage(
+                                        image: NetworkImage(url),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         const SizedBox(height: 15),
 
                         GestureDetector(
@@ -268,31 +338,41 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey.withOpacity(0.5), style: BorderStyle.solid),
                               borderRadius: BorderRadius.circular(15),
-                              image: _pickedImage != null ? DecorationImage(
-                                image: FileImage(_pickedImage!),
-                                fit: BoxFit.cover,
-                              ) : null,
+                              image: _pickedImage != null
+                                  ? DecorationImage(
+                                      image: FileImage(_pickedImage!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : selectedImageUrl.isNotEmpty
+                                      ? DecorationImage(
+                                          image: NetworkImage(selectedImageUrl),
+                                          fit: BoxFit.cover,
+                                        )
+                                      : null,
                             ),
-                            child: _pickedImage == null ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.cloud_upload_outlined, color: Colors.grey, size: 40),
-                                SizedBox(height: 5),
-                                AppText("Click to upload", fontWeight: FontWeight.bold, fontSize: 14),
-                                AppText("PNG or GIF (max. 5MB)", fontSize: 10, color: Colors.grey),
-                              ],
-                            ) : Stack(
-                              children: [
-                                Positioned(
-                                  right: 10, top: 10,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                    child: const Icon(Icons.edit, size: 16, color: Colors.black),
+                            child: _pickedImage == null && selectedImageUrl.isEmpty
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.cloud_upload_outlined, color: Colors.grey, size: 40),
+                                      SizedBox(height: 5),
+                                      AppText("Click to upload", fontWeight: FontWeight.bold, fontSize: 14),
+                                      AppText("PNG or GIF (max. 5MB)", fontSize: 10, color: Colors.grey),
+                                    ],
+                                  )
+                                : Stack(
+                                    children: [
+                                      Positioned(
+                                        right: 10,
+                                        top: 10,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                          child: const Icon(Icons.edit, size: 16, color: Colors.black),
+                                        ),
+                                      )
+                                    ],
                                   ),
-                                )
-                              ],
-                            ),
                           ),
                         ),
                       ],
@@ -373,6 +453,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                 ),
                                 child: const AppText(
                                   "Back",
+                                  fontSize: 18,
                                   color: AppColors.mainAppColor,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -385,26 +466,35 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () async {
-                            final authController = Get.find<AuthController>();
-                            final token = authController.token;
-                            if (token != null) {
+                          onPressed: _isSaving ? null : () async {
+                            setState(() => _isSaving = true);
+                            try {
+                              final authController = Get.find<AuthController>();
+                              final token = authController.token;
+                              if (token != null) {
                               final data = {
-                                "description": _descriptionController.text.trim(),
-                                "audioName": currentAudioName,
-                                "audioUrl": currentAudioUrl,
-                                "hasImage": _pickedImage != null,
-                              };
-                              await CalmPlaceService.saveCalmPlace(token, data);
+                                  "description": _descriptionController.text.trim(),
+                                  "audioName": currentAudioName,
+                                  "audioUrl": currentAudioUrl,
+                                  "imageUrl": selectedImageUrl,
+                                };
+                                await CalmPlaceService.saveCalmPlace(token, data);
+                              }
+                              Get.to(() => Sessionfourpage());
+                            } catch (e) {
+                              print("Error saving: $e");
+                            } finally {
+                              setState(() => _isSaving = false);
                             }
-                            Get.to(() => const SessionFourPage());
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.mainAppColor,
                             padding: const EdgeInsets.symmetric(vertical: 15),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const AppText("Save & Continue", color: Colors.white, fontWeight: FontWeight.bold),
+                          child: _isSaving 
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              : const AppText("Save & Continue", fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],

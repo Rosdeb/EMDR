@@ -24,18 +24,7 @@ class SessionProgressController extends GetxController {
         return;
       }
 
-      // Try to get user ID from ProfileController, or use a default test ID
-      String id = '60d0fe4f5311236168a109ca'; // Default from user request
-      try {
-        final profileController = Get.find<ProfileController>();
-        if (profileController.userProfile.isNotEmpty) {
-           id = profileController.userProfile['_id'] ?? profileController.userProfile['id'] ?? id;
-        }
-      } catch (e) {
-        // Ignore if ProfileController is not found or empty
-      }
-
-      final result = await SessionProgressService.getProgressById(token, id);
+      final result = await SessionProgressService.getAllProgress(token);
       if (result['success'] == true) {
         final data = result['data'];
         if (data is List) {

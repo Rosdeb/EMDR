@@ -53,13 +53,13 @@ class _SessionOneState extends State<SessionOne> {
     }
 
     // Get video for Session 1 intro
-    final videoObj = _mediaController.getFirstMedia('EMDR Therapy Sessions', 'video');
+    final videoObj = _mediaController.getFirstMedia('session-1', 'video');
     
     if (videoObj != null && videoObj['url'] != null) {
       _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoObj['url']));
     } else {
       // Fallback
-      _videoPlayerController = VideoPlayerController.asset('assets/video/spiral_technique.mp4');
+      _videoPlayerController = VideoPlayerController.asset('assets/video/Video 1.mp4');
     }
 
     try {
@@ -187,7 +187,7 @@ class _SessionOneState extends State<SessionOne> {
                 const SizedBox(height: 20),
 
                 // Optional Questionnaires Link
-                _buildQuestionnairesLink(),
+                // _buildQuestionnairesLink(),
 
                 const SizedBox(height: 20),
 
@@ -198,7 +198,7 @@ class _SessionOneState extends State<SessionOne> {
                       child: ElevatedButton(
                         onPressed: () {
                           // Save progress if needed and navigate to SessionTwo
-                          Get.to(() => const SessionTwo());
+                          Get.to(() => const CBTFormulationPage());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF537E5D),
@@ -212,7 +212,7 @@ class _SessionOneState extends State<SessionOne> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () {
-                          Get.to(() => const SessionTwo());
+                          Get.to(() => const CBTFormulationPage());
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 15),
@@ -248,52 +248,52 @@ class _SessionOneState extends State<SessionOne> {
     );
   }
 
-  Widget _buildQuestionnairesLink() {
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5E9),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: const Color(0xFF537E5D).withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Optional Questionnaires",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
-          ),
-          const SizedBox(height: 5),
-          const Text(
-            "Track your progress weekly with specific questionnaires (PHQ, GAD, etc.). Results will be shown in your dashboard.",
-            style: TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () {
-              // Navigate to Questionnaires/Assessment
-              Get.to(() => const FullAssessmentFlow());
-            },
-            icon: const Icon(Icons.assignment_outlined, size: 18),
-            label: const Text("Go to Questionnaires"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF537E5D),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: () {
-              Get.to(() => const ProgressPage());
-            },
-            child: const Text(
-              "View My Progress Dashboard",
-              style: TextStyle(color: Color(0xFF537E5D), decoration: TextDecoration.underline),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildQuestionnairesLink() {
+  //   return Container(
+  //     padding: const EdgeInsets.all(15),
+  //     decoration: BoxDecoration(
+  //       color: const Color(0xFFE8F5E9),
+  //       borderRadius: BorderRadius.circular(15),
+  //       border: Border.all(color: const Color(0xFF537E5D).withOpacity(0.3)),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Text(
+  //           "Optional Questionnaires",
+  //           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2E3E32)),
+  //         ),
+  //         const SizedBox(height: 5),
+  //         const Text(
+  //           "Track your progress weekly with specific questionnaires (PHQ, GAD, etc.). Results will be shown in your dashboard.",
+  //           style: TextStyle(fontSize: 13, color: Colors.black54),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         ElevatedButton.icon(
+  //           onPressed: () {
+  //             // Navigate to Questionnaires/Assessment
+  //             Get.to(() => const FullAssessmentFlow());
+  //           },
+  //           icon: const Icon(Icons.assignment_outlined, size: 18),
+  //           label: const Text("Go to Questionnaires"),
+  //           style: ElevatedButton.styleFrom(
+  //             backgroundColor: const Color(0xFF537E5D),
+  //             foregroundColor: Colors.white,
+  //             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         TextButton(
+  //           onPressed: () {
+  //             Get.to(() => const ProgressPage());
+  //           },
+  //           child: const Text(
+  //             "View My Progress Dashboard",
+  //             style: TextStyle(color: Color(0xFF537E5D), decoration: TextDecoration.underline),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 }

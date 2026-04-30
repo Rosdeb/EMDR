@@ -39,8 +39,8 @@ class _SessionFiveState extends State<SessionFive> {
 
     // Attempt to get video from API category
     // Using a generic search or a specific category if known. 
-    // For now, using 'EMDR Therapy Sessions' as it was used in Session One.
-    final videoObj = _mediaController.getFirstMedia('EMDR Therapy Sessions', 'video');
+    // For now, using 'session-5' as the category for Session 5.
+    final videoObj = _mediaController.getFirstMedia('session-5', 'video');
     
     if (videoObj != null && videoObj['url'] != null) {
       _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoObj['url']));

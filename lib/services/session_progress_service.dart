@@ -18,14 +18,7 @@ class SessionProgressService {
         Uri.parse(_baseUrl),
         headers: _headers(token),
       );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final bool isSuccess =
-          response.statusCode >= 200 && response.statusCode < 300;
-      if (isSuccess) return {'success': true, 'data': body['data']};
-      return {
-        'success': false,
-        'message': body['message'] ?? 'Failed to load session progress'
-      };
+      return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
       print('SessionProgressService getAllProgress Error: $e');
       return {
@@ -44,14 +37,7 @@ class SessionProgressService {
         headers: _headers(token),
         body: jsonEncode(data),
       );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final bool isSuccess =
-          response.statusCode >= 200 && response.statusCode < 300;
-      if (isSuccess) return {'success': true, 'data': body['data']};
-      return {
-        'success': false,
-        'message': body['message'] ?? 'Failed to update session progress'
-      };
+      return _handleResponse(response, 'Failed to update session progress');
     } catch (e) {
       print('SessionProgressService updateProgress Error: $e');
       return {
@@ -69,14 +55,7 @@ class SessionProgressService {
         Uri.parse('$_baseUrl/$id'),
         headers: _headers(token),
       );
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final bool isSuccess =
-          response.statusCode >= 200 && response.statusCode < 300;
-      if (isSuccess) return {'success': true, 'data': body['data']};
-      return {
-        'success': false,
-        'message': body['message'] ?? 'Failed to load session progress'
-      };
+      return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
       print('SessionProgressService getProgressById Error: $e');
       return {
@@ -84,5 +63,44 @@ class SessionProgressService {
         'message': 'Network error. Please try again.'
       };
     }
+  }
+
+  static Map<String, dynamic> _handleResponse(
+    http.Response response,
+    String fallbackMessage,
+  ) {
+    try {
+      final decoded = jsonDecode(response.body);
+      final body = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+      final bool isSuccess =
+          response.statusCode >= 200 && response.statusCode < 300;
+
+      if (isSuccess) {
+        return {'success': true, 'data': body['data']};
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(body) ?? '$fallbackMessage (${response.statusCode})',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': '$fallbackMessage (${response.statusCode})',
+      };
+    }
+  }
+
+  static String? _errorMessage(Map<String, dynamic> body) {
+    final message = body['message'];
+    if (message != null) return message.toString();
+
+    final error = body['error'];
+    if (error is Map && error['message'] != null) {
+      return error['message'].toString();
+    }
+    if (error != null) return error.toString();
+
+    return null;
   }
 }
