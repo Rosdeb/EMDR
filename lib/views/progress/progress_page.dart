@@ -8,21 +8,12 @@ import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
 
+import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/controller/my_tests_controller.dart';
+import 'package:jonssony/services/symptom_tracker_service.dart';
 import 'package:jonssony/services/tracker_storage_service.dart';
-import 'package:jonssony/views/progress/anxiety_screen.dart';
-import 'package:jonssony/views/progress/anger_screen.dart';
-import 'package:jonssony/views/progress/addiction_screen.dart';
-import 'package:jonssony/views/progress/depression_screen.dart';
-import 'package:jonssony/views/progress/ocd_screen.dart';
-import 'package:jonssony/views/progress/pain_screen.dart';
-import 'package:jonssony/views/progress/self-esteem_screen.dart';
-import 'package:jonssony/views/progress/social-phobia_screen.dart';
-import 'package:jonssony/views/progress/specific-phobia_screen.dart';
-import 'package:jonssony/views/progress/stress-burnout_screen.dart';
-import 'package:jonssony/views/progress/trauma_screen.dart';
-import 'package:jonssony/views/progress/worry_screen.dart';
 import 'package:jonssony/views/progress/category_items_screen.dart';
+import 'package:jonssony/views/progress/symptom_tracker_screen.dart';
 import 'package:get/get.dart';
 import 'result_step_screen.dart';
 
@@ -37,67 +28,72 @@ class _ProgressPageState extends State<ProgressPage> {
   bool isResultsTab = false;
   String? _selectedResultTrackerTitle;
   final Map<String, Map<String, dynamic>> _testResults = {};
+  final Map<String, Map<String, dynamic>> _latestTrackerResults = {};
+  final Map<String, List<dynamic>> _trackerTrends = {};
   Map<String, List<TrackerResult>> _storedTrackerResults = {};
+  List<Map<String, dynamic>> _trackerConfigs = [];
+  bool _isTrackerLoading = false;
+  String? _trackerError;
 
   final List<Map<String, dynamic>> _trackers = [
     {
       'name': 'Anxiety',
-      'screen': const AnxietyScreen(),
+      'trackerType': 'anxiety',
       'image': 'assets/images/stress.jpg',
     },
     {
       'name': 'Anger',
-      'screen': const AngerScreen(),
+      'trackerType': 'anger',
       'image': 'assets/images/anger.jpg',
     },
     {
       'name': 'Addiction',
-      'screen': const AddictionScreen(),
+      'trackerType': 'addiction',
       'image': 'assets/images/addiction.jpg',
     },
     {
       'name': 'Depression',
-      'screen': const DepressionScreen(),
+      'trackerType': 'depression',
       'image': 'assets/images/depression.jpg',
     },
     {
       'name': 'OCD',
-      'screen': const OcdScreen(),
+      'trackerType': 'ocd',
       'image': 'assets/images/ocd.jpg',
     },
     {
       'name': 'Pain',
-      'screen': const PainScreen(),
+      'trackerType': 'pain',
       'image': 'assets/images/fire.jpg',
     },
     {
       'name': 'Self-Esteem',
-      'screen': const SelfEsteemScreen(),
+      'trackerType': 'self-esteem',
       'image': 'assets/images/selfesteem.jpg',
     },
     {
       'name': 'Social Phobia',
-      'screen': const SocialPhobiaScreen(),
+      'trackerType': 'social-phobia',
       'image': 'assets/images/Phobia questionnaire.jpg',
     },
     {
       'name': 'Specific Phobia',
-      'screen': const SpecificPhobiaScreen(),
+      'trackerType': 'specific-phobia',
       'image': 'assets/images/Phobia questionnaire.jpg',
     },
     {
       'name': 'Stress & Burnout',
-      'screen': const StressBurnoutScreen(),
+      'trackerType': 'stress-burnout',
       'image': 'assets/images/burnout.jpg',
     },
     {
       'name': 'Trauma',
-      'screen': const TraumaScreen(),
+      'trackerType': 'trauma',
       'image': 'assets/images/trauma.jpg',
     },
     {
       'name': 'Worry',
-      'screen': const WorryScreen(),
+      'trackerType': 'worry',
       'image': 'assets/images/worry.jpg',
     },
   ];
@@ -107,6 +103,7 @@ class _ProgressPageState extends State<ProgressPage> {
     super.initState();
     final controller = Get.find<MyTestsController>();
     controller.fetchCategories();
+    _loadBackendTrackers();
     _loadTrackerResults();
   }
 
@@ -121,19 +118,176 @@ class _ProgressPageState extends State<ProgressPage> {
     });
   }
 
+  List<Map<String, dynamic>> get _visibleTrackers {
+    if (_trackerConfigs.isEmpty) return _trackers;
+    return _trackerConfigs.map((config) {
+      final trackerType = config['trackerType']?.toString() ?? '';
+      return <String, dynamic>{
+        'name': config['name']?.toString() ?? trackerType,
+        'trackerType': trackerType,
+        'image': _imageForTracker(trackerType),
+        'config': config,
+      };
+    }).toList();
+  }
+
+  String _imageForTracker(String trackerType) {
+    const images = {
+      'anxiety': 'assets/images/stress.jpg',
+      'anger': 'assets/images/anger.jpg',
+      'addiction': 'assets/images/addiction.jpg',
+      'depression': 'assets/images/depression.jpg',
+      'ocd': 'assets/images/ocd.jpg',
+      'pain': 'assets/images/fire.jpg',
+      'self-esteem': 'assets/images/selfesteem.jpg',
+      'social-phobia': 'assets/images/Phobia questionnaire.jpg',
+      'specific-phobia': 'assets/images/Phobia questionnaire.jpg',
+      'stress-burnout': 'assets/images/burnout.jpg',
+      'trauma': 'assets/images/trauma.jpg',
+      'worry': 'assets/images/worry.jpg',
+    };
+    return images[trackerType] ?? 'assets/images/bg_progress.jpg';
+  }
+
+  Future<void> _loadBackendTrackers() async {
+    final token = Get.find<AuthController>().token;
+    if (token == null || token.isEmpty) return;
+
+    setState(() {
+      _isTrackerLoading = true;
+      _trackerError = null;
+    });
+
+    final configsResult = await SymptomTrackerService.getConfigs(token);
+    if (!mounted) return;
+
+    if (configsResult['success'] == true && configsResult['data'] is List) {
+      final configs = List<Map<String, dynamic>>.from(
+        (configsResult['data'] as List).map(
+          (item) => Map<String, dynamic>.from(item as Map),
+        ),
+      );
+      setState(() {
+        _trackerConfigs = configs;
+      });
+      await _loadLatestAndTrends(configs);
+    } else {
+      setState(() {
+        _trackerError = configsResult['message'] ?? 'Failed to load trackers';
+      });
+    }
+
+    if (mounted) {
+      setState(() => _isTrackerLoading = false);
+    }
+  }
+
+  Future<void> _loadLatestAndTrends(List<Map<String, dynamic>> configs) async {
+    final token = Get.find<AuthController>().token;
+    if (token == null || token.isEmpty) return;
+
+    final latestResult = await SymptomTrackerService.getLatest(token);
+    if (mounted && latestResult['success'] == true) {
+      final latestData = latestResult['data'];
+      final latestMap = <String, Map<String, dynamic>>{};
+      if (latestData is List) {
+        for (final item in latestData) {
+          if (item is Map) {
+            final map = Map<String, dynamic>.from(item);
+            final type = map['trackerType']?.toString();
+            if (type != null) latestMap[type] = map;
+          }
+        }
+      } else if (latestData is Map) {
+        final map = Map<String, dynamic>.from(latestData);
+        final type = map['trackerType']?.toString();
+        if (type != null) latestMap[type] = map;
+      }
+      setState(() {
+        _latestTrackerResults
+          ..clear()
+          ..addAll(latestMap);
+      });
+    }
+
+    final trendMap = <String, List<dynamic>>{};
+    for (final config in configs) {
+      final type = config['trackerType']?.toString();
+      if (type == null || type.isEmpty) continue;
+      final trendResult = await SymptomTrackerService.getTrend(
+        token,
+        trackerType: type,
+        limit: 10,
+      );
+      if (trendResult['success'] == true && trendResult['data'] is List) {
+        trendMap[type] = List<dynamic>.from(trendResult['data']);
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _trackerTrends
+          ..clear()
+          ..addAll(trendMap);
+      });
+    }
+  }
+
   Map<String, dynamic>? _getTrackerResultData(String title) {
     final currentResult = _testResults[title];
     if (currentResult != null) return currentResult;
 
+    final tracker = _trackerByTitle(title);
+    final trackerType = tracker?['trackerType']?.toString();
+    final latestBackend =
+        trackerType != null ? _latestTrackerResults[trackerType] : null;
+    if (latestBackend != null) {
+      return {
+        'score': latestBackend['totalScore'],
+        'maxScore': _maxScoreForTracker(trackerType!),
+        'bandLabel': latestBackend['severityBand'],
+      };
+    }
+
     final storedResults = _storedTrackerResults[_trackerKeyForTitle(title)];
     if (storedResults == null || storedResults.isEmpty) return null;
 
-    final latest = storedResults.last;
+    final latestStored = storedResults.last;
     return {
-      'score': latest.score,
-      'maxScore': latest.maxScore,
-      'bandLabel': latest.band,
+      'score': latestStored.score,
+      'maxScore': latestStored.maxScore,
+      'bandLabel': latestStored.band,
     };
+  }
+
+  int _maxScoreForTracker(String trackerType) {
+    Map<String, dynamic>? config;
+    for (final item in _trackerConfigs) {
+      if (item['trackerType']?.toString() == trackerType) {
+        config = item;
+        break;
+      }
+    }
+    final items = config?['items'];
+    final options = config?['options'];
+    if (items is List && options is List && options.isNotEmpty) {
+      var maxOption = 0;
+      for (final option in options) {
+        if (option is Map && option['value'] is num) {
+          final value = (option['value'] as num).toInt();
+          if (value > maxOption) maxOption = value;
+        }
+      }
+      return items.length * maxOption;
+    }
+    return 40;
+  }
+
+  Map<String, dynamic>? _trackerByTitle(String title) {
+    for (final tracker in _visibleTrackers) {
+      if (tracker['name'] == title) return tracker;
+    }
+    return null;
   }
 
   Future<void> _loadCategoryStats() async {
@@ -148,11 +302,9 @@ class _ProgressPageState extends State<ProgressPage> {
 
   Future<void> _refreshCategories() async {
     final controller = Get.find<MyTestsController>();
+    await _loadBackendTrackers();
     await controller.fetchCategories();
     await _loadTrackerResults();
-    if (isResultsTab) {
-      await _loadCategoryStats();
-    }
   }
 
   @override
@@ -285,7 +437,6 @@ class _ProgressPageState extends State<ProgressPage> {
           setState(() => isResultsTab = label == "My Results");
           if (label == "My Results") {
             await _loadTrackerResults();
-            await _loadCategoryStats();
           }
         },
 
@@ -313,15 +464,31 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   Widget _buildTestsList() {
+    if (_isTrackerLoading && _trackerConfigs.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Column(
       key: const ValueKey(1),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ..._trackers.map(
+        if (_trackerError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: AppText(
+              _trackerError!,
+              fontSize: 13,
+              color: Colors.redAccent,
+            ),
+          ),
+        ..._visibleTrackers.map(
           (tracker) => _trackerCard(
             tracker['name'] as String,
-            tracker['screen'] as Widget,
+            tracker['trackerType'] as String,
             tracker['image'] as String,
+            config: tracker['config'] is Map<String, dynamic>
+                ? tracker['config'] as Map<String, dynamic>
+                : null,
           ),
         ),
       ],
@@ -410,7 +577,11 @@ class _ProgressPageState extends State<ProgressPage> {
         if (openAnxiety) {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AnxietyScreen()),
+            MaterialPageRoute(
+              builder: (context) => const SymptomTrackerScreen(
+                trackerType: 'anxiety',
+              ),
+            ),
           );
           if (result is Map<String, dynamic>) {
             if (!mounted) return;
@@ -423,7 +594,6 @@ class _ProgressPageState extends State<ProgressPage> {
             });
             if (result['showResultsTab'] == true) {
               await _loadTrackerResults();
-              await _loadCategoryStats();
             }
             return;
           }
@@ -509,12 +679,22 @@ class _ProgressPageState extends State<ProgressPage> {
     );
   }
 
-  Widget _trackerCard(String title, Widget screen, String imagePath) {
+  Widget _trackerCard(
+    String title,
+    String trackerType,
+    String imagePath, {
+    Map<String, dynamic>? config,
+  }) {
     return GestureDetector(
       onTap: () async {
         final result = await Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => screen),
+          MaterialPageRoute(
+            builder: (context) => SymptomTrackerScreen(
+              trackerType: trackerType,
+              initialConfig: config,
+            ),
+          ),
         );
         if (result is Map<String, dynamic>) {
           if (!mounted) return;
@@ -526,9 +706,7 @@ class _ProgressPageState extends State<ProgressPage> {
             }
           });
           await _loadTrackerResults();
-          if (result['showResultsTab'] == true) {
-            await _loadCategoryStats();
-          }
+          await _loadBackendTrackers();
         }
       },
       child: ClipRRect(
@@ -789,16 +967,21 @@ class _ProgressPageState extends State<ProgressPage> {
   String? _defaultResultTrackerTitle() {
     if (_selectedResultTrackerTitle != null) {
       final selectedKey = _trackerKeyForTitle(_selectedResultTrackerTitle!);
+      final selectedTracker = _trackerByTitle(_selectedResultTrackerTitle!);
+      final selectedType = selectedTracker?['trackerType']?.toString();
       if ((_storedTrackerResults[selectedKey]?.isNotEmpty ?? false) ||
+          (selectedType != null && _latestTrackerResults[selectedType] != null) ||
           _testResults.containsKey(_selectedResultTrackerTitle)) {
         return _selectedResultTrackerTitle;
       }
     }
 
-    for (final tracker in _trackers) {
+    for (final tracker in _visibleTrackers) {
       final title = tracker['name'] as String;
       final key = _trackerKeyForTitle(title);
+      final trackerType = tracker['trackerType']?.toString();
       if ((_storedTrackerResults[key]?.isNotEmpty ?? false) ||
+          (trackerType != null && _latestTrackerResults[trackerType] != null) ||
           _testResults.containsKey(title)) {
         return title;
       }
@@ -807,27 +990,71 @@ class _ProgressPageState extends State<ProgressPage> {
     return null;
   }
 
+  List<String> _allResultTrackerTitles() {
+    final titles = <String>[];
+
+    for (final tracker in _visibleTrackers) {
+      final title = tracker['name'] as String;
+      final key = _trackerKeyForTitle(title);
+      final trackerType = tracker['trackerType']?.toString();
+      final hasResult =
+          _testResults.containsKey(title) ||
+          (_storedTrackerResults[key]?.isNotEmpty ?? false) ||
+          (trackerType != null && _latestTrackerResults[trackerType] != null);
+
+      if (hasResult && !titles.contains(title)) {
+        titles.add(title);
+      }
+    }
+
+    for (final title in _testResults.keys) {
+      if (!titles.contains(title)) {
+        titles.add(title);
+      }
+    }
+
+    return titles;
+  }
+
   Widget _buildInlineProgressView(String title) {
     final key = _trackerKeyForTitle(title);
     final storedResults = _storedTrackerResults[key] ?? [];
     final localResult = _testResults[title];
     final latestStored = storedResults.isNotEmpty ? storedResults.last : null;
+    final tracker = _trackerByTitle(title);
+    final trackerType = tracker?['trackerType']?.toString();
+    final latestBackend =
+        trackerType != null ? _latestTrackerResults[trackerType] : null;
 
     final score =
-        (localResult?['score'] as num?)?.toInt() ?? latestStored?.score ?? 0;
+        (localResult?['score'] as num?)?.toInt() ??
+        (latestBackend?['totalScore'] as num?)?.toInt() ??
+        latestStored?.score ??
+        0;
     final maxScore =
         (localResult?['maxScore'] as num?)?.toInt() ??
+        (trackerType != null ? _maxScoreForTracker(trackerType) : null) ??
         latestStored?.maxScore ??
-        0;
+        40;
     final band =
-        localResult?['bandLabel']?.toString() ?? latestStored?.band ?? '-';
+        localResult?['bandLabel']?.toString() ??
+        latestBackend?['severityBand']?.toString() ??
+        latestStored?.band ??
+        '-';
     final description =
         localResult?['bandDescription']?.toString() ??
         'Your latest $title score is $score/$maxScore, which falls in the $band range. Keep tracking weekly to notice changes over time.';
-    final chartValues = _buildCurrentWeekChartValues(
-      storedResults,
-      fallbackScore: score,
-    );
+    final backendTrend = trackerType != null ? _trackerTrends[trackerType] : null;
+    final chartValues = backendTrend != null && backendTrend.isNotEmpty
+        ? backendTrend
+            .map((item) => item is Map
+                ? ((item['totalScore'] as num?)?.toDouble() ?? 0.0)
+                : 0.0)
+            .toList()
+        : _buildCurrentWeekChartValues(
+            storedResults,
+            fallbackScore: score,
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -851,7 +1078,13 @@ class _ProgressPageState extends State<ProgressPage> {
                   Flexible(
                     child: _progressBadge(
                       'Date',
-                      latestStored != null ? _formatDate(latestStored.savedAt) : 'Today',
+                      latestBackend?['submittedAt'] != null
+                          ? _formatDate(
+                              DateTime.parse(
+                                latestBackend!['submittedAt'].toString(),
+                              ),
+                            )
+                          : latestStored != null ? _formatDate(latestStored.savedAt) : 'Today',
                     ),
                   ),
                 ],
@@ -1076,90 +1309,40 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   Widget _buildResultsList() {
-    final controller = Get.find<MyTestsController>();
-    return Obx(() {
-      if (controller.isLoading.value && controller.categories.isEmpty) {
-        return const Center(child: CircularProgressIndicator());
-      }
+    final resultTrackerTitles = _allResultTrackerTitles();
 
-      if (controller.categories.isEmpty &&
-          _testResults.isEmpty &&
-          _storedTrackerResults.isEmpty) {
-        return Column(
-          key: const ValueKey(2),
-          children: const [
-            AppText("No categories or test results found."),
-            SizedBox(height: 20),
-            AppText("Pull down to refresh and load your tests."),
-          ],
-        );
-      }
-
-      final selectedTrackerTitle = _defaultResultTrackerTitle();
-
-      return Column(
-        key: const ValueKey(2),
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return Column(
+      key: const ValueKey(2),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppText(
+          'View My Progress',
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF2E3E32),
+        ),
+        const SizedBox(height: 6),
+        const AppText(
+          'Your saved test progress is shown below.',
+          fontSize: 13,
+          color: Colors.black54,
+        ),
+        const SizedBox(height: 18),
+        if (resultTrackerTitles.isNotEmpty)
+          ...resultTrackerTitles.expand(
+            (title) => [
+              _buildInlineProgressView(title),
+              const SizedBox(height: 24),
+            ],
+          )
+        else
           const AppText(
-            'View My Progress',
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2E3E32),
-          ),
-          const SizedBox(height: 6),
-          const AppText(
-            'Your saved test progress is shown below.',
-            fontSize: 13,
+            "No saved progress found yet.",
+            fontSize: 14,
             color: Colors.black54,
           ),
-          const SizedBox(height: 18),
-          if (selectedTrackerTitle != null) ...[
-            _buildInlineProgressView(selectedTrackerTitle),
-            const SizedBox(height: 24),
-          ],
-          const AppText(
-            'Tracker Results',
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-          const SizedBox(height: 12),
-          ..._trackers.map(
-            (tracker) => _buildTrackerResultCard(
-              tracker['name'] as String,
-              _getTrackerResultData(tracker['name'] as String),
-            ),
-          ),
-          ...controller.categories.map((cat) {
-            final id = cat['_id']?.toString() ?? '';
-            final stats = controller.categoryStats[id] as Map<String, dynamic>?;
-            final itemsByDay = <double>[];
-            if (stats != null && stats['itemsByDay'] is List) {
-              for (final value in stats['itemsByDay']) {
-                if (value is num) {
-                  itemsByDay.add(value.toDouble());
-                }
-              }
-            }
-            return Column(
-              children: [
-                _resultGraphCard(
-                  cat['categoryName'] ?? 'Category',
-                  cat['description'] ?? '',
-                  itemsByDay.isNotEmpty ? itemsByDay : [1, 2, 1, 3, 2],
-                  activeCount: stats != null ? stats['activeItems'] ?? 0 : null,
-                  inactiveCount: stats != null
-                      ? stats['inactiveItems'] ?? 0
-                      : null,
-                  totalCount: stats != null ? stats['totalItems'] ?? 0 : null,
-                ),
-                const SizedBox(height: 20),
-              ],
-            );
-          }),
-        ],
-      );
-    });
+      ],
+    );
   }
 
   Widget _resultGraphCard(

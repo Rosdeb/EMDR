@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 import 'package:jonssony/services/session_progress_service.dart';
 import 'package:jonssony/controller/auth_controller.dart';
-import 'package:jonssony/controller/profile_controller.dart';
 
 class SessionProgressController extends GetxController {
   final RxBool isLoading = true.obs;
+  final RxBool isJourneyProgressLoading = false.obs;
   final RxList<dynamic> progresses = [].obs;
+  final RxMap<String, Map<String, dynamic>> journeyProgresses =
+      <String, Map<String, dynamic>>{}.obs;
+  final Set<String> _requestedJourneyProgressIds = {};
 
   @override
   void onInit() {
@@ -43,6 +46,41 @@ class SessionProgressController extends GetxController {
       print("Error fetching progresses: $e");
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> fetchProgressForJourneys(List<dynamic> journeys) async {
+    final authController = Get.find<AuthController>();
+    final token = authController.token;
+    if (token == null || journeys.isEmpty) return;
+
+    final journeyIds = journeys
+        .map((journey) => journey is Map ? journey['_id']?.toString() ?? '' : '')
+        .where((id) => id.isNotEmpty)
+        .toList();
+
+    final missingIds = journeyIds
+        .where((id) =>
+            !journeyProgresses.containsKey(id) &&
+            !_requestedJourneyProgressIds.contains(id))
+        .toList();
+    if (missingIds.isEmpty) return;
+
+    _requestedJourneyProgressIds.addAll(missingIds);
+    isJourneyProgressLoading.value = true;
+    try {
+      for (final journeyId in missingIds) {
+        final result =
+            await SessionProgressService.getProgressById(token, journeyId);
+        if (result['success'] == true && result['data'] is Map) {
+          journeyProgresses[journeyId] =
+              Map<String, dynamic>.from(result['data'] as Map);
+        }
+      }
+    } catch (e) {
+      print("Error fetching journey progress: $e");
+    } finally {
+      isJourneyProgressLoading.value = false;
     }
   }
 }

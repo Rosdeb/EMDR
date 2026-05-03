@@ -9,6 +9,7 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/home/homework.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/healper/route.dart';
+import 'package:jonssony/controller/journey_controller.dart';
 import 'package:jonssony/controller/session_progress_controller.dart';
 
 import 'MyCalmSpace.dart';
@@ -20,7 +21,13 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     Get.put(ProfileController());
     Get.put(NotificationController());
-    final sessionProgressController = Get.put(SessionProgressController());
+    final journeyController = Get.isRegistered<JourneyController>()
+        ? Get.find<JourneyController>()
+        : Get.put(JourneyController());
+    final sessionProgressController =
+        Get.isRegistered<SessionProgressController>()
+            ? Get.find<SessionProgressController>()
+            : Get.put(SessionProgressController());
 
 
     const double appBarImageHeight = 170;
@@ -125,35 +132,68 @@ class HomeScreen extends StatelessWidget {
                             const SizedBox(height: 25),
 
                             Obx(() {
-                              if (sessionProgressController.isLoading.value) {
+                              if (journeyController.isLoading.value) {
                                 return const Center(
                                   child: CircularProgressIndicator(color: AppColors.mainAppColor),
                                 );
                               }
 
-                              final progresses = sessionProgressController.progresses;
-                              if (progresses.isEmpty) {
-                                // Fallback / Empty state if no progress found from API
-                                return Column(
-                                  children: [
-                                    _buildJourneyCard("Anxiety Management Journey", "20 sessions", "95/100", 0.95, AppColors.mainAppColor),
-                                    _buildJourneyCard("Mindfulness Practice", "15 sessions", "80/100", 0.80, AppColors.mainAppColor),
-                                    _buildJourneyCard("Focus Training", "10 sessions", "60/100", 0.60, AppColors.mainAppColor),
-                                  ],
+                              final journeys = journeyController.journeys;
+                              if (journeys.isEmpty) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 20),
+                                    child: AppText(
+                                      "No journeys found",
+                                      fontSize: 14,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
                                 );
                               }
 
-                              return Column(
-                                children: progresses.map((p) {
-                                  // Parse API data safely based on standard JSON structure
-                                  final title = p['title'] ?? p['journeyName'] ?? p['name'] ?? 'EMDR Journey';
-                                  final total = p['totalSessions'] ?? 100;
-                                  final completed = p['completedSessions'] ?? p['progress'] ?? 0;
-                                  final percent = total > 0 ? (completed / total).toDouble() : 0.0;
-                                  final subTitle = "$total sessions";
-                                  final progressText = "$completed/$total";
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                sessionProgressController
+                                    .fetchProgressForJourneys(journeys);
+                              });
 
-                                  return _buildJourneyCard(title, subTitle, progressText, percent, AppColors.mainAppColor);
+                              return Column(
+                                children: journeys.map((journey) {
+                                  final item = journey is Map
+                                      ? Map<String, dynamic>.from(journey)
+                                      : <String, dynamic>{};
+                                  final journeyId = item['_id']?.toString() ?? '';
+                                  final progressData = sessionProgressController
+                                      .journeyProgresses[journeyId];
+                                  final details = progressData?['details'] is Map
+                                      ? Map<String, dynamic>.from(
+                                          progressData!['details'] as Map,
+                                        )
+                                      : <String, dynamic>{};
+                                  final total = _asInt(details['totalSessions']);
+                                  final completed =
+                                      _asInt(details['completedSessions']);
+                                  final percent = total > 0
+                                      ? (completed / total)
+                                          .clamp(0.0, 1.0)
+                                          .toDouble()
+                                      : 0.0;
+                                  final percentText =
+                                      progressData?['totalCompledSession']
+                                              ?.toString() ??
+                                          "${(percent * 100).round()}%";
+
+                                  return _buildJourneyCard(
+                                    item['journeyName']?.toString() ??
+                                        'EMDR Journey',
+                                    "$total sessions",
+                                    "$completed/$total completed ($percentText)",
+                                    percent,
+                                    AppColors.mainAppColor,
+                                    imageUrl: item['imageUrl']?.toString(),
+                                    dateText:
+                                        _formatApiDate(item['createdAt']),
+                                  );
                                 }).toList(),
                               );
                             }),
@@ -332,7 +372,44 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildJourneyCard(String title, String subTitle, String progress, double percent, Color color) {
+  int _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  String _formatApiDate(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    if (parsed == null) return '';
+
+    final local = parsed.toLocal();
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    return "${months[local.month - 1]} ${local.day}, ${local.year}";
+  }
+
+  Widget _buildJourneyCard(
+    String title,
+    String subTitle,
+    String progress,
+    double percent,
+    Color color, {
+    String? imageUrl,
+    String dateText = '',
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: ClipRRect(
@@ -351,16 +428,24 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const CircleAvatar(
+                    CircleAvatar(
                       radius: 24,
-                      backgroundImage: AssetImage('assets/images/emdr_sun.jpg'),
+                      backgroundImage: imageUrl != null && imageUrl.isNotEmpty
+                          ? NetworkImage(imageUrl) as ImageProvider
+                          : const AssetImage('assets/images/emdr_sun.jpg'),
                     ),
                     const SizedBox(width: 15),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AppText(title, fontWeight: FontWeight.bold, fontSize: 15),
+                          AppText(
+                            title,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           AppText(subTitle, fontSize: 12, color: Colors.black54),
                         ],
                       ),
@@ -385,9 +470,8 @@ class HomeScreen extends StatelessWidget {
                     AppText(progress, fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87),
                     Row(
                       children: [
-                        _iconLabel(Icons.calendar_today_outlined, "Daily"),
-                        const SizedBox(width: 15),
-                        _iconLabel(Icons.access_time_rounded, "10m"),
+                        if (dateText.isNotEmpty)
+                          _iconLabel(Icons.calendar_today_outlined, dateText),
                       ],
                     )
                   ],

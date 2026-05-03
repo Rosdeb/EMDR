@@ -27,18 +27,24 @@ class BilateralService {
     required String iconUrl,
     required String soundUrl,
     required String speed, // 'slow', 'medium', 'fast'
-    required String direction, // 'left-right', 'top-bottom', 'diagonal-down', 'diagonal-up'
+    required String direction, // 'left-right', 'diagonal-down', 'diagonal-up'
   }) async {
+    final body = <String, dynamic>{
+      'environmentId': environmentUrl.trim(),
+      'iconUrl': iconUrl.trim(),
+      'speed': speed,
+      'direction': direction,
+    };
+
+    final trimmedSoundUrl = soundUrl.trim();
+    if (trimmedSoundUrl.isNotEmpty) {
+      body['soundId'] = trimmedSoundUrl;
+    }
+
     final response = await http.post(
       Uri.parse('$_baseUrl/settings'),
       headers: _headers(token),
-      body: jsonEncode({
-        'environmentId': environmentUrl,
-        'iconUrl': iconUrl,
-        'soundId': soundUrl,
-        'speed': speed,
-        'direction': direction,
-      }),
+      body: jsonEncode(body),
     );
     return _handleResponse(response);
   }

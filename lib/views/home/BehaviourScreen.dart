@@ -1,13 +1,19 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/home/InKindChatBot.dart';
 
 
-class BehaviourScreen extends StatelessWidget {
+class BehaviourScreen extends StatefulWidget {
   const BehaviourScreen({super.key});
 
+  @override
+  State<BehaviourScreen> createState() => _BehaviourScreenState();
+}
+
+class _BehaviourScreenState extends State<BehaviourScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -140,6 +146,10 @@ class BehaviourScreen extends StatelessWidget {
     );
   }
   Widget _buildActionGlassSection() {
+    final box = GetStorage();
+    final hasHomework = box.read<bool>('behaviour_homework_exists') ?? false;
+    final behavior = box.read<String>('behaviour_homework_behavior') ?? 'Behaviour homework';
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
@@ -156,7 +166,9 @@ class BehaviourScreen extends StatelessWidget {
               // 'Make A New Homework' Button
               ElevatedButton.icon(
                 onPressed: () {
-                  Get.to(() =>InKindChatBot());
+                  Get.to(() => const InKindChatBot(forceNewHomework: true))?.then((_) {
+                    if (mounted) setState(() {});
+                  });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF537E5D), // Progress Page এর গ্রাফ কালার
@@ -176,36 +188,85 @@ class BehaviourScreen extends StatelessWidget {
               ),
               const SizedBox(height: 30),
 
-              // Empty State Inside the Glass Box
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 30),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
-                ),
-                child: Column(
-                  children: [
-                    Icon(Icons.history_toggle_off, color: Colors.black38, size: 45),
-                    const SizedBox(height: 10),
-                    const Text(
-                      'No started homeworks yet',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      child: Text(
-                        'Your behaviour exercises will appear here.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Colors.black45),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              hasHomework
+                  ? _buildStartedHomeworkCard(behavior)
+                  : _buildEmptyHomeworkCard(),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStartedHomeworkCard(String behavior) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.assignment_turned_in_outlined, color: Color(0xFF537E5D), size: 45),
+          const SizedBox(height: 10),
+          const Text(
+            'Started homework',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text(
+              behavior,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: () {
+              Get.to(() => const InKindChatBot())?.then((_) {
+                if (mounted) setState(() {});
+              });
+            },
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Weekly follow up'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF537E5D),
+              side: const BorderSide(color: Color(0xFF537E5D)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyHomeworkCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 30),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.history_toggle_off, color: Colors.black38, size: 45),
+          SizedBox(height: 10),
+          Text(
+            'No started homeworks yet',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black54),
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Text(
+              'Your behaviour exercises will appear here.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+          ),
+        ],
       ),
     );
   }

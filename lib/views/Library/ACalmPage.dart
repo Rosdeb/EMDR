@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:get/get.dart';
@@ -7,7 +8,7 @@ import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/calm_place_service.dart';
 
 class ACalmPage extends StatefulWidget {
-  const   ACalmPage({super.key});
+  const ACalmPage({super.key});
 
   @override
   State<ACalmPage> createState() => _ACalmPageState();
@@ -15,116 +16,125 @@ class ACalmPage extends StatefulWidget {
 
 class _ACalmPageState extends State<ACalmPage> {
   late AudioPlayer _audioPlayer;
-  String currentAudio = "Calm_place.mp3";
+  String currentAudio = "calm place.wav";
 
   bool _isLoading = true;
   String currentDescription = "The air is crisp and I can hear the wind in the trees. It smells like pine and damp earth.";
   String backgroundImageUrl = "";
-
-  // CBT Formulation Q&A data from session_two
-  bool _hasCbtData = false;
-  final List<Map<String, String>> _cbtQA = [];
+  String currentAudioUrl = "";
+  bool _hasLocalCalmPlace = false;
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _loadCbtData();
+    _loadSavedCalmPlace();
     _fetchCalmPlaceAndInit();
   }
 
-  void _loadCbtData() {
+  void _loadSavedCalmPlace() {
     final box = GetStorage();
-    final saved = box.read<bool>('cbt_saved') ?? false;
+    final saved = box.read<bool>('calm_place_saved') ?? false;
     if (!saved) return;
+    _hasLocalCalmPlace = true;
 
-    final qaItems = <Map<String, String>>[];
+    final description = box.read<String>('calm_place_description') ?? '';
+    final audioName = box.read<String>('calm_place_audio_name') ?? '';
+    final audioUrl = box.read<String>('calm_place_audio_url') ?? '';
+    final imageUrl = box.read<String>('calm_place_image_url') ?? '';
 
-    void addIfNotEmpty(String question, String key) {
-      final val = box.read<String>(key) ?? '';
-      if (val.isNotEmpty) qaItems.add({'q': question, 'a': val});
-    }
-
-    addIfNotEmpty('A Recent Happening', 'cbt_recent_happening');
-    addIfNotEmpty('Triggers', 'cbt_triggers');
-    addIfNotEmpty('My Thoughts', 'cbt_thoughts');
-    addIfNotEmpty('My Feelings', 'cbt_feelings');
-    addIfNotEmpty('My Behaviors', 'cbt_behaviors');
-    addIfNotEmpty('Deep-Down Beliefs', 'cbt_deep_beliefs');
-    addIfNotEmpty('When I Was Little', 'cbt_childhood');
-    addIfNotEmpty('The Rules I Follow', 'cbt_rules');
-    addIfNotEmpty('The Consequences', 'cbt_consequences');
-    addIfNotEmpty('My Superpowers', 'cbt_superpowers');
-
-    setState(() {
-      _hasCbtData = qaItems.isNotEmpty;
-      _cbtQA.addAll(qaItems);
+    _applyCalmPlaceData({
+      'description': description,
+      'audioName': audioName,
+      'audioUrl': audioUrl,
+      'imageUrl': imageUrl,
     });
+  }
+
+  void _applyCalmPlaceData(Map data) {
+    final audioName = data['audioName']?.toString() ?? '';
+    final description = data['description']?.toString() ?? '';
+    final audioUrl = data['audioUrl']?.toString() ?? '';
+    final imageUrl = data['imageUrl']?.toString() ?? '';
+
+    if (audioName.isNotEmpty) currentAudio = audioName;
+    if (description.isNotEmpty) currentDescription = description;
+    currentAudioUrl = audioUrl;
+    if (imageUrl.isNotEmpty) backgroundImageUrl = imageUrl;
   }
 
   Future<void> _fetchCalmPlaceAndInit() async {
     try {
+      if (_hasLocalCalmPlace) {
+        await _setSavedAudioSource();
+        return;
+      }
+
       final authController = Get.find<AuthController>();
       final token = authController.token;
       if (token != null) {
         final result = await CalmPlaceService.getCalmPlace(token);
         if (result['success'] == true && result['data'] != null) {
           final data = result['data'];
-          
+
           if (data is List && data.isNotEmpty) {
-             final firstItem = data.last; // get the latest one
-             setState(() {
-              if (firstItem['audioName'] != null && firstItem['audioName'].isNotEmpty) {
-                 currentAudio = firstItem['audioName'];
-              }
-              if (firstItem['description'] != null && firstItem['description'].isNotEmpty) {
-                 currentDescription = firstItem['description'];
-              }
-              if (firstItem['imageUrl'] != null && firstItem['imageUrl'].isNotEmpty) {
-                 backgroundImageUrl = firstItem['imageUrl'];
-              }
+            final firstItem = data.last; // get the latest one
+            setState(() {
+              _applyCalmPlaceData(firstItem);
             });
-             
+
             final audioUrl = firstItem['audioUrl'];
             if (audioUrl != null && audioUrl.isNotEmpty) {
-               await _audioPlayer.setUrl(audioUrl);
+              await _audioPlayer.setUrl(audioUrl);
             } else {
-               await _audioPlayer.setAsset('assets/audio/calm place.wav');
+              await _setSavedAudioSource();
             }
           } else if (data is Map) {
             setState(() {
-              if (data['audioName'] != null && data['audioName'].isNotEmpty) {
-                 currentAudio = data['audioName'];
-              }
-              if (data['description'] != null && data['description'].isNotEmpty) {
-                 currentDescription = data['description'];
-              }
-              if (data['imageUrl'] != null && data['imageUrl'].isNotEmpty) {
-                 backgroundImageUrl = data['imageUrl'];
-              }
+              _applyCalmPlaceData(data);
             });
             final audioUrl = data['audioUrl'];
             if (audioUrl != null && audioUrl.isNotEmpty) {
-               await _audioPlayer.setUrl(audioUrl);
+              await _audioPlayer.setUrl(audioUrl);
             } else {
-               await _audioPlayer.setAsset('assets/audio/calm place.wav');
+              await _setSavedAudioSource();
             }
           } else {
-             await _audioPlayer.setAsset('assets/audio/calm place.wav');
+            await _setSavedAudioSource();
           }
         } else {
-           await _audioPlayer.setAsset('assets/audio/calm place.wav');
+          await _setSavedAudioSource();
         }
       } else {
-        await _audioPlayer.setAsset('assets/audio/calm place.wav');
+        await _setSavedAudioSource();
       }
     } catch (e) {
       debugPrint("Audio load error: $e");
-      await _audioPlayer.setAsset('assets/audio/calm place.wav');
+      await _setSavedAssetAudio();
     } finally {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _setSavedAudioSource() async {
+    if (currentAudioUrl.isNotEmpty) {
+      await _audioPlayer.setUrl(currentAudioUrl);
+      return;
+    }
+
+    await _setSavedAssetAudio();
+  }
+
+  Future<void> _setSavedAssetAudio() async {
+    final assetName = currentAudio.isNotEmpty ? currentAudio : 'calm place.wav';
+    try {
+      await _audioPlayer.setAsset('assets/audio/$assetName');
+    } catch (_) {
+      currentAudio = 'calm place.wav';
+      await _audioPlayer.setAsset('assets/audio/calm place.wav');
     }
   }
 
@@ -136,121 +146,155 @@ class _ACalmPageState extends State<ACalmPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    const double appBarImageHeight = 180;
+    const double overlapAmount = 5;
 
+    return Scaffold(
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // 1. Full Background Illustration
-          Positioned.fill(
-            child: backgroundImageUrl.isNotEmpty
-                ? Image.network(
-                    backgroundImageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset(
-                      'assets/images/home_bg1.jpg',
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Image.asset(
-                    'assets/images/home_bg1.jpg',
-                    fit: BoxFit.cover,
-                  ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: appBarImageHeight,
+            child: Image.asset(
+              'assets/images/my_emdr.png',
+              fit: BoxFit.fill,
+            ),
           ),
-
-          // 2. Main Content
-          SafeArea(
-            child: Column(
-              children: [
-                _buildAppBar(context),
-                const Spacer(),
-
-                  // Outer Glass Container
-                  if (_isLoading)
-                    const Expanded(child: Center(child: CircularProgressIndicator(color: Color(0xFF5A7D63))))
-                  else
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(color: Colors.white.withOpacity(0.3)),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Inner Card - Selected Image
-                                Container(
-                                  height: 400, // Matching the tall image in UI
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFAF3E0).withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(20),
-                                    child: backgroundImageUrl.isNotEmpty
-                                        ? Image.network(
-                                            backgroundImageUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Image.asset(
-                                              'assets/images/home_bg2.jpg',
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : Image.asset(
-                                            'assets/images/home_bg2.jpg', // Fallback inner drawing
-                                            fit: BoxFit.cover,
-                                          ),
-                                  ),
-                                ),
-
-                                const SizedBox(height: 10),
-
-                                // Audio Controller Card
-                                _buildAudioPlayerCard(),
-
-                                // CBT Q&A section
-                                if (_hasCbtData) ...[
-                                  const SizedBox(height: 10),
-                                  _buildCbtQACard(),
-                                ],
-                              ],
-                            ),
+          Column(
+            children: [
+              _buildAppBar(context),
+              Expanded(
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned.fill(
+                      top: -overlapAmount,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(35),
+                            topRight: Radius.circular(35),
+                          ),
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/home_bg1.jpg'),
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
                     ),
-                  const SizedBox(height: 20),
-                ],
+                    _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF5A7D63),
+                            ),
+                          )
+                        : LayoutBuilder(
+                            builder: (context, constraints) {
+                              final imageHeight = (constraints.maxHeight * 0.42)
+                                  .clamp(220.0, 360.0);
+
+                              return SingleChildScrollView(
+                                physics: const BouncingScrollPhysics(),
+                                padding: EdgeInsets.fromLTRB(
+                                  15,
+                                  40,
+                                  15,
+                                  MediaQuery.of(context).padding.bottom + 20,
+                                ),
+                                child: Column(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: BackdropFilter(
+                                        filter: ImageFilter.blur(
+                                          sigmaX: 10,
+                                          sigmaY: 10,
+                                        ),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(30),
+                                            border: Border.all(
+                                              color:
+                                                  Colors.white.withOpacity(0.3),
+                                            ),
+                                          ),
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Container(
+                                                height: imageHeight,
+                                                width: double.infinity,
+                                                decoration: BoxDecoration(
+                                                  color: const Color(0xFFFAF3E0)
+                                                      .withOpacity(0.6),
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(20),
+                                                  child: backgroundImageUrl
+                                                          .isNotEmpty
+                                                      ? _buildCalmImage(
+                                                          fallbackAsset:
+                                                              'assets/images/home_bg2.jpg',
+                                                          fit: BoxFit.cover,
+                                                        )
+                                                      : Image.asset(
+                                                          'assets/images/home_bg2.jpg',
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 10),
+                                              _buildAudioPlayerCard(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 20,
+        left: 10,
+        right: 20,
+        bottom: 10,
+      ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF333333)),
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
             onPressed: () => Navigator.pop(context),
           ),
           const Text(
             "My Calm Space",
             style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w400,
-              fontFamily: 'Serif', // Serif font use karein image matching ke liye
-              color: Color(0xFF333333),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2E3E32),
             ),
           ),
         ],
@@ -324,6 +368,48 @@ class _ACalmPageState extends State<ACalmPage> {
     );
   }
 
+  Widget _buildCalmImage({required String fallbackAsset, required BoxFit fit}) {
+    final imagePath = backgroundImageUrl.trim();
+
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
+          fallbackAsset,
+          fit: fit,
+        ),
+      );
+    }
+
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(
+        imagePath,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) => Image.asset(
+          fallbackAsset,
+          fit: fit,
+        ),
+      );
+    }
+
+    if (imagePath.isNotEmpty) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          fit: fit,
+          errorBuilder: (context, error, stackTrace) => Image.asset(
+            fallbackAsset,
+            fit: fit,
+          ),
+        );
+      }
+    }
+
+    return Image.asset(fallbackAsset, fit: fit);
+  }
+
   Widget _buildSlider() {
     return StreamBuilder<Duration>(
       stream: _audioPlayer.positionStream,
@@ -342,7 +428,8 @@ class _ACalmPageState extends State<ACalmPage> {
               ),
               child: Slider(
                 value: duration.inMilliseconds > 0
-                    ? position.inMilliseconds / duration.inMilliseconds
+                    ? (position.inMilliseconds / duration.inMilliseconds)
+                        .clamp(0.0, 1.0)
                     : 0,
                 onChanged: (v) {
                   _audioPlayer.seek(Duration(milliseconds: (v * duration.inMilliseconds).toInt()));
@@ -359,93 +446,6 @@ class _ACalmPageState extends State<ACalmPage> {
           ],
         );
       },
-    );
-  }
-
-  Widget _buildCbtQACard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5A7D63).withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.psychology_outlined, color: Color(0xFF5A7D63), size: 20),
-              ),
-              const SizedBox(width: 10),
-              const Text(
-                'My Journey Formulation',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF2E3E32),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          const Divider(color: Color(0xFFDCEADE), thickness: 1),
-          const SizedBox(height: 8),
-          ..._cbtQA.map((item) => _buildQAItem(item['q']!, item['a']!)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQAItem(String question, String answer) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Icon(Icons.help_outline_rounded, size: 14, color: Color(0xFF5A7D63)),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  question,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF5A7D63),
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F9F5),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFDCEADE)),
-            ),
-            child: Text(
-              answer,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF2D3436),
-                height: 1.5,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
