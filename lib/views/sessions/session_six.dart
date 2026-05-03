@@ -3,12 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/views/sessions/session_seven.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
-
 
 enum EMDRPhase { phase1, phase2, phase3, closing }
 
@@ -24,17 +24,17 @@ class SessionSix extends StatefulWidget {
 class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
   final box = GetStorage();
   final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   EMDRPhase _currentPhase = EMDRPhase.phase1;
   Phase1State _p1State = Phase1State.intro;
-  
+
   // Phase 1 Data
   int _sudsScore = 10;
   bool _isChanging = true;
-  
+
   // Phase 2 Data
   int _vocScore = 1;
-  
+
   // Timer Data
   Duration _sessionDuration = const Duration(hours: 1);
   Timer? _sessionTimer;
@@ -47,19 +47,21 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    _blsController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _blsController.reverse();
-        } else if (status == AnimationStatus.dismissed) {
-          _blsController.forward();
-        }
-      });
-    _blsAnimation = Tween<double>(begin: -1.0, end: 1.0).animate(
-      CurvedAnimation(parent: _blsController, curve: Curves.easeInOut),
-    );
+    _blsController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 1000),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            _blsController.reverse();
+          } else if (status == AnimationStatus.dismissed) {
+            _blsController.forward();
+          }
+        });
+    _blsAnimation = Tween<double>(
+      begin: -1.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _blsController, curve: Curves.easeInOut));
   }
 
   @override
@@ -101,8 +103,8 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     _blsController.forward();
     // Play BLS sound if available
     _playVoice('assets/audio/calm place.wav'); // Placeholder for BLS ticking
-    
-    // BLS set typically lasts 30-60 seconds in some protocols, 
+
+    // BLS set typically lasts 30-60 seconds in some protocols,
     // but here it seems manual or automatic based on user input.
     // For now, let's stop after 30 seconds and show check-in.
     Future.delayed(const Duration(seconds: 30), () {
@@ -118,7 +120,9 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     setState(() {
       _p1State = Phase1State.checkin;
     });
-    _playVoice('assets/audio/calm place.wav'); // Placeholder: "Is it changing and still connected?"
+    _playVoice(
+      'assets/audio/calm place.wav',
+    ); // Placeholder: "Is it changing and still connected?"
   }
 
   @override
@@ -168,10 +172,14 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
 
   String _getPhaseTitle() {
     switch (_currentPhase) {
-      case EMDRPhase.phase1: return "Phase 1: Desensitization";
-      case EMDRPhase.phase2: return "Phase 2: Installation";
-      case EMDRPhase.phase3: return "Phase 3: Body Scan";
-      case EMDRPhase.closing: return "Session Closing";
+      case EMDRPhase.phase1:
+        return "Phase 1: Desensitization";
+      case EMDRPhase.phase2:
+        return "Phase 2: Installation";
+      case EMDRPhase.phase3:
+        return "Phase 3: Body Scan";
+      case EMDRPhase.closing:
+        return "Session Closing";
     }
   }
 
@@ -188,7 +196,10 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       ),
       child: Text(
         "Time Remaining: $hours:$minutes:$seconds",
-        style: TextStyle(color: AppColors.mainAppColor, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: AppColors.mainAppColor,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -233,11 +244,24 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const AppText("Roadmap Summary", fontSize: 18, fontWeight: FontWeight.bold),
+                const AppText(
+                  "Roadmap Summary",
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 const SizedBox(height: 15),
-                _buildSummaryItem("Target Memory", answers['A Recent Happening'] ?? "Not specified"),
-                _buildSummaryItem("Negative Belief", answers['Deep-Down Beliefs'] ?? "Not specified"),
-                _buildSummaryItem("Emotions", answers['My Feelings'] ?? "Not specified"),
+                _buildSummaryItem(
+                  "Target Memory",
+                  answers['A Recent Happening'] ?? "Not specified",
+                ),
+                _buildSummaryItem(
+                  "Negative Belief",
+                  answers['Deep-Down Beliefs'] ?? "Not specified",
+                ),
+                _buildSummaryItem(
+                  "Emotions",
+                  answers['My Feelings'] ?? "Not specified",
+                ),
               ],
             ),
           ),
@@ -247,7 +271,10 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 30),
-          _buildPrimaryButton("Choose Session Length", () => _showDurationPicker()),
+          _buildPrimaryButton(
+            "Choose Session Length",
+            () => _showDurationPicker(),
+          ),
         ],
       ),
     );
@@ -257,13 +284,22 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(25),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppText("Choose Session Duration", fontSize: 18, fontWeight: FontWeight.bold),
+            const AppText(
+              "Choose Session Duration",
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
             const SizedBox(height: 20),
             _buildListTile("1 min (Test)", () {
               _startSessionTimer(1);
@@ -286,7 +322,11 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const AppText("When you are ready...", fontSize: 22, fontWeight: FontWeight.bold),
+          const AppText(
+            "When you are ready...",
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
           const SizedBox(height: 40),
           _buildPrimaryButton("Start Bilateral Stimulation", _startBLS),
         ],
@@ -298,7 +338,11 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const AppText("Follow the ball with your eyes", fontSize: 16, color: Colors.black54),
+        const AppText(
+          "Follow the ball with your eyes",
+          fontSize: 16,
+          color: Colors.black54,
+        ),
         const SizedBox(height: 60),
         AnimatedBuilder(
           animation: _blsAnimation,
@@ -308,16 +352,16 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
               child: Container(
                 width: 40,
                 height: 40,
-                decoration: const BoxDecoration(color: Color(0xFF537E5D), shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF537E5D),
+                  shape: BoxShape.circle,
+                ),
               ),
             );
           },
         ),
         const SizedBox(height: 100),
-        OutlinedButton(
-          onPressed: _stopBLS,
-          child: const Text("Stop Set"),
-        ),
+        OutlinedButton(onPressed: _stopBLS, child: const Text("Stop Set")),
       ],
     );
   }
@@ -329,7 +373,12 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const AppText("Is it changing and still connected?", fontSize: 20, fontWeight: FontWeight.bold, textAlign: TextAlign.center),
+            const AppText(
+              "Is it changing and still connected?",
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 40),
             _buildPrimaryButton("Yes, it's changing", () {
               // "Ok good, go with that"
@@ -341,7 +390,9 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
                 // "Ok, lets go back to the original image..."
                 setState(() => _p1State = Phase1State.suds);
               },
-              style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 55)),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 55),
+              ),
               child: const Text("No, it's not changing"),
             ),
           ],
@@ -356,12 +407,28 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const AppText("Notice what you see and feel in the original image.", fontSize: 16, textAlign: TextAlign.center),
+          const AppText(
+            "Notice what you see and feel in the original image.",
+            fontSize: 16,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 20),
-          const AppText("Rate your negative emotion (SUDS)", fontSize: 18, fontWeight: FontWeight.bold),
-          const AppText("0 = No disturbance, 10 = Maximum disturbance", fontSize: 12, color: Colors.grey),
+          const AppText(
+            "Rate your negative emotion (SUDS)",
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+          const AppText(
+            "0 = No disturbance, 10 = Maximum disturbance",
+            fontSize: 12,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 20),
-          _buildScorePicker(10, _sudsScore, (val) => setState(() => _sudsScore = val)),
+          _buildScorePicker(
+            10,
+            _sudsScore,
+            (val) => setState(() => _sudsScore = val),
+          ),
           const SizedBox(height: 30),
           _buildPrimaryButton("Confirm Score", () {
             if (_sudsScore <= 1) {
@@ -386,13 +453,29 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const AppText("Phase 2: Positive Belief Installation", fontSize: 20, fontWeight: FontWeight.bold),
+          const AppText(
+            "Phase 2: Positive Belief Installation",
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
           const SizedBox(height: 20),
-          const AppText("Focus on your positive belief. How true does it feel now?", textAlign: TextAlign.center),
+          const AppText(
+            "Focus on your positive belief. How true does it feel now?",
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 10),
-          const AppText("1 = Completely false, 7 = Completely true", fontSize: 12, color: Colors.grey),
+          const AppText(
+            "1 = Completely false, 7 = Completely true",
+            fontSize: 12,
+            color: Colors.grey,
+          ),
           const SizedBox(height: 20),
-          _buildScorePicker(7, _vocScore, (val) => setState(() => _vocScore = val), startFrom: 1),
+          _buildScorePicker(
+            7,
+            _vocScore,
+            (val) => setState(() => _vocScore = val),
+            startFrom: 1,
+          ),
           const SizedBox(height: 30),
           _buildPrimaryButton("Confirm Score", () {
             if (_vocScore >= 6) {
@@ -415,9 +498,17 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.accessibility_new, size: 80, color: Color(0xFF537E5D)),
+          const Icon(
+            Icons.accessibility_new,
+            size: 80,
+            color: Color(0xFF537E5D),
+          ),
           const SizedBox(height: 20),
-          const AppText("Phase 3: Body Scan", fontSize: 20, fontWeight: FontWeight.bold),
+          const AppText(
+            "Phase 3: Body Scan",
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
           const SizedBox(height: 20),
           const AppText(
             "Close your eyes and scan your body from head to toe. Notice if there is any tension or unusual sensation.",
@@ -441,7 +532,11 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
         children: [
           const Icon(Icons.favorite, size: 60, color: Colors.redAccent),
           const SizedBox(height: 20),
-          const AppText("Calm Place Exercise", fontSize: 22, fontWeight: FontWeight.bold),
+          const AppText(
+            "Calm Place Exercise",
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
           const SizedBox(height: 15),
           const AppText(
             "Bring up your Calm Place pincode. Spend a minute finding that nice feeling in your body.",
@@ -458,13 +553,16 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
             ),
           ),
           const SizedBox(height: 40),
-          _buildPrimaryButton("Go to Session 7 (Ongoing)", () {
-            Get.to(() => const SessionSeven());
+          _buildPrimaryButton("Go to Session 7 (Ongoing)", () async {
+            await SessionCompletionService.markCompleted(6);
+            Get.to(() => const SessionSeven(), arguments: Get.arguments);
           }),
           const SizedBox(height: 15),
           OutlinedButton(
             onPressed: () => Get.back(),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 55)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 55),
+            ),
             child: const Text("Finish & Return Home"),
           ),
         ],
@@ -493,7 +591,14 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black54)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+              color: Colors.black54,
+            ),
+          ),
           Text(value, style: const TextStyle(fontSize: 14)),
         ],
       ),
@@ -508,14 +613,28 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF537E5D),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
         ),
-        child: Text(text, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildScorePicker(int max, int current, Function(int) onSelected, {int startFrom = 0}) {
+  Widget _buildScorePicker(
+    int max,
+    int current,
+    Function(int) onSelected, {
+    int startFrom = 0,
+  }) {
     return Wrap(
       spacing: 10,
       runSpacing: 10,
@@ -535,7 +654,10 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
             child: Center(
               child: Text(
                 val.toString(),
-                style: TextStyle(color: isSelected ? Colors.white : const Color(0xFF537E5D), fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  color: isSelected ? Colors.white : const Color(0xFF537E5D),
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

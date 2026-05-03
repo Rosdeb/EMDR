@@ -98,6 +98,24 @@ class MediaService {
     return _handleResponse(response);
   }
 
+  // Update watched progress for a media item.
+  static Future<Map<String, dynamic>> updateMediaProgress({
+    required String token,
+    required String mediaId,
+    required int watchedSeconds,
+    required int totalSeconds,
+  }) async {
+    final response = await http.patch(
+      Uri.parse('${AppUrl.baseUrl}/progress/media/$mediaId'),
+      headers: _headers(token),
+      body: jsonEncode({
+        'watchedSeconds': watchedSeconds,
+        'totalSeconds': totalSeconds,
+      }),
+    );
+    return _handleResponse(response);
+  }
+
   // ─── Response Handler ──────────────────────────────────────
   static Map<String, dynamic> _handleResponse(http.Response response) {
     try {

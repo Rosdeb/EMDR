@@ -3,8 +3,8 @@ import 'dart:math' as math;
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/services/cbt_service.dart';
+import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/views/sessions/session_three.dart';
-
 
 // ─── DATA MODELS ────────────────────────────────────────────────────────────
 
@@ -23,9 +23,9 @@ class JourneyData {
 
   bool get isMinimallyComplete =>
       recentHappening.isNotEmpty &&
-          thoughts.isNotEmpty &&
-          feelings.isNotEmpty &&
-          behaviors.isNotEmpty;
+      thoughts.isNotEmpty &&
+      feelings.isNotEmpty &&
+      behaviors.isNotEmpty;
 }
 
 // ─── CONSTANTS ───────────────────────────────────────────────────────────────
@@ -84,17 +84,45 @@ const List<String> consequenceOptions = [
 
 const List<Map<String, dynamic>> emotions = [
   {'label': 'Sad', 'color1': Color(0xFF74B9FF), 'color2': Color(0xFF6C5CE7)},
-  {'label': 'Shocked', 'color1': Color(0xFFFF6B6B), 'color2': Color(0xFFEE5A24)},
+  {
+    'label': 'Shocked',
+    'color1': Color(0xFFFF6B6B),
+    'color2': Color(0xFFEE5A24),
+  },
   {'label': 'Angry', 'color1': Color(0xFFFF6B6B), 'color2': Color(0xFFC0392B)},
-  {'label': 'Irritated', 'color1': Color(0xFFE17055), 'color2': Color(0xFFD63031)},
-  {'label': 'Anxious', 'color1': Color(0xFFA29BFE), 'color2': Color(0xFF6C5CE7)},
+  {
+    'label': 'Irritated',
+    'color1': Color(0xFFE17055),
+    'color2': Color(0xFFD63031),
+  },
+  {
+    'label': 'Anxious',
+    'color1': Color(0xFFA29BFE),
+    'color2': Color(0xFF6C5CE7),
+  },
   {'label': 'Panic', 'color1': Color(0xFFFD79A8), 'color2': Color(0xFFE84393)},
-  {'label': 'Frightened', 'color1': Color(0xFF636E72), 'color2': Color(0xFF2D3436)},
-  {'label': 'Stressed', 'color1': Color(0xFFFDCB6E), 'color2': Color(0xFFF39C12)},
+  {
+    'label': 'Frightened',
+    'color1': Color(0xFF636E72),
+    'color2': Color(0xFF2D3436),
+  },
+  {
+    'label': 'Stressed',
+    'color1': Color(0xFFFDCB6E),
+    'color2': Color(0xFFF39C12),
+  },
   {'label': 'Scared', 'color1': Color(0xFFDFE6E9), 'color2': Color(0xFFB2BEC3)},
-  {'label': 'Confused', 'color1': Color(0xFFFD79A8), 'color2': Color(0xFFA29BFE)},
+  {
+    'label': 'Confused',
+    'color1': Color(0xFFFD79A8),
+    'color2': Color(0xFFA29BFE),
+  },
   {'label': 'Guilty', 'color1': Color(0xFF636E72), 'color2': Color(0xFF2D3436)},
-  {'label': 'Ashamed', 'color1': Color(0xFFFAB1A0), 'color2': Color(0xFFE17055)},
+  {
+    'label': 'Ashamed',
+    'color1': Color(0xFFFAB1A0),
+    'color2': Color(0xFFE17055),
+  },
   {'label': 'Hurt', 'color1': Color(0xFFFF7675), 'color2': Color(0xFFD63031)},
   {'label': 'Grief', 'color1': Color(0xFF95A5A6), 'color2': Color(0xFF7F8C8D)},
 ];
@@ -298,8 +326,14 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           setState(() {
             _apiEmotions = rawEmotions.map((e) {
               final label = e.toString();
-              final cols = emotionColors[label] ?? [const Color(0xFF74B9FF), const Color(0xFF6C5CE7)];
-              return <String, dynamic>{'label': label, 'color1': cols[0], 'color2': cols[1]};
+              final cols =
+                  emotionColors[label] ??
+                  [const Color(0xFF74B9FF), const Color(0xFF6C5CE7)];
+              return <String, dynamic>{
+                'label': label,
+                'color1': cols[0],
+                'color2': cols[1],
+              };
             }).toList();
           });
         }
@@ -308,7 +342,9 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         final rawConsequences = data['consequenceOptions'];
         if (rawConsequences is List) {
           setState(() {
-            _apiConsequenceOptions = rawConsequences.map((e) => e.toString()).toList();
+            _apiConsequenceOptions = rawConsequences
+                .map((e) => e.toString())
+                .toList();
           });
         }
       }
@@ -332,17 +368,24 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
             _data.childhood = latest['childhood']?.toString() ?? '';
             _data.rules = latest['rules']?.toString() ?? '';
             _data.superpowers = latest['superpowers']?.toString() ?? '';
-            
+
             if (latest['feelings'] is List) {
-              _data.feelings = (latest['feelings'] as List).map((e) => e.toString()).toList();
+              _data.feelings = (latest['feelings'] as List)
+                  .map((e) => e.toString())
+                  .toList();
             }
             if (latest['deepBeliefs'] is List) {
-              _data.deepBeliefs = (latest['deepBeliefs'] as List).map((e) => e.toString()).toList();
+              _data.deepBeliefs = (latest['deepBeliefs'] as List)
+                  .map((e) => e.toString())
+                  .toList();
             }
             if (latest['consequences'] is List) {
-              _data.consequences = (latest['consequences'] as List).map((e) => e.toString()).toList();
+              _data.consequences = (latest['consequences'] as List)
+                  .map((e) => e.toString())
+                  .toList();
             }
-            _data.consequencesOther = latest['consequencesOther']?.toString() ?? '';
+            _data.consequencesOther =
+                latest['consequencesOther']?.toString() ?? '';
           });
         }
       } else {
@@ -350,22 +393,37 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         final savedAnswers = box.read('cbt_answers');
         if (savedAnswers is Map) {
           setState(() {
-            _data.childhood = savedAnswers['When I Was Little']?.toString() ?? '';
+            _data.childhood =
+                savedAnswers['When I Was Little']?.toString() ?? '';
             _data.rules = savedAnswers['The Rules']?.toString() ?? '';
             _data.triggers = savedAnswers['Triggers']?.toString() ?? '';
-            _data.recentHappening = savedAnswers['A Recent Happening']?.toString() ?? '';
+            _data.recentHappening =
+                savedAnswers['A Recent Happening']?.toString() ?? '';
             _data.thoughts = savedAnswers['My Thoughts']?.toString() ?? '';
             _data.behaviors = savedAnswers['What I Did']?.toString() ?? '';
-            _data.superpowers = savedAnswers['Your Superpowers']?.toString() ?? '';
-            
-            if (savedAnswers['Deep-Down Beliefs'] != null && savedAnswers['Deep-Down Beliefs'].toString().isNotEmpty) {
-              _data.deepBeliefs = savedAnswers['Deep-Down Beliefs'].toString().split(', ').toList();
+            _data.superpowers =
+                savedAnswers['Your Superpowers']?.toString() ?? '';
+
+            if (savedAnswers['Deep-Down Beliefs'] != null &&
+                savedAnswers['Deep-Down Beliefs'].toString().isNotEmpty) {
+              _data.deepBeliefs = savedAnswers['Deep-Down Beliefs']
+                  .toString()
+                  .split(', ')
+                  .toList();
             }
-            if (savedAnswers['My Feelings'] != null && savedAnswers['My Feelings'].toString().isNotEmpty) {
-              _data.feelings = savedAnswers['My Feelings'].toString().split(', ').toList();
+            if (savedAnswers['My Feelings'] != null &&
+                savedAnswers['My Feelings'].toString().isNotEmpty) {
+              _data.feelings = savedAnswers['My Feelings']
+                  .toString()
+                  .split(', ')
+                  .toList();
             }
-            if (savedAnswers['The Consequences'] != null && savedAnswers['The Consequences'].toString().isNotEmpty) {
-              _data.consequences = savedAnswers['The Consequences'].toString().split(', ').toList();
+            if (savedAnswers['The Consequences'] != null &&
+                savedAnswers['The Consequences'].toString().isNotEmpty) {
+              _data.consequences = savedAnswers['The Consequences']
+                  .toString()
+                  .split(', ')
+                  .toList();
             }
           });
         }
@@ -401,7 +459,8 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         return _data.behaviors;
       case 'consequences':
         final all = [..._data.consequences];
-        if (_data.consequencesOther.isNotEmpty) all.add(_data.consequencesOther);
+        if (_data.consequencesOther.isNotEmpty)
+          all.add(_data.consequencesOther);
         return all.join('; ');
       case 'superpowers':
         return _data.superpowers;
@@ -437,7 +496,8 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
     // Save to local storage using cbt_answers format that cbt.dart reads
     final box = GetStorage();
     final allConsequences = [..._data.consequences];
-    if (_data.consequencesOther.isNotEmpty) allConsequences.add(_data.consequencesOther);
+    if (_data.consequencesOther.isNotEmpty)
+      allConsequences.add(_data.consequencesOther);
 
     final answers = <String, String>{
       'When I Was Little': _data.childhood,
@@ -482,17 +542,27 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           // Fallback: create a new formulation
           await CbtService.saveCbt(
             token: token,
-            recentHappening: _data.recentHappening.isNotEmpty ? _data.recentHappening : null,
+            recentHappening: _data.recentHappening.isNotEmpty
+                ? _data.recentHappening
+                : null,
             triggers: _data.triggers.isNotEmpty ? _data.triggers : null,
             thoughts: _data.thoughts.isNotEmpty ? _data.thoughts : null,
             feelings: _data.feelings.isNotEmpty ? _data.feelings : null,
             behaviors: _data.behaviors.isNotEmpty ? _data.behaviors : null,
-            deepBeliefs: _data.deepBeliefs.isNotEmpty ? _data.deepBeliefs : null,
+            deepBeliefs: _data.deepBeliefs.isNotEmpty
+                ? _data.deepBeliefs
+                : null,
             childhood: _data.childhood.isNotEmpty ? _data.childhood : null,
             rules: _data.rules.isNotEmpty ? _data.rules : null,
-            consequences: _data.consequences.isNotEmpty ? _data.consequences : null,
-            consequencesOther: _data.consequencesOther.isNotEmpty ? _data.consequencesOther : null,
-            superpowers: _data.superpowers.isNotEmpty ? _data.superpowers : null,
+            consequences: _data.consequences.isNotEmpty
+                ? _data.consequences
+                : null,
+            consequencesOther: _data.consequencesOther.isNotEmpty
+                ? _data.consequencesOther
+                : null,
+            superpowers: _data.superpowers.isNotEmpty
+                ? _data.superpowers
+                : null,
           );
         }
       }
@@ -515,9 +585,11 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
       ),
     );
 
+    await SessionCompletionService.markCompleted(2);
+
     // Navigate to Session 3 after brief delay
     Future.delayed(const Duration(seconds: 1), () {
-      Get.to(() => const SessionThreePage());
+      Get.to(() => const SessionThreePage(), arguments: Get.arguments);
     });
   }
 
@@ -525,7 +597,8 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
     // Auto-save to local storage and backend without UI feedback
     final box = GetStorage();
     final allConsequences = [..._data.consequences];
-    if (_data.consequencesOther.isNotEmpty) allConsequences.add(_data.consequencesOther);
+    if (_data.consequencesOther.isNotEmpty)
+      allConsequences.add(_data.consequencesOther);
 
     final answers = <String, String>{
       'When I Was Little': _data.childhood,
@@ -569,17 +642,27 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           // Create a new draft
           final result = await CbtService.saveCbt(
             token: token,
-            recentHappening: _data.recentHappening.isNotEmpty ? _data.recentHappening : null,
+            recentHappening: _data.recentHappening.isNotEmpty
+                ? _data.recentHappening
+                : null,
             triggers: _data.triggers.isNotEmpty ? _data.triggers : null,
             thoughts: _data.thoughts.isNotEmpty ? _data.thoughts : null,
             feelings: _data.feelings.isNotEmpty ? _data.feelings : null,
             behaviors: _data.behaviors.isNotEmpty ? _data.behaviors : null,
-            deepBeliefs: _data.deepBeliefs.isNotEmpty ? _data.deepBeliefs : null,
+            deepBeliefs: _data.deepBeliefs.isNotEmpty
+                ? _data.deepBeliefs
+                : null,
             childhood: _data.childhood.isNotEmpty ? _data.childhood : null,
             rules: _data.rules.isNotEmpty ? _data.rules : null,
-            consequences: _data.consequences.isNotEmpty ? _data.consequences : null,
-            consequencesOther: _data.consequencesOther.isNotEmpty ? _data.consequencesOther : null,
-            superpowers: _data.superpowers.isNotEmpty ? _data.superpowers : null,
+            consequences: _data.consequences.isNotEmpty
+                ? _data.consequences
+                : null,
+            consequencesOther: _data.consequencesOther.isNotEmpty
+                ? _data.consequencesOther
+                : null,
+            superpowers: _data.superpowers.isNotEmpty
+                ? _data.superpowers
+                : null,
           );
           if (result['success'] == true && result['data'] != null) {
             _formulationId = result['data']['_id']?.toString();
@@ -606,15 +689,17 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                   _buildTitle(),
                   const SizedBox(height: 30),
                   // Main flow bubbles
-                  ...mainBubbles.map((cfg) => Column(
-                    children: [
-                      _buildSectionLabel(cfg.sectionTitle),
-                      const SizedBox(height: 12),
-                      _buildMainBubble(cfg),
-                      const SizedBox(height: 8),
-                      _buildWavyArrow(),
-                    ],
-                  )),
+                  ...mainBubbles.map(
+                    (cfg) => Column(
+                      children: [
+                        _buildSectionLabel(cfg.sectionTitle),
+                        const SizedBox(height: 12),
+                        _buildMainBubble(cfg),
+                        const SizedBox(height: 8),
+                        _buildWavyArrow(),
+                      ],
+                    ),
+                  ),
                   // Response section
                   _buildSectionLabel('How I React'),
                   const SizedBox(height: 12),
@@ -623,17 +708,19 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                   _buildCycleIndicator(),
                   _buildWavyArrow(),
                   // Bottom bubbles
-                  ...bottomBubbles.map((cfg) => Column(
-                    children: [
-                      _buildSectionLabel(cfg.sectionTitle),
-                      const SizedBox(height: 12),
-                      _buildMainBubble(cfg),
-                      if (cfg != bottomBubbles.last) ...[
-                        const SizedBox(height: 8),
-                        _buildWavyArrow(),
+                  ...bottomBubbles.map(
+                    (cfg) => Column(
+                      children: [
+                        _buildSectionLabel(cfg.sectionTitle),
+                        const SizedBox(height: 12),
+                        _buildMainBubble(cfg),
+                        if (cfg != bottomBubbles.last) ...[
+                          const SizedBox(height: 8),
+                          _buildWavyArrow(),
+                        ],
                       ],
-                    ],
-                  )),
+                    ),
+                  ),
                   const SizedBox(height: 40),
                   _buildSaveButton(),
                   const SizedBox(height: 30),
@@ -649,10 +736,7 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
   }
 
   Widget _buildLinedBackground() {
-    return CustomPaint(
-      painter: LinedPaperPainter(),
-      size: Size.infinite,
-    );
+    return CustomPaint(painter: LinedPaperPainter(), size: Size.infinite);
   }
 
   Widget _buildTitle() {
@@ -709,29 +793,29 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           decoration: BoxDecoration(
             gradient: filled
                 ? const LinearGradient(
-              colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            )
+                    colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
                 : LinearGradient(
-              colors: [cfg.bgColor1, cfg.bgColor2],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+                    colors: [cfg.bgColor1, cfg.bgColor2],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
             border: Border.all(color: cfg.borderColor, width: 3),
             borderRadius: isEven
                 ? const BorderRadius.only(
-              topLeft: Radius.circular(60),
-              topRight: Radius.circular(40),
-              bottomLeft: Radius.circular(60),
-              bottomRight: Radius.circular(40),
-            )
+                    topLeft: Radius.circular(60),
+                    topRight: Radius.circular(40),
+                    bottomLeft: Radius.circular(60),
+                    bottomRight: Radius.circular(40),
+                  )
                 : const BorderRadius.only(
-              topLeft: Radius.circular(50),
-              topRight: Radius.circular(60),
-              bottomLeft: Radius.circular(40),
-              bottomRight: Radius.circular(50),
-            ),
+                    topLeft: Radius.circular(50),
+                    topRight: Radius.circular(60),
+                    bottomLeft: Radius.circular(40),
+                    bottomRight: Radius.circular(50),
+                  ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -756,14 +840,18 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
               const SizedBox(height: 4),
               Text(
                 filled
-                    ? (display.length > 50 ? '${display.substring(0, 47)}...' : display)
+                    ? (display.length > 50
+                          ? '${display.substring(0, 47)}...'
+                          : display)
                     : cfg.subtitle,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 15,
-                  color: filled ? const Color(0xFF2D3436) : const Color(0xFF636E72),
+                  color: filled
+                      ? const Color(0xFF2D3436)
+                      : const Color(0xFF636E72),
                   fontStyle: filled ? FontStyle.italic : FontStyle.normal,
                   fontWeight: filled ? FontWeight.w600 : FontWeight.normal,
                   fontFamily: 'Caveat',
@@ -797,15 +885,15 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                   decoration: BoxDecoration(
                     gradient: filled
                         ? const LinearGradient(
-                      colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
+                            colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
                         : LinearGradient(
-                      colors: [cfg.bgColor1, cfg.bgColor2],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                            colors: [cfg.bgColor1, cfg.bgColor2],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                     border: Border.all(color: cfg.borderColor, width: 3),
                     borderRadius: [
                       const BorderRadius.only(
@@ -835,7 +923,10 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 16,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -852,16 +943,24 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                       const SizedBox(height: 4),
                       Text(
                         filled
-                            ? (display.length > 25 ? '${display.substring(0, 22)}...' : display)
+                            ? (display.length > 25
+                                  ? '${display.substring(0, 22)}...'
+                                  : display)
                             : cfg.subtitle,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 12,
-                          color: filled ? const Color(0xFF2D3436) : const Color(0xFF636E72),
-                          fontStyle: filled ? FontStyle.italic : FontStyle.normal,
-                          fontWeight: filled ? FontWeight.w600 : FontWeight.normal,
+                          color: filled
+                              ? const Color(0xFF2D3436)
+                              : const Color(0xFF636E72),
+                          fontStyle: filled
+                              ? FontStyle.italic
+                              : FontStyle.normal,
+                          fontWeight: filled
+                              ? FontWeight.w600
+                              : FontWeight.normal,
                           fontFamily: 'Caveat',
                         ),
                       ),
@@ -915,7 +1014,9 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         ElevatedButton(
           onPressed: canSave ? _saveFormulation : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: canSave ? const Color(0xFF4CAF50) : Colors.grey.shade400,
+            backgroundColor: canSave
+                ? const Color(0xFF4CAF50)
+                : Colors.grey.shade400,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
             shape: RoundedRectangleBorder(
@@ -990,7 +1091,9 @@ class _HelperSheetState extends State<HelperSheet> {
     _selectedEmotions = List.from(widget.data.feelings);
     _selectedBeliefs = List.from(widget.data.deepBeliefs);
     _selectedConsequences = List.from(widget.data.consequences);
-    _otherController = TextEditingController(text: widget.data.consequencesOther);
+    _otherController = TextEditingController(
+      text: widget.data.consequencesOther,
+    );
 
     final id = widget.config.id;
     String initial = '';
@@ -1032,16 +1135,23 @@ class _HelperSheetState extends State<HelperSheet> {
       case 'recent-happening':
         return {
           'title': 'A Recent Happening',
-          'intro': 'Write the situation where you last felt the feeling as to why you are here today. We want an actual situation that happened.',
-          'example': 'Examples:\n• "I had an argument with my partner"\n• "I had feedback from my boss"\n• "I tried to go to work"',
+          'intro':
+              'Write the situation where you last felt the feeling as to why you are here today. We want an actual situation that happened.',
+          'example':
+              'Examples:\n• "I had an argument with my partner"\n• "I had feedback from my boss"\n• "I tried to go to work"',
           'type': 'text',
         };
       case 'triggers':
         return {
           'title': 'Triggers',
-          'intro': 'What has happened over the years that maybe has triggered how you are feeling?',
-          'questions': ['Was there a specific event, person, or place involved?', 'Have similar situations triggered you before?'],
-          'example': 'Example: "Being criticised", "Grandma passed", "Being attacked"',
+          'intro':
+              'What has happened over the years that maybe has triggered how you are feeling?',
+          'questions': [
+            'Was there a specific event, person, or place involved?',
+            'Have similar situations triggered you before?',
+          ],
+          'example':
+              'Example: "Being criticised", "Grandma passed", "Being attacked"',
           'type': 'text',
         };
       case 'thoughts':
@@ -1053,13 +1163,15 @@ class _HelperSheetState extends State<HelperSheet> {
             'What were you telling yourself about the situation?',
             'What did you think it meant about you or others?',
           ],
-          'example': 'Examples: "They don\'t respect me" or "I always mess things up"',
+          'example':
+              'Examples: "They don\'t respect me" or "I always mess things up"',
           'type': 'text',
         };
       case 'feelings':
         return {
           'title': 'My Feelings - in the body',
-          'intro': 'How did this situation make you feel? Select all emotions you experienced:',
+          'intro':
+              'How did this situation make you feel? Select all emotions you experienced:',
           'type': 'emotions',
         };
       case 'behaviors':
@@ -1077,18 +1189,21 @@ class _HelperSheetState extends State<HelperSheet> {
       case 'deep-beliefs':
         return {
           'title': 'My deep-down negative beliefs',
-          'intro': 'These are deep beliefs about yourself. Choose all that apply:',
+          'intro':
+              'These are deep beliefs about yourself. Choose all that apply:',
           'type': 'beliefs',
         };
       case 'childhood':
         return {
           'title': 'When I was little (Childhood)',
-          'intro': 'Float back in time and see if you remember feeling this way as a child.',
+          'intro':
+              'Float back in time and see if you remember feeling this way as a child.',
           'questions': [
             'Were there specific events or patterns in your family?',
             'What messages did you receive about yourself growing up?',
           ],
-          'example': 'Example: "My parents were very critical" or "I had to be perfect to get attention"',
+          'example':
+              'Example: "My parents were very critical" or "I had to be perfect to get attention"',
           'type': 'text',
         };
       case 'rules':
@@ -1099,20 +1214,24 @@ class _HelperSheetState extends State<HelperSheet> {
             'What "shoulds" or "musts" do you tell yourself?',
             'What do you believe you need to do to be accepted or safe?',
           ],
-          'example': 'Example: "I must never show weakness" or "I should always put others first"',
+          'example':
+              'Example: "I must never show weakness" or "I should always put others first"',
           'type': 'text',
         };
       case 'consequences':
         return {
           'title': 'The Consequences',
-          'intro': 'What are the consequences of the stuck loop you are in? Select all that apply:',
+          'intro':
+              'What are the consequences of the stuck loop you are in? Select all that apply:',
           'type': 'consequences',
         };
       case 'superpowers':
         return {
           'title': 'Your Superpowers',
-          'intro': 'What are your superpowers? What makes you strong, resilient, and able to carry on?',
-          'example': 'Examples: kindness, warmth, intelligence, being a good friend, determination',
+          'intro':
+              'What are your superpowers? What makes you strong, resilient, and able to carry on?',
+          'example':
+              'Examples: kindness, warmth, intelligence, being a good friend, determination',
           'type': 'text',
         };
       default:
@@ -1166,8 +1285,6 @@ class _HelperSheetState extends State<HelperSheet> {
     Navigator.of(context).pop();
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final info = _helperInfo;
@@ -1179,7 +1296,11 @@ class _HelperSheetState extends State<HelperSheet> {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         boxShadow: [
-          BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, -5)),
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 20,
+            offset: Offset(0, -5),
+          ),
         ],
       ),
       child: Column(
@@ -1213,7 +1334,11 @@ class _HelperSheetState extends State<HelperSheet> {
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: Color(0xFF81C784), size: 28),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Color(0xFF81C784),
+                    size: 28,
+                  ),
                 ),
               ],
             ),
@@ -1228,7 +1353,12 @@ class _HelperSheetState extends State<HelperSheet> {
           ),
           // Buttons
           Padding(
-            padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              10,
+              20,
+              MediaQuery.of(context).viewInsets.bottom + 20,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -1244,7 +1374,11 @@ class _HelperSheetState extends State<HelperSheet> {
                     ),
                     child: const Text(
                       'Save & Continue',
-                      style: TextStyle(fontSize: 16, fontFamily: 'Kalam', fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Kalam',
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
@@ -1254,7 +1388,10 @@ class _HelperSheetState extends State<HelperSheet> {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Color(0xFF81C784), width: 2),
                     foregroundColor: const Color(0xFF2E7D32),
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 14,
+                      horizontal: 20,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -1298,21 +1435,35 @@ class _HelperSheetState extends State<HelperSheet> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
-              children: (info['questions'] as List<String>).map((q) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('• ', style: TextStyle(fontSize: 15, color: Color(0xFF2E7D32))),
-                    Expanded(
-                      child: Text(
-                        q,
-                        style: const TextStyle(fontSize: 15, color: Color(0xFF636E72), fontFamily: 'Caveat'),
+              children: (info['questions'] as List<String>)
+                  .map(
+                    (q) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '• ',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF2E7D32),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              q,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Color(0xFF636E72),
+                                fontFamily: 'Caveat',
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              )).toList(),
+                  )
+                  .toList(),
             ),
           ),
           const SizedBox(height: 12),
@@ -1390,7 +1541,9 @@ class _HelperSheetState extends State<HelperSheet> {
             decoration: BoxDecoration(
               color: isSelected ? const Color(0xFFE0F7F5) : Colors.white,
               border: Border.all(
-                color: isSelected ? const Color(0xFF4ECDC4) : Colors.transparent,
+                color: isSelected
+                    ? const Color(0xFF4ECDC4)
+                    : Colors.transparent,
                 width: 3,
               ),
               borderRadius: BorderRadius.circular(15),
@@ -1425,7 +1578,9 @@ class _HelperSheetState extends State<HelperSheet> {
                   style: TextStyle(
                     fontSize: 13,
                     color: const Color(0xFF2D3436),
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w700
+                        : FontWeight.normal,
                     fontFamily: 'Caveat',
                   ),
                   textAlign: TextAlign.center,
@@ -1474,7 +1629,9 @@ class _HelperSheetState extends State<HelperSheet> {
                       });
                     },
                     activeColor: const Color(0xFF2E7D32),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
                   Expanded(
                     child: Text(
@@ -1482,8 +1639,12 @@ class _HelperSheetState extends State<HelperSheet> {
                       style: TextStyle(
                         fontSize: 15,
                         fontFamily: 'Caveat',
-                        color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF2D3436),
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                        color: isSelected
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFF2D3436),
+                        fontWeight: isSelected
+                            ? FontWeight.w700
+                            : FontWeight.normal,
                       ),
                     ),
                   ),
@@ -1534,7 +1695,9 @@ class _HelperSheetState extends State<HelperSheet> {
                           });
                         },
                         activeColor: const Color(0xFF2E7D32),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
                       Expanded(
                         child: Text(
@@ -1542,8 +1705,12 @@ class _HelperSheetState extends State<HelperSheet> {
                           style: TextStyle(
                             fontSize: 15,
                             fontFamily: 'Caveat',
-                            color: isSelected ? const Color(0xFF2E7D32) : const Color(0xFF2D3436),
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal,
+                            color: isSelected
+                                ? const Color(0xFF2E7D32)
+                                : const Color(0xFF2D3436),
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.normal,
                           ),
                         ),
                       ),
@@ -1561,7 +1728,10 @@ class _HelperSheetState extends State<HelperSheet> {
           style: const TextStyle(fontSize: 15, fontFamily: 'Caveat'),
           decoration: InputDecoration(
             labelText: 'Other (add your own)',
-            labelStyle: const TextStyle(fontFamily: 'Caveat', color: Color(0xFF81C784)),
+            labelStyle: const TextStyle(
+              fontFamily: 'Caveat',
+              color: Color(0xFF81C784),
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1650,7 +1820,13 @@ class DoodleDecorations extends StatelessWidget {
     );
   }
 
-  Widget _buildStar({double? top, double? left, double? right, double? bottom, double angle = 0}) {
+  Widget _buildStar({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    double angle = 0,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -1660,16 +1836,19 @@ class DoodleDecorations extends StatelessWidget {
         angle: angle,
         child: Opacity(
           opacity: 0.3,
-          child: CustomPaint(
-            size: const Size(28, 28),
-            painter: StarPainter(),
-          ),
+          child: CustomPaint(size: const Size(28, 28), painter: StarPainter()),
         ),
       ),
     );
   }
 
-  Widget _buildHeart({double? top, double? left, double? right, double? bottom, double angle = 0}) {
+  Widget _buildHeart({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+    double angle = 0,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -1679,16 +1858,18 @@ class DoodleDecorations extends StatelessWidget {
         angle: angle,
         child: Opacity(
           opacity: 0.3,
-          child: CustomPaint(
-            size: const Size(24, 24),
-            painter: HeartPainter(),
-          ),
+          child: CustomPaint(size: const Size(24, 24), painter: HeartPainter()),
         ),
       ),
     );
   }
 
-  Widget _buildSpiral({double? top, double? left, double? right, double? bottom}) {
+  Widget _buildSpiral({
+    double? top,
+    double? left,
+    double? right,
+    double? bottom,
+  }) {
     return Positioned(
       top: top,
       left: left,
@@ -1696,10 +1877,7 @@ class DoodleDecorations extends StatelessWidget {
       bottom: bottom,
       child: Opacity(
         opacity: 0.25,
-        child: CustomPaint(
-          size: const Size(36, 36),
-          painter: SpiralPainter(),
-        ),
+        child: CustomPaint(size: const Size(36, 36), painter: SpiralPainter()),
       ),
     );
   }

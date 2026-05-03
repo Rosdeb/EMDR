@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/services/media_service.dart';
+import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/utils/app_colors.dart';
 
 import 'package:jonssony/utils/app_text.dart';
@@ -182,7 +183,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppText("Select Audio", fontSize: 18, fontWeight: FontWeight.bold),
+                const AppText(
+                  "Select Audio",
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
                 const SizedBox(height: 20),
                 Flexible(
                   child: ListView.builder(
@@ -199,16 +204,25 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       return ListTile(
                         leading: Icon(
                           Icons.music_note,
-                          color: isSelected ? const Color(0xFF537E5D) : Colors.grey,
+                          color: isSelected
+                              ? const Color(0xFF537E5D)
+                              : Colors.grey,
                         ),
                         title: AppText(
                           name,
                           fontSize: 16,
-                          color: isSelected ? const Color(0xFF537E5D) : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? const Color(0xFF537E5D)
+                              : Colors.black87,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                         trailing: isSelected
-                            ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: Color(0xFF537E5D),
+                              )
                             : null,
                         onTap: () async {
                           Navigator.pop(context);
@@ -232,7 +246,10 @@ class _SessionThreePageState extends State<SessionThreePage> {
     );
   }
 
-  Future<void> _setAudioSource({required String name, required String url}) async {
+  Future<void> _setAudioSource({
+    required String name,
+    required String url,
+  }) async {
     try {
       await _audioPlayer.stop();
       if (url.isNotEmpty) {
@@ -251,7 +268,6 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -265,14 +281,23 @@ class _SessionThreePageState extends State<SessionThreePage> {
             border: Border.all(color: Colors.white.withOpacity(0.5)),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32), size: 20),
+            icon: const Icon(
+              Icons.arrow_back,
+              color: Color(0xFF2E3E32),
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             splashRadius: 20,
           ),
         ),
-        title: const AppText("Session 3", color: Color(0xFF2E3E32), fontSize: 20, fontWeight: FontWeight.bold),
+        title: const AppText(
+          "Session 3",
+          color: Color(0xFF2E3E32),
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
       ),
       body: Stack(
         children: [
@@ -287,7 +312,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AppText("Visual", fontSize: 16, fontWeight: FontWeight.bold),
+                        const AppText(
+                          "Visual",
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                         const SizedBox(height: 10),
                         if (_apiImages.isEmpty)
                           // Fallback to local images
@@ -295,7 +324,8 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               ..._fallbackImages.map(
-                                (path) => _buildThumb(path, selectedImageUrl == path),
+                                (path) =>
+                                    _buildThumb(path, selectedImageUrl == path),
                               ),
                             ],
                           )
@@ -322,7 +352,12 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                     margin: const EdgeInsets.only(right: 10),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(10),
-                                      border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
+                                      border: isSelected
+                                          ? Border.all(
+                                              color: Colors.blue,
+                                              width: 2,
+                                            )
+                                          : null,
                                       image: DecorationImage(
                                         image: NetworkImage(url),
                                         fit: BoxFit.cover,
@@ -341,28 +376,44 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             width: double.infinity,
                             height: 140, // Slightly taller to show image better
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.withOpacity(0.5), style: BorderStyle.solid),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.5),
+                                style: BorderStyle.solid,
+                              ),
                               borderRadius: BorderRadius.circular(15),
-                                      image: _pickedImage != null
-                                          ? DecorationImage(
-                                              image: FileImage(_pickedImage!),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : selectedImageUrl.isNotEmpty
-                                              ? DecorationImage(
-                                                  image: _imageProvider(selectedImageUrl),
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : null,
+                              image: _pickedImage != null
+                                  ? DecorationImage(
+                                      image: FileImage(_pickedImage!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : selectedImageUrl.isNotEmpty
+                                  ? DecorationImage(
+                                      image: _imageProvider(selectedImageUrl),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
                             ),
-                            child: _pickedImage == null && selectedImageUrl.isEmpty
+                            child:
+                                _pickedImage == null && selectedImageUrl.isEmpty
                                 ? Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.cloud_upload_outlined, color: Colors.grey, size: 40),
+                                      Icon(
+                                        Icons.cloud_upload_outlined,
+                                        color: Colors.grey,
+                                        size: 40,
+                                      ),
                                       SizedBox(height: 5),
-                                      AppText("Click to upload", fontWeight: FontWeight.bold, fontSize: 14),
-                                      AppText("PNG or GIF (max. 5MB)", fontSize: 10, color: Colors.grey),
+                                      AppText(
+                                        "Click to upload",
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                      AppText(
+                                        "PNG or GIF (max. 5MB)",
+                                        fontSize: 10,
+                                        color: Colors.grey,
+                                      ),
                                     ],
                                   )
                                 : Stack(
@@ -372,10 +423,17 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                         top: 10,
                                         child: Container(
                                           padding: const EdgeInsets.all(4),
-                                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                                          child: const Icon(Icons.edit, size: 16, color: Colors.black),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.edit,
+                                            size: 16,
+                                            color: Colors.black,
+                                          ),
                                         ),
-                                      )
+                                      ),
                                     ],
                                   ),
                           ),
@@ -386,12 +444,15 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
                   const SizedBox(height: 15),
 
-
                   _buildGlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AppText("Set the mood", fontWeight: FontWeight.bold, fontSize: 16),
+                        const AppText(
+                          "Set the mood",
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         const SizedBox(height: 10),
                         _buildAudioPlayer(context, currentAudioName, true),
                       ],
@@ -403,7 +464,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const AppText("Describe this place", fontWeight: FontWeight.bold, fontSize: 16),
+                        const AppText(
+                          "Describe this place",
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         const SizedBox(height: 10),
                         Container(
                           height: 100,
@@ -416,7 +481,8 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             controller: _descriptionController,
                             maxLines: 3,
                             decoration: const InputDecoration(
-                              hintText: "Why does this place make you feel safe? E.g., 'The air is crisp...'",
+                              hintText:
+                                  "Why does this place make you feel safe? E.g., 'The air is crisp...'",
                               border: InputBorder.none,
                               hintStyle: TextStyle(fontSize: 12),
                             ),
@@ -437,10 +503,14 @@ class _SessionThreePageState extends State<SessionThreePage> {
                             filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                             child: Container(
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15), // glass layer
+                                color: Colors.white.withOpacity(
+                                  0.15,
+                                ), // glass layer
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: AppColors.mainAppColor.withOpacity(0.6),
+                                  color: AppColors.mainAppColor.withOpacity(
+                                    0.6,
+                                  ),
                                   width: 1.2,
                                 ),
                               ),
@@ -451,7 +521,9 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                 style: OutlinedButton.styleFrom(
                                   backgroundColor: Colors.transparent,
                                   side: BorderSide.none,
-                                  padding: const EdgeInsets.symmetric(vertical: 15),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                  ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -471,33 +543,59 @@ class _SessionThreePageState extends State<SessionThreePage> {
                       const SizedBox(width: 15),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: _isSaving ? null : () async {
-                            setState(() => _isSaving = true);
-                            try {
-                              final authController = Get.find<AuthController>();
-                              final token = authController.token;
-                              final data = _buildCalmPlaceData();
-                              if (token != null) {
-                                _saveCalmPlaceLocally(data);
-                                await CalmPlaceService.saveCalmPlace(token, data);
-                              } else {
-                                _saveCalmPlaceLocally(data);
-                              }
-                              Get.to(() => Sessionfourpage());
-                            } catch (e) {
-                              print("Error saving: $e");
-                            } finally {
-                              setState(() => _isSaving = false);
-                            }
-                          },
+                          onPressed: _isSaving
+                              ? null
+                              : () async {
+                                  setState(() => _isSaving = true);
+                                  try {
+                                    final authController =
+                                        Get.find<AuthController>();
+                                    final token = authController.token;
+                                    final data = _buildCalmPlaceData();
+                                    if (token != null) {
+                                      _saveCalmPlaceLocally(data);
+                                      await CalmPlaceService.saveCalmPlace(
+                                        token,
+                                        data,
+                                      );
+                                    } else {
+                                      _saveCalmPlaceLocally(data);
+                                    }
+                                    await SessionCompletionService.markCompleted(
+                                      3,
+                                    );
+                                    Get.to(
+                                      () => const Sessionfourpage(),
+                                      arguments: Get.arguments,
+                                    );
+                                  } catch (e) {
+                                    print("Error saving: $e");
+                                  } finally {
+                                    setState(() => _isSaving = false);
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.mainAppColor,
                             padding: const EdgeInsets.symmetric(vertical: 15),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: _isSaving 
-                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const AppText("Save & Continue", fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const AppText(
+                                  "Save & Continue",
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                         ),
                       ),
                     ],
@@ -572,7 +670,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
     box.write('calm_place_image_url', data['imageUrl'] ?? '');
   }
 
-  Widget _buildAudioPlayer(BuildContext context, String title, bool hasReplace) {
+  Widget _buildAudioPlayer(
+    BuildContext context,
+    String title,
+    bool hasReplace,
+  ) {
     return Row(
       children: [
         GestureDetector(
@@ -601,7 +703,9 @@ class _SessionThreePageState extends State<SessionThreePage> {
               ),
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 6,
+                  ),
                   trackHeight: 4,
                   activeTrackColor: const Color(0xFF537E5D),
                   inactiveTrackColor: Colors.grey[300],
@@ -633,8 +737,16 @@ class _SessionThreePageState extends State<SessionThreePage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    AppText(_formatDuration(position), fontSize: 10, color: Colors.black54),
-                    AppText(_formatDuration(duration), fontSize: 10, color: Colors.black54),
+                    AppText(
+                      _formatDuration(position),
+                      fontSize: 10,
+                      color: Colors.black54,
+                    ),
+                    AppText(
+                      _formatDuration(duration),
+                      fontSize: 10,
+                      color: Colors.black54,
+                    ),
                   ],
                 ),
               ),
@@ -646,14 +758,21 @@ class _SessionThreePageState extends State<SessionThreePage> {
           ElevatedButton(
             onPressed: () => _showAudioSelectionModal(context),
             style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF537E5D),
-                minimumSize: const Size(60, 30),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+              backgroundColor: const Color(0xFF537E5D),
+              minimumSize: const Size(60, 30),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            child: const AppText("Replace", fontSize: 11, color: Colors.white, fontWeight: FontWeight.w600),
+            child: const AppText(
+              "Replace",
+              fontSize: 11,
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ]
+        ],
       ],
     );
   }
@@ -665,9 +784,10 @@ class _SessionThreePageState extends State<SessionThreePage> {
     return "$minutes:$seconds";
   }
 
-// _buildAudioListItem is no longer needed in the main body, but kept if we want to reuse it elsewhere,
-// though for the modal I used ListTile for simplicity. I will remove it to clean up as it's not used.
+  // _buildAudioListItem is no longer needed in the main body, but kept if we want to reuse it elsewhere,
+  // though for the modal I used ListTile for simplicity. I will remove it to clean up as it's not used.
 }
+
 /*
 Replace  button e click korle _buildAudioListItem gulu pop up akare show korbe and music gula change hobe
  */
