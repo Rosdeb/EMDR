@@ -1172,9 +1172,12 @@ class _ProgressPageState extends State<ProgressPage> {
           ),
           child: AppText(
             value,
-            fontSize: 16,
+            fontSize: 12,
             fontWeight: FontWeight.bold,
             color: const Color(0xFF537E5D),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         const SizedBox(height: 6),

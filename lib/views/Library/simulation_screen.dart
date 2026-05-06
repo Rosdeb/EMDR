@@ -13,9 +13,12 @@ class SimulationScreen extends StatefulWidget {
   State<SimulationScreen> createState() => _SimulationScreenState();
 }
 
-class _SimulationScreenState extends State<SimulationScreen> with SingleTickerProviderStateMixin {
+class _SimulationScreenState extends State<SimulationScreen>
+    with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  late AnimationController _wingController;
+  late Animation<double> _wingAnimation;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isPaused = false; // Track pause state
@@ -47,14 +50,24 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
 
+    _wingController = AnimationController(
+      duration: const Duration(milliseconds: 360),
+      vsync: this,
+    );
+    _wingAnimation = CurvedAnimation(
+      parent: _wingController,
+      curve: Curves.easeInOut,
+    );
+
     _controller.forward(); // Start animation
+    _wingController.repeat(reverse: true);
     _setupAudio();
   }
 
   Future<void> _setupAudio() async {
     try {
       if (widget.settings.audioAsset.isEmpty) return;
-      
+
       if (widget.settings.audioAsset.startsWith('http')) {
         await _audioPlayer.setSource(UrlSource(widget.settings.audioAsset));
       } else {
@@ -80,6 +93,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       _isPaused = !_isPaused;
       if (_isPaused) {
         _controller.stop();
+        _wingController.stop();
         _audioPlayer.pause();
       } else {
         if (_isReversing) {
@@ -87,6 +101,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
         } else {
           _controller.forward();
         }
+        _wingController.repeat(reverse: true);
         _audioPlayer.resume();
       }
     });
@@ -94,11 +109,15 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
 
   Alignment _getAlignment(double value) {
     switch (widget.settings.direction) {
-      case AnimationDirection.vertical: return Alignment(0.0, value);
-      case AnimationDirection.diagonal: return Alignment(value, value);
-      case AnimationDirection.diagonalReverse: return Alignment(value, -value);
+      case AnimationDirection.vertical:
+        return Alignment(0.0, value);
+      case AnimationDirection.diagonal:
+        return Alignment(value, value);
+      case AnimationDirection.diagonalReverse:
+        return Alignment(value, -value);
       case AnimationDirection.horizontal:
-      default: return Alignment(value, 0.2);
+      default:
+        return Alignment(value, 0.2);
     }
   }
 
@@ -109,40 +128,168 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       DeviceOrientation.portraitDown,
     ]);
     _controller.dispose();
+    _wingController.dispose();
     _audioPlayer.dispose();
     super.dispose();
   }
+
+  Widget _buildBackground() {
+    final background = widget.settings.environmentImage.startsWith('http')
+        ? CachedNetworkImage(
+            imageUrl: widget.settings.environmentImage,
+            fit: BoxFit.cover,
+            placeholder: (context, url) =>
+                const Center(child: CircularProgressIndicator()),
+            errorWidget: (context, url, error) => Container(color: Colors.grey),
+          )
+        : Image.asset(widget.settings.environmentImage, fit: BoxFit.cover);
+
+    return AnimatedBuilder(
+      animation: _controller,
+      child: background,
+      builder: (context, child) {
+        final progress = _controller.value;
+        final panX = (progress - 0.5) * 18;
+        final scale = 1.04 + (progress * 0.015);
+
+        return ClipRect(
+          child: Transform.translate(
+            offset: Offset(panX, 0),
+            child: Transform.scale(
+              scale: scale,
+              child: child,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildVisualObject({double size = 70}) {
+    if (widget.settings.visualObject.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: widget.settings.visualObject,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+        placeholder: (context, url) => const SizedBox(
+          width: 70,
+          height: 70,
+          child: CircularProgressIndicator(),
+        ),
+        errorWidget: (context, url, error) => const Icon(Icons.error, size: 70),
+      );
+    }
+
+    return Image.asset(
+      widget.settings.visualObject,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+    );
+  }
+
+  bool get _shouldFlapWings {
+    return widget.settings.visualObject.toLowerCase().contains('butterfly');
+  }
+
+  Widget _buildWingHalf({required bool isLeft, required double wingScale}) {
+    return Transform.scale(
+      scaleX: wingScale,
+      alignment: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+      child: ClipRect(
+        child: Align(
+          alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+          widthFactor: 0.5,
+          child: _buildVisualObject(size: 74),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButterflyBodyStrip() {
+    return ClipRect(
+      child: Align(
+        widthFactor: 0.22,
+        child: _buildVisualObject(size: 74),
+      ),
+    );
+  }
+
+  Widget _buildFlappingButterfly() {
+    final wingScale = 0.68 + (_wingAnimation.value * 0.38);
+    final wingRise = (1 - _wingAnimation.value) * 2.5;
+
+    return SizedBox(
+      width: 96,
+      height: 88,
+      child: Center(
+        child: Transform.translate(
+          offset: Offset(0, -wingRise),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildWingHalf(isLeft: true, wingScale: wingScale),
+                  _buildWingHalf(isLeft: false, wingScale: wingScale),
+                ],
+              ),
+              _buildButterflyBodyStrip(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedVisualObject() {
+    final centerWeight = 1 - _animation.value.abs();
+    final scale = 0.98 + (centerWeight * 0.08);
+    final glowOpacity = 0.14 + (centerWeight * 0.1);
+
+    return Transform.rotate(
+      angle: _animation.value * 0.08,
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: 96,
+          height: 96,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withOpacity(glowOpacity),
+                blurRadius: 28,
+                spreadRadius: 8,
+              ),
+            ],
+          ),
+          child: _shouldFlapWings
+              ? _buildFlappingButterfly()
+              : _buildVisualObject(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           // Background
-          Positioned.fill(
-            child: widget.settings.environmentImage.startsWith('http')
-                ? CachedNetworkImage(
-                    imageUrl: widget.settings.environmentImage, 
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                    errorWidget: (context, url, error) => Container(color: Colors.grey),
-                  )
-                : Image.asset(widget.settings.environmentImage, fit: BoxFit.cover),
-          ),
+          Positioned.fill(child: _buildBackground()),
 
           // Moving Object
           AnimatedBuilder(
-            animation: _animation,
+            animation: Listenable.merge([_animation, _wingAnimation]),
             builder: (context, child) {
               return Align(
                 alignment: _getAlignment(_animation.value),
-                child: widget.settings.visualObject.startsWith('http')
-                    ? CachedNetworkImage(
-                        imageUrl: widget.settings.visualObject, 
-                        width: 70,
-                        placeholder: (context, url) => const SizedBox(width: 70, child: CircularProgressIndicator()),
-                        errorWidget: (context, url, error) => const Icon(Icons.error, size: 70),
-                      )
-                    : Image.asset(widget.settings.visualObject, width: 70),
+                child: _buildAnimatedVisualObject(),
               );
             },
           ),
@@ -152,6 +299,7 @@ class _SimulationScreenState extends State<SimulationScreen> with SingleTickerPr
       ),
     );
   }
+
   Widget _buildTopBar() {
     return SafeArea(
       child: Padding(
