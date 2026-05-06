@@ -25,7 +25,7 @@ class MyHomeworkPri extends StatelessWidget {
           },
         ),
         title: const Text(
-          "My Resources",
+          "My Homework",
           style: TextStyle(
             color: Color(0xFF2E3E32),
             fontSize: 20,

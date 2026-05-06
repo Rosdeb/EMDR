@@ -3,18 +3,12 @@ import 'package:jonssony/services/session_progress_service.dart';
 import 'package:jonssony/controller/auth_controller.dart';
 
 class SessionProgressController extends GetxController {
-  final RxBool isLoading = true.obs;
+  final RxBool isLoading = false.obs;
   final RxBool isJourneyProgressLoading = false.obs;
   final RxList<dynamic> progresses = [].obs;
   final RxMap<String, Map<String, dynamic>> journeyProgresses =
       <String, Map<String, dynamic>>{}.obs;
   final Set<String> _requestedJourneyProgressIds = {};
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchProgresses();
-  }
 
   Future<void> fetchProgresses() async {
     try {

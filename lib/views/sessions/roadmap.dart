@@ -38,7 +38,7 @@ class CreateRoadmapPage extends StatelessWidget {
               icon: Icons.assignment_turned_in_outlined,
               title: "Session",
               description: "Chat with our intelligent assistant to identify your target memory, negative beliefs, and emotions.",
-              buttonText: "View Assessments",
+              buttonText: "View Sessions",
               buttonColor: AppColors.mainAppColor,
               onTap: () {
                 Get.to(() => SessionOne());

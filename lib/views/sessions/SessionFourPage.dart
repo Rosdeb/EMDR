@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/emdr_session_service.dart';
+import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/views/sessions/session_five.dart';
 
 class AppText extends StatelessWidget {
@@ -14,12 +15,12 @@ class AppText extends StatelessWidget {
   final Color? color;
   final FontWeight? fontWeight;
   const AppText(
-      this.text, {
-        super.key,
-        this.fontSize,
-        this.color,
-        this.fontWeight,
-      });
+    this.text, {
+    super.key,
+    this.fontSize,
+    this.color,
+    this.fontWeight,
+  });
   @override
   Widget build(BuildContext context) => Text(
     text,
@@ -33,7 +34,6 @@ class BeliefPair {
   BeliefPair({required this.negative, required this.positive});
   Map<String, dynamic> toMap() => {'negative': negative, 'positive': positive};
 }
-
 
 const Map<String, List<String>> kNegativeBeliefs = {
   "RESPONSIBILITY – I AM SOMETHING 'WRONG'": [
@@ -438,7 +438,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       });
       Future.delayed(
         const Duration(milliseconds: 300),
-            () => _focusNode.requestFocus(),
+        () => _focusNode.requestFocus(),
       );
     }
   }
@@ -447,7 +447,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
     final currentQuestion =
-    _currentFlow != null && _currentStep < _currentFlow!.length
+        _currentFlow != null && _currentStep < _currentFlow!.length
         ? _currentFlow![_currentStep]
         : null;
 
@@ -600,11 +600,11 @@ class _SessionfourpageState extends State<Sessionfourpage> {
     final beliefPairs = _beliefPairs
         .map(
           (pair) => {
-        'negativeBelief': pair.negative,
-        'positiveBelief': pair.positive,
-        'vocRating': _vocRating,
-      },
-    )
+            'negativeBelief': pair.negative,
+            'positiveBelief': pair.positive,
+            'vocRating': _vocRating,
+          },
+        )
         .toList();
 
     final result = await EmdrSessionService.saveBeliefs(
@@ -725,7 +725,9 @@ class _SessionfourpageState extends State<Sessionfourpage> {
         _freezeFrameFile = file;
       }
     });
-    _showError('📎 Media attached. It will upload with your target description.');
+    _showError(
+      '📎 Media attached. It will upload with your target description.',
+    );
   }
 
   // ── Belief selection submit ────────────────────────────────
@@ -813,125 +815,126 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       child: Scaffold(
         backgroundColor: Colors.white,
         body: Stack(
-        children: [
-          // Background image top
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 150,
-            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
-          ),
-          Column(
-            children: [
-              _buildAppBar(context),
-              Expanded(
-                child: Stack(
-                  children: [
-                    // Background
-                    Positioned.fill(
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(35),
-                            topRight: Radius.circular(35),
-                          ),
-                          image: DecorationImage(
-                            image: AssetImage('assets/images/chatbot_bg.jpg'),
-                            fit: BoxFit.cover,
+          children: [
+            // Background image top
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 150,
+              child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
+            ),
+            Column(
+              children: [
+                _buildAppBar(context),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      // Background
+                      Positioned.fill(
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(35),
+                              topRight: Radius.circular(35),
+                            ),
+                            image: DecorationImage(
+                              image: AssetImage('assets/images/chatbot_bg.jpg'),
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // Chat list
-                    Positioned.fill(
-                      child: ListView(
-                        controller: _scrollController,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: 24,
-                          bottom: _showInput ? 160 : 100,
+                      // Chat list
+                      Positioned.fill(
+                        child: ListView(
+                          controller: _scrollController,
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            left: 16,
+                            right: 16,
+                            top: 24,
+                            bottom: _showInput ? 160 : 100,
+                          ),
+                          children: [
+                            ..._messages.map((m) => _buildMessageBubble(m)),
+                            // Inline UI widgets based on state
+                            if (_uiState == _UIState.startOptions)
+                              _StartingOptionsWidget(
+                                onChoose: _handleStartingChoice,
+                              ),
+                            if (_uiState == _UIState.negativeBeliefs)
+                              _BeliefSelectionWidget(
+                                type: 'negative',
+                                beliefs: kNegativeBeliefs,
+                                onSubmit: (sel) => _submitNegativeBeliefs(sel),
+                              ),
+                            if (_uiState == _UIState.positiveBeliefs)
+                              _BeliefSelectionWidget(
+                                type: 'positive',
+                                beliefs: kPositiveBeliefs,
+                                currentNegative:
+                                    _negativeBeliefIndex <
+                                        _selectedNegativeBeliefs.length
+                                    ? _selectedNegativeBeliefs[_negativeBeliefIndex]
+                                    : null,
+                                onSubmitSingle: (s) => _submitPositiveBelief(s),
+                              ),
+                            if (_uiState == _UIState.vocRating)
+                              _RatingScaleWidget(
+                                type: 'voc',
+                                positiveBeliefs: _selectedPositiveBeliefs,
+                                negativeBeliefs: _selectedNegativeBeliefs,
+                                onSubmit: (v) => _submitRating('voc', v),
+                              ),
+                            if (_uiState == _UIState.sudRating)
+                              _RatingScaleWidget(
+                                type: 'sud',
+                                positiveBeliefs: _selectedPositiveBeliefs,
+                                negativeBeliefs: _selectedNegativeBeliefs,
+                                onSubmit: (v) => _submitRating('sud', v),
+                              ),
+                            if (_uiState == _UIState.pfsRating)
+                              _RatingScaleWidget(
+                                type: 'pfs',
+                                positiveBeliefs: const [],
+                                negativeBeliefs: const [],
+                                onSubmit: (v) => _submitRating('pfs', v),
+                              ),
+                            if (_uiState == _UIState.summary)
+                              _SummaryWidget(
+                                responses: _responses,
+                                beliefPairs: _beliefPairs,
+                                isAddiction: _isAddictionFlow,
+                              ),
+                          ],
                         ),
-                        children: [
-                          ..._messages.map((m) => _buildMessageBubble(m)),
-                          // Inline UI widgets based on state
-                          if (_uiState == _UIState.startOptions)
-                            _StartingOptionsWidget(
-                              onChoose: _handleStartingChoice,
-                            ),
-                          if (_uiState == _UIState.negativeBeliefs)
-                            _BeliefSelectionWidget(
-                              type: 'negative',
-                              beliefs: kNegativeBeliefs,
-                              onSubmit: (sel) => _submitNegativeBeliefs(sel),
-                            ),
-                          if (_uiState == _UIState.positiveBeliefs)
-                            _BeliefSelectionWidget(
-                              type: 'positive',
-                              beliefs: kPositiveBeliefs,
-                              currentNegative:
-                              _negativeBeliefIndex <
-                                  _selectedNegativeBeliefs.length
-                                  ? _selectedNegativeBeliefs[_negativeBeliefIndex]
-                                  : null,
-                              onSubmitSingle: (s) => _submitPositiveBelief(s),
-                            ),
-                          if (_uiState == _UIState.vocRating)
-                            _RatingScaleWidget(
-                              type: 'voc',
-                              positiveBeliefs: _selectedPositiveBeliefs,
-                              negativeBeliefs: _selectedNegativeBeliefs,
-                              onSubmit: (v) => _submitRating('voc', v),
-                            ),
-                          if (_uiState == _UIState.sudRating)
-                            _RatingScaleWidget(
-                              type: 'sud',
-                              positiveBeliefs: _selectedPositiveBeliefs,
-                              negativeBeliefs: _selectedNegativeBeliefs,
-                              onSubmit: (v) => _submitRating('sud', v),
-                            ),
-                          if (_uiState == _UIState.pfsRating)
-                            _RatingScaleWidget(
-                              type: 'pfs',
-                              positiveBeliefs: const [],
-                              negativeBeliefs: const [],
-                              onSubmit: (v) => _submitRating('pfs', v),
-                            ),
-                          if (_uiState == _UIState.summary)
-                            _SummaryWidget(
-                              responses: _responses,
-                              beliefPairs: _beliefPairs,
-                              isAddiction: _isAddictionFlow,
-                            ),
-                        ],
                       ),
-                    ),
-                    // Input bar
-                    if (_showInput && _uiState == _UIState.chat)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: _buildInputBar(context),
-                      ),
-                    // Done button
-                    if (_uiState == _UIState.summary)
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: _buildDoneBar(context),
-                      ),
-                  ],
+                      // Input bar
+                      if (_showInput && _uiState == _UIState.chat)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: _buildInputBar(context),
+                        ),
+                      // Done button
+                      if (_uiState == _UIState.summary)
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: _buildDoneBar(context),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-      ));
+    );
   }
 
   Widget _buildMessageBubble(ChatMessage msg) {
@@ -1019,7 +1022,10 @@ class _SessionfourpageState extends State<Sessionfourpage> {
           child: Row(
             children: [
               // Attachment button (shown only during target/freeze-frame steps)
-              if (_currentStep <= 1 || (_currentFlow != null && _currentStep < _currentFlow!.length && !_currentFlow![_currentStep].startsWith('__')))
+              if (_currentStep <= 1 ||
+                  (_currentFlow != null &&
+                      _currentStep < _currentFlow!.length &&
+                      !_currentFlow![_currentStep].startsWith('__')))
                 GestureDetector(
                   onTap: _pickAttachment,
                   child: Container(
@@ -1141,8 +1147,9 @@ class _SessionfourpageState extends State<Sessionfourpage> {
               Expanded(
                 flex: 2,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Get.to(() => const SessionFive());
+                  onPressed: () async {
+                    await SessionCompletionService.markCompleted(4);
+                    Get.to(() => const SessionFive(), arguments: Get.arguments);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF537E5D),
@@ -1354,29 +1361,29 @@ class _OptionCard extends StatelessWidget {
                 ...(option['examples'] as List<String>)
                     .map(
                       (e) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.circle,
-                          size: 5,
-                          color: Colors.black38,
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            e,
-                            style: const TextStyle(
-                              fontSize: 10,
-                              color: Colors.black54,
+                        padding: const EdgeInsets.only(bottom: 2),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.circle,
+                              size: 5,
+                              color: Colors.black38,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                e,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black54,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                )
+                      ),
+                    )
                     .toList(),
               ],
             ),
@@ -1726,7 +1733,7 @@ class _RatingScaleWidgetState extends State<_RatingScaleWidget> {
     if (widget.type == 'voc') {
       final beliefs = widget.positiveBeliefs.join(', ');
       title =
-      'Holding the freeze frame in mind, how true does\n"$beliefs"\nfeel right now?';
+          'Holding the freeze frame in mind, how true does\n"$beliefs"\nfeel right now?';
       instruction = 'Rate from 1 (not true at all) to 7 (completely true)';
       minLabel = 'Not true at all';
       maxLabel = 'Completely true';
@@ -1734,17 +1741,17 @@ class _RatingScaleWidgetState extends State<_RatingScaleWidget> {
     } else if (widget.type == 'sud') {
       final neg = widget.negativeBeliefs.join(', ');
       title =
-      'Keeping that frozen moment in mind and thinking about\n"$neg"\nHow intense is the distress right now?';
+          'Keeping that frozen moment in mind and thinking about\n"$neg"\nHow intense is the distress right now?';
       instruction =
-      'All negative emotions together (0 = none, 10 = most intense)';
+          'All negative emotions together (0 = none, 10 = most intense)';
       minLabel = 'No distress';
       maxLabel = 'Most intense';
       maxVal = 10;
     } else {
       title =
-      'How intense is this positive feeling right now when you think about it?';
+          'How intense is this positive feeling right now when you think about it?';
       instruction =
-      'Rate from 0 (no positive feeling) to 10 (most intense positive feeling)';
+          'Rate from 0 (no positive feeling) to 10 (most intense positive feeling)';
       minLabel = 'No positive feeling';
       maxLabel = 'Most intense';
       maxVal = 10;
@@ -1791,7 +1798,7 @@ class _RatingScaleWidgetState extends State<_RatingScaleWidget> {
                 runSpacing: 8,
                 children: List.generate(
                   maxVal + 1 - (widget.type == 'voc' ? 1 : 0),
-                      (i) {
+                  (i) {
                     final val = i + (widget.type == 'voc' ? 1 : 0);
                     final isSel = _selected == val;
                     return GestureDetector(
@@ -1811,14 +1818,14 @@ class _RatingScaleWidgetState extends State<_RatingScaleWidget> {
                           ),
                           boxShadow: isSel
                               ? [
-                            BoxShadow(
-                              color: const Color(
-                                0xFF537E5D,
-                              ).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
+                                  BoxShadow(
+                                    color: const Color(
+                                      0xFF537E5D,
+                                    ).withOpacity(0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
                               : null,
                         ),
                         child: Center(
@@ -1970,7 +1977,7 @@ class _SummaryWidget extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 ...beliefPairs.map(
-                      (pair) => Container(
+                  (pair) => Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(

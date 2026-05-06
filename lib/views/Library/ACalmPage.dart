@@ -8,7 +8,10 @@ import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/calm_place_service.dart';
 
 class ACalmPage extends StatefulWidget {
-  const ACalmPage({super.key});
+  const ACalmPage({super.key, this.mediaName, this.mediaUrl});
+
+  final String? mediaName;
+  final String? mediaUrl;
 
   @override
   State<ACalmPage> createState() => _ACalmPageState();
@@ -19,7 +22,8 @@ class _ACalmPageState extends State<ACalmPage> {
   String currentAudio = "calm place.wav";
 
   bool _isLoading = true;
-  String currentDescription = "The air is crisp and I can hear the wind in the trees. It smells like pine and damp earth.";
+  String currentDescription =
+      "The air is crisp and I can hear the wind in the trees. It smells like pine and damp earth.";
   String backgroundImageUrl = "";
   String currentAudioUrl = "";
   bool _hasLocalCalmPlace = false;
@@ -28,8 +32,35 @@ class _ACalmPageState extends State<ACalmPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _loadSavedCalmPlace();
-    _fetchCalmPlaceAndInit();
+    if ((widget.mediaUrl ?? '').trim().isNotEmpty) {
+      _applyProvidedMedia();
+      _initProvidedMediaAudio();
+    } else {
+      _loadSavedCalmPlace();
+      _fetchCalmPlaceAndInit();
+    }
+  }
+
+  void _applyProvidedMedia() {
+    final mediaName = widget.mediaName?.trim() ?? '';
+    final mediaUrl = widget.mediaUrl?.trim() ?? '';
+
+    if (mediaName.isNotEmpty) currentAudio = mediaName;
+    currentAudioUrl = mediaUrl;
+  }
+
+  Future<void> _initProvidedMediaAudio() async {
+    try {
+      await _setAudioFromPath(currentAudioUrl);
+    } catch (e) {
+      debugPrint("Provided audio load error: $e");
+      await _setSavedAssetAudio();
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   void _loadSavedCalmPlace() {
@@ -85,7 +116,7 @@ class _ACalmPageState extends State<ACalmPage> {
 
             final audioUrl = firstItem['audioUrl'];
             if (audioUrl != null && audioUrl.isNotEmpty) {
-              await _audioPlayer.setUrl(audioUrl);
+              await _setAudioFromPath(audioUrl);
             } else {
               await _setSavedAudioSource();
             }
@@ -95,7 +126,7 @@ class _ACalmPageState extends State<ACalmPage> {
             });
             final audioUrl = data['audioUrl'];
             if (audioUrl != null && audioUrl.isNotEmpty) {
-              await _audioPlayer.setUrl(audioUrl);
+              await _setAudioFromPath(audioUrl);
             } else {
               await _setSavedAudioSource();
             }
@@ -121,7 +152,27 @@ class _ACalmPageState extends State<ACalmPage> {
 
   Future<void> _setSavedAudioSource() async {
     if (currentAudioUrl.isNotEmpty) {
-      await _audioPlayer.setUrl(currentAudioUrl);
+      await _setAudioFromPath(currentAudioUrl);
+      return;
+    }
+
+    await _setSavedAssetAudio();
+  }
+
+  Future<void> _setAudioFromPath(String path) async {
+    final source = path.trim();
+    if (source.startsWith('http://') || source.startsWith('https://')) {
+      await _audioPlayer.setUrl(source);
+      return;
+    }
+
+    if (source.startsWith('assets/')) {
+      await _audioPlayer.setAsset(source);
+      return;
+    }
+
+    if (source.isNotEmpty) {
+      await _audioPlayer.setUrl(source);
       return;
     }
 
@@ -158,10 +209,7 @@ class _ACalmPageState extends State<ACalmPage> {
             left: 0,
             right: 0,
             height: appBarImageHeight,
-            child: Image.asset(
-              'assets/images/my_emdr.png',
-              fit: BoxFit.fill,
-            ),
+            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
           Column(
             children: [
@@ -217,12 +265,16 @@ class _ACalmPageState extends State<ACalmPage> {
                                         child: Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(30),
+                                            color: Colors.white.withOpacity(
+                                              0.2,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              30,
+                                            ),
                                             border: Border.all(
-                                              color:
-                                                  Colors.white.withOpacity(0.3),
+                                              color: Colors.white.withOpacity(
+                                                0.3,
+                                              ),
                                             ),
                                           ),
                                           child: Column(
@@ -232,15 +284,17 @@ class _ACalmPageState extends State<ACalmPage> {
                                                 height: imageHeight,
                                                 width: double.infinity,
                                                 decoration: BoxDecoration(
-                                                  color: const Color(0xFFFAF3E0)
-                                                      .withOpacity(0.6),
+                                                  color: const Color(
+                                                    0xFFFAF3E0,
+                                                  ).withOpacity(0.6),
                                                   borderRadius:
                                                       BorderRadius.circular(20),
                                                 ),
                                                 child: ClipRRect(
                                                   borderRadius:
                                                       BorderRadius.circular(20),
-                                                  child: backgroundImageUrl
+                                                  child:
+                                                      backgroundImageUrl
                                                           .isNotEmpty
                                                       ? _buildCalmImage(
                                                           fallbackAsset:
@@ -320,7 +374,8 @@ class _ACalmPageState extends State<ACalmPage> {
                 builder: (context, snapshot) {
                   final playing = snapshot.data?.playing ?? false;
                   return GestureDetector(
-                    onTap: () => playing ? _audioPlayer.pause() : _audioPlayer.play(),
+                    onTap: () =>
+                        playing ? _audioPlayer.pause() : _audioPlayer.play(),
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
@@ -328,7 +383,9 @@ class _ACalmPageState extends State<ACalmPage> {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        playing
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
                         color: Colors.white,
                         size: 32,
                       ),
@@ -344,7 +401,10 @@ class _ACalmPageState extends State<ACalmPage> {
                   children: [
                     Text(
                       currentAudio,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     _buildSlider(),
                   ],
@@ -375,10 +435,8 @@ class _ACalmPageState extends State<ACalmPage> {
       return Image.network(
         imagePath,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => Image.asset(
-          fallbackAsset,
-          fit: fit,
-        ),
+        errorBuilder: (context, error, stackTrace) =>
+            Image.asset(fallbackAsset, fit: fit),
       );
     }
 
@@ -386,10 +444,8 @@ class _ACalmPageState extends State<ACalmPage> {
       return Image.asset(
         imagePath,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => Image.asset(
-          fallbackAsset,
-          fit: fit,
-        ),
+        errorBuilder: (context, error, stackTrace) =>
+            Image.asset(fallbackAsset, fit: fit),
       );
     }
 
@@ -399,10 +455,8 @@ class _ACalmPageState extends State<ACalmPage> {
         return Image.file(
           file,
           fit: fit,
-          errorBuilder: (context, error, stackTrace) => Image.asset(
-            fallbackAsset,
-            fit: fit,
-          ),
+          errorBuilder: (context, error, stackTrace) =>
+              Image.asset(fallbackAsset, fit: fit),
         );
       }
     }
@@ -428,19 +482,31 @@ class _ACalmPageState extends State<ACalmPage> {
               ),
               child: Slider(
                 value: duration.inMilliseconds > 0
-                    ? (position.inMilliseconds / duration.inMilliseconds)
-                        .clamp(0.0, 1.0)
+                    ? (position.inMilliseconds / duration.inMilliseconds).clamp(
+                        0.0,
+                        1.0,
+                      )
                     : 0,
                 onChanged: (v) {
-                  _audioPlayer.seek(Duration(milliseconds: (v * duration.inMilliseconds).toInt()));
+                  _audioPlayer.seek(
+                    Duration(
+                      milliseconds: (v * duration.inMilliseconds).toInt(),
+                    ),
+                  );
                 },
               ),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_formatDuration(position), style: const TextStyle(fontSize: 10)),
-                Text(_formatDuration(duration), style: const TextStyle(fontSize: 10)),
+                Text(
+                  _formatDuration(position),
+                  style: const TextStyle(fontSize: 10),
+                ),
+                Text(
+                  _formatDuration(duration),
+                  style: const TextStyle(fontSize: 10),
+                ),
               ],
             ),
           ],

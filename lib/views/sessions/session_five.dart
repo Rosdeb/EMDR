@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/views/sessions/session_bilateral_simulation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:jonssony/controller/media_controller.dart';
 import 'package:jonssony/utils/app_colors.dart';
-
 
 class SessionFive extends StatefulWidget {
   const SessionFive({super.key});
@@ -38,15 +38,19 @@ class _SessionFiveState extends State<SessionFive> {
     }
 
     // Attempt to get video from API category
-    // Using a generic search or a specific category if known. 
+    // Using a generic search or a specific category if known.
     // For now, using 'session-5' as the category for Session 5.
     final videoObj = _mediaController.getFirstMedia('session-5', 'video');
-    
+
     if (videoObj != null && videoObj['url'] != null) {
-      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(videoObj['url']));
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(videoObj['url']),
+      );
     } else {
       // Fallback
-      _videoPlayerController = VideoPlayerController.asset('assets/video/spiral_technique.mp4');
+      _videoPlayerController = VideoPlayerController.asset(
+        'assets/video/spiral_technique.mp4',
+      );
     }
 
     try {
@@ -106,7 +110,11 @@ class _SessionFiveState extends State<SessionFive> {
           ),
           const Text(
             "Session 5",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
         ],
       ),
@@ -119,7 +127,11 @@ class _SessionFiveState extends State<SessionFive> {
         color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, spreadRadius: 5),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            spreadRadius: 5,
+          ),
         ],
       ),
       child: Column(
@@ -137,7 +149,9 @@ class _SessionFiveState extends State<SessionFive> {
                 child: _chewieController != null
                     ? Chewie(controller: _chewieController!)
                     : const Center(
-                        child: CircularProgressIndicator(color: Color(0xFF537E5D)),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF537E5D),
+                        ),
                       ),
               ),
             ),
@@ -151,22 +165,38 @@ class _SessionFiveState extends State<SessionFive> {
               children: [
                 const Text(
                   "Your Journey Guide",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF333333),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   "When I was little (Childhood)",
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF444444)),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF444444),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "This may or may not be relevant to what you would like to work on so skip it if not.",
-                  style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.7), height: 1.4),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black.withOpacity(0.7),
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   "Float back in time and see if you remember feeling this way (from your situation) as a child or any other time?",
-                  style: TextStyle(fontSize: 13, color: Colors.black.withOpacity(0.7), height: 1.4),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.black.withOpacity(0.7),
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 25),
 
@@ -174,17 +204,26 @@ class _SessionFiveState extends State<SessionFive> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
-                          Get.to(() => const SessionBilateralSimulation());
+                        onPressed: () async {
+                          await SessionCompletionService.markCompleted(5);
+                          Get.to(
+                            () => const SessionBilateralSimulation(),
+                            arguments: Get.arguments,
+                          );
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF537E5D),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           elevation: 0,
                         ),
-                        child: const Text("Save & Continue", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Save & Continue",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -195,10 +234,15 @@ class _SessionFiveState extends State<SessionFive> {
                           side: BorderSide(color: Colors.grey.shade300),
                           foregroundColor: Colors.black87,
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           backgroundColor: Colors.white,
                         ),
-                        child: const Text("Skip for now", style: TextStyle(fontWeight: FontWeight.w500)),
+                        child: const Text(
+                          "Skip for now",
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ),
                   ],

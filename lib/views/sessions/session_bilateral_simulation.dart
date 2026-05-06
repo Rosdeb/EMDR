@@ -44,8 +44,8 @@ class _SessionBilateralSimulationState
 
     final environments =
         _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
-    final objects = _mediaController
-            .mediaByCategory['Bilateral Stimulation Visual icon'] ??
+    final objects =
+        _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ??
         [];
     final sounds =
         _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [];
@@ -67,21 +67,20 @@ class _SessionBilateralSimulationState
       environmentImage: settings['environmentId']?.toString().isNotEmpty == true
           ? settings['environmentId'].toString()
           : environments.isNotEmpty
-              ? (environments.first['url'] ?? 'assets/images/mountain.jpg')
-                  .toString()
-              : 'assets/images/mountain.jpg',
+          ? (environments.first['url'] ?? 'assets/images/mountain.jpg')
+                .toString()
+          : 'assets/images/mountain.jpg',
       visualObject: settings['iconUrl']?.toString().isNotEmpty == true
           ? settings['iconUrl'].toString()
           : objects.isNotEmpty
-              ? (objects.first['url'] ?? 'assets/images/butterfly.png')
-                  .toString()
-              : 'assets/images/butterfly.png',
+          ? (objects.first['url'] ?? 'assets/images/butterfly.png').toString()
+          : 'assets/images/butterfly.png',
       speed: speed,
       audioAsset: settings['soundId']?.toString().isNotEmpty == true
           ? settings['soundId'].toString()
           : sounds.isNotEmpty
-              ? (sounds.first['url'] ?? '').toString()
-              : '',
+          ? (sounds.first['url'] ?? '').toString()
+          : '',
       direction: direction,
       isNetworkImage: settings.isNotEmpty || environments.isNotEmpty,
     );
@@ -91,9 +90,8 @@ class _SessionBilateralSimulationState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => SimulationScreen(
-          settings: _buildSimulationSettings(),
-        ),
+        builder: (context) =>
+            SimulationScreen(settings: _buildSimulationSettings()),
       ),
     );
   }
@@ -136,7 +134,10 @@ class _SessionBilateralSimulationState
                           ),
                           const SizedBox(height: 12),
                           OutlinedButton(
-                            onPressed: () => Get.to(() => const SessionSix()),
+                            onPressed: () => Get.to(
+                              () => const SessionSix(),
+                              arguments: Get.arguments,
+                            ),
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size(double.infinity, 54),
                               side: BorderSide(color: Colors.grey.shade300),
@@ -203,11 +204,7 @@ class _SessionBilateralSimulationState
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.blur_on_rounded,
-            color: AppColors.mainAppColor,
-            size: 42,
-          ),
+          Icon(Icons.blur_on_rounded, color: AppColors.mainAppColor, size: 42),
           SizedBox(height: 16),
           AppText(
             "Follow the moving object",
