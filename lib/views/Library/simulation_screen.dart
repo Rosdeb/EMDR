@@ -15,6 +15,8 @@ class SimulationScreen extends StatefulWidget {
 
 class _SimulationScreenState extends State<SimulationScreen>
     with TickerProviderStateMixin {
+  static const String _butterflyGif =
+      'assets/images/Butterfly Lottie Animation.gif';
   late AnimationController _controller;
   late Animation<double> _animation;
   late AnimationController _wingController;
@@ -60,7 +62,9 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
 
     _controller.forward(); // Start animation
-    _wingController.repeat(reverse: true);
+    if (_shouldFlapWings) {
+      _wingController.repeat(reverse: true);
+    }
     _setupAudio();
   }
 
@@ -93,7 +97,9 @@ class _SimulationScreenState extends State<SimulationScreen>
       _isPaused = !_isPaused;
       if (_isPaused) {
         _controller.stop();
-        _wingController.stop();
+        if (_shouldFlapWings) {
+          _wingController.stop();
+        }
         _audioPlayer.pause();
       } else {
         if (_isReversing) {
@@ -101,7 +107,9 @@ class _SimulationScreenState extends State<SimulationScreen>
         } else {
           _controller.forward();
         }
-        _wingController.repeat(reverse: true);
+        if (_shouldFlapWings) {
+          _wingController.repeat(reverse: true);
+        }
         _audioPlayer.resume();
       }
     });
@@ -165,10 +173,27 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
+  String get _resolvedVisualObject {
+    final visualObject = widget.settings.visualObject.trim();
+    final lowerVisualObject = visualObject.toLowerCase();
+
+    if (visualObject.isEmpty ||
+        lowerVisualObject.contains('butterfly.png') ||
+        lowerVisualObject.contains('butterfly lottie') ||
+        (lowerVisualObject.contains('butterfly') &&
+            !lowerVisualObject.endsWith('.gif'))) {
+      return _butterflyGif;
+    }
+
+    return visualObject;
+  }
+
   Widget _buildVisualObject({double size = 70}) {
-    if (widget.settings.visualObject.startsWith('http')) {
+    final visualObject = _resolvedVisualObject;
+
+    if (visualObject.startsWith('http')) {
       return CachedNetworkImage(
-        imageUrl: widget.settings.visualObject,
+        imageUrl: visualObject,
         width: size,
         height: size,
         fit: BoxFit.contain,
@@ -182,7 +207,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     }
 
     return Image.asset(
-      widget.settings.visualObject,
+      visualObject,
       width: size,
       height: size,
       fit: BoxFit.contain,
@@ -190,18 +215,29 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   bool get _shouldFlapWings {
-    return widget.settings.visualObject.toLowerCase().contains('butterfly');
+    final visualObject = _resolvedVisualObject.toLowerCase();
+    return visualObject.contains('butterfly') && !visualObject.endsWith('.gif');
   }
 
-  Widget _buildWingHalf({required bool isLeft, required double wingScale}) {
-    return Transform.scale(
-      scaleX: wingScale,
+  Widget _buildWingHalf({
+    required bool isLeft,
+    required double wingScale,
+    required double wingAngle,
+  }) {
+    return Transform(
       alignment: isLeft ? Alignment.centerRight : Alignment.centerLeft,
-      child: ClipRect(
-        child: Align(
-          alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
-          widthFactor: 0.5,
-          child: _buildVisualObject(size: 74),
+      transform: Matrix4.identity()
+        ..setEntry(3, 2, 0.001)
+        ..rotateY(isLeft ? wingAngle : -wingAngle),
+      child: Transform.scale(
+        scaleX: wingScale,
+        alignment: isLeft ? Alignment.centerRight : Alignment.centerLeft,
+        child: ClipRect(
+          child: Align(
+            alignment: isLeft ? Alignment.centerLeft : Alignment.centerRight,
+            widthFactor: 0.5,
+            child: _buildVisualObject(size: 74),
+          ),
         ),
       ),
     );
@@ -217,8 +253,9 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildFlappingButterfly() {
-    final wingScale = 0.68 + (_wingAnimation.value * 0.38);
-    final wingRise = (1 - _wingAnimation.value) * 2.5;
+    final wingScale = 0.72 + (_wingAnimation.value * 0.34);
+    final wingRise = (1 - _wingAnimation.value) * 3.5;
+    final wingAngle = -0.42 + (_wingAnimation.value * 0.84);
 
     return SizedBox(
       width: 96,
@@ -232,8 +269,16 @@ class _SimulationScreenState extends State<SimulationScreen>
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildWingHalf(isLeft: true, wingScale: wingScale),
-                  _buildWingHalf(isLeft: false, wingScale: wingScale),
+                  _buildWingHalf(
+                    isLeft: true,
+                    wingScale: wingScale,
+                    wingAngle: wingAngle,
+                  ),
+                  _buildWingHalf(
+                    isLeft: false,
+                    wingScale: wingScale,
+                    wingAngle: wingAngle,
+                  ),
                 ],
               ),
               _buildButterflyBodyStrip(),

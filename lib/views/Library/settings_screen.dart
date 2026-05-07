@@ -1,4 +1,4 @@
-  import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:get/get.dart';
@@ -40,15 +40,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       selectedEnvUrl = envs.first['url'];
     }
 
-    final objs = _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ?? [];
+    final objs = _objectOptions;
     if (objs.isNotEmpty) {
       selectedObjUrl = objs.first['url'];
     }
 
     if (_bilateralController.userSettings.isNotEmpty) {
       final userSettings = _bilateralController.userSettings;
-      selectedEnvUrl = userSettings['environmentId'] ?? selectedEnvUrl;
-      selectedObjUrl = userSettings['iconUrl'] ?? selectedObjUrl;
+      final savedEnvUrl = userSettings['environmentId']?.toString() ?? '';
+      if (_isNetworkUrl(savedEnvUrl)) {
+        selectedEnvUrl = savedEnvUrl;
+      }
+      final savedObjUrl = userSettings['iconUrl']?.toString() ?? '';
+      if (_isNetworkUrl(savedObjUrl)) {
+        selectedObjUrl = savedObjUrl;
+      }
       selectedSoundUrl = userSettings['soundId'];
 
       final speedStr = userSettings['speed'];
@@ -220,7 +226,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final envs = _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
     if (envs.isEmpty) return const Text("No environments available");
 
-    if (selectedEnvUrl == null && envs.isNotEmpty) {
+    if (!_isNetworkUrl(selectedEnvUrl) && envs.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => selectedEnvUrl = envs.first['url']);
       });
@@ -267,10 +273,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Visual Object (3-column icon grid) ─────────────────────────────────────
   Widget _buildObjectGrid() {
-    final objects = _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ?? [];
+    final objects = _objectOptions;
     if (objects.isEmpty) return const Text("No objects available");
 
-    if (selectedObjUrl == null && objects.isNotEmpty) {
+    if (!_isNetworkUrl(selectedObjUrl)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => selectedObjUrl = objects.first['url']);
       });
@@ -288,7 +294,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       itemCount: objects.length,
       itemBuilder: (context, index) {
         final String path = objects[index]['url'] ?? '';
-        final String name = objects[index]['name'] ?? "Object";
+        final String name = objects[index]['name'] ?? 'Object';
         final bool isSelected = selectedObjUrl == path;
         return GestureDetector(
           onTap: () => setState(() => selectedObjUrl = path),
@@ -299,21 +305,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                path.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: path,
-                        width: 32,
-                        height: 32,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => const SizedBox(
-                          width: 32,
-                          height: 32,
-                          child: CircularProgressIndicator(strokeWidth: 1.5),
-                        ),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.broken_image, size: 32),
-                      )
-                    : const Icon(Icons.broken_image, size: 32),
+                _buildObjectThumbnail(path),
                 const SizedBox(height: 6),
                 Text(
                   name,
@@ -334,7 +326,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Sound (3-column icon grid) ──────────────────────────────────────────────
+  // Object thumbnails
+  List<Map<String, String>> get _objectOptions {
+    final mediaObjects = List<dynamic>.from(
+      _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ??
+          [],
+    );
+
+    return mediaObjects
+        .map(
+          (object) => {
+            'name': (object['name'] ?? 'Object').toString(),
+            'url': (object['url'] ?? '').toString(),
+          },
+        )
+        .where((object) => _isNetworkUrl(object['url']))
+        .toList();
+  }
+
+  bool _isNetworkUrl(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    final uri = Uri.tryParse(value.trim());
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
+  }
+
+  Widget _buildObjectThumbnail(String path) {
+    if (path.isEmpty) {
+      return const Icon(Icons.broken_image, size: 32);
+    }
+
+    if (path.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: path,
+        width: 32,
+        height: 32,
+        fit: BoxFit.contain,
+        placeholder: (context, url) => const SizedBox(
+          width: 32,
+          height: 32,
+          child: CircularProgressIndicator(strokeWidth: 1.5),
+        ),
+        errorWidget: (context, url, error) =>
+            const Icon(Icons.broken_image, size: 32),
+      );
+    }
+
+    return Image.asset(
+      path,
+      width: 32,
+      height: 32,
+      fit: BoxFit.contain,
+      errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.broken_image, size: 32),
+    );
+  }
+
+  // Sound (3-column icon grid)
   Widget _buildSoundGrid() {
     final sounds = List<dynamic>.from(
       _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [],
@@ -492,13 +541,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: _bilateralController.isSaving.value
               ? null
               : () async {
-                  if (selectedEnvUrl == null || selectedEnvUrl!.trim().isEmpty) {
+                  final environmentUrl = selectedEnvUrl?.trim() ?? '';
+                  final objectUrl = selectedObjUrl?.trim() ?? '';
+
+                  if (environmentUrl.isEmpty) {
                     Get.snackbar('Error', 'Please select an environment',
                         backgroundColor: Colors.redAccent, colorText: Colors.white);
                     return;
                   }
-                  if (selectedObjUrl == null || selectedObjUrl!.trim().isEmpty) {
+                  if (objectUrl.isEmpty) {
                     Get.snackbar('Error', 'Please select a visual object',
+                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                    return;
+                  }
+                  if (!_isNetworkUrl(environmentUrl)) {
+                    Get.snackbar('Error', 'Selected environment URL is invalid',
+                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                    return;
+                  }
+                  if (!_isNetworkUrl(objectUrl)) {
+                    Get.snackbar('Error', 'Selected object URL is invalid',
                         backgroundColor: Colors.redAccent, colorText: Colors.white);
                     return;
                   }
@@ -512,8 +574,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   if (selectedDir == AnimationDirection.diagonalReverse) dirStr = 'diagonal-up';
 
                   await _bilateralController.saveSettings(
-                    environmentUrl: selectedEnvUrl!.trim(),
-                    iconUrl: selectedObjUrl!.trim(),
+                    environmentUrl: environmentUrl,
+                    iconUrl: objectUrl,
                     soundUrl: selectedSoundUrl ?? '',
                     speed: speedStr,
                     direction: dirStr,

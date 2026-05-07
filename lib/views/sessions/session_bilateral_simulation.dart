@@ -21,6 +21,8 @@ class _SessionBilateralSimulationState
   final BilateralController _bilateralController =
       Get.find<BilateralController>();
   final MediaController _mediaController = Get.find<MediaController>();
+  static const String _defaultVisualObject =
+      'assets/images/Butterfly Lottie Animation.gif';
 
   @override
   void initState() {
@@ -44,9 +46,6 @@ class _SessionBilateralSimulationState
 
     final environments =
         _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
-    final objects =
-        _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ??
-        [];
     final sounds =
         _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [];
 
@@ -72,9 +71,7 @@ class _SessionBilateralSimulationState
           : 'assets/images/mountain.jpg',
       visualObject: settings['iconUrl']?.toString().isNotEmpty == true
           ? settings['iconUrl'].toString()
-          : objects.isNotEmpty
-          ? (objects.first['url'] ?? 'assets/images/butterfly.png').toString()
-          : 'assets/images/butterfly.png',
+          : _defaultVisualObject,
       speed: speed,
       audioAsset: settings['soundId']?.toString().isNotEmpty == true
           ? settings['soundId'].toString()

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jonssony/services/app_url.dart';
 
@@ -11,16 +12,27 @@ class SessionProgressService {
         'Authorization': 'Bearer $token',
       };
 
+  static void _logResponse(String method, Uri url, http.Response response) {
+    if (!kDebugMode) return;
+
+    debugPrint(
+      'SessionProgressService $method $url -> ${response.statusCode}',
+    );
+    debugPrint('SessionProgressService response: ${response.body}');
+  }
+
   // ─── Get All Session Progress ──────────────────────────────────────
   static Future<Map<String, dynamic>> getAllProgress(String token) async {
     try {
+      final url = Uri.parse(_baseUrl);
       final response = await http.get(
-        Uri.parse(_baseUrl),
+        url,
         headers: _headers(token),
       );
+      _logResponse('GET', url, response);
       return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
-      print('SessionProgressService getAllProgress Error: $e');
+      debugPrint('SessionProgressService getAllProgress Error: $e');
       return {
         'success': false,
         'message': 'Network error. Please try again.'
@@ -32,14 +44,19 @@ class SessionProgressService {
   static Future<Map<String, dynamic>> updateProgress(
       String token, Map<String, dynamic> data) async {
     try {
+      final url = Uri.parse('$_baseUrl/update');
       final response = await http.post(
-        Uri.parse('$_baseUrl/update'),
+        url,
         headers: _headers(token),
         body: jsonEncode(data),
       );
+      if (kDebugMode) {
+        debugPrint('SessionProgressService POST body: ${jsonEncode(data)}');
+      }
+      _logResponse('POST', url, response);
       return _handleResponse(response, 'Failed to update session progress');
     } catch (e) {
-      print('SessionProgressService updateProgress Error: $e');
+      debugPrint('SessionProgressService updateProgress Error: $e');
       return {
         'success': false,
         'message': 'Network error. Please try again.'
@@ -51,13 +68,15 @@ class SessionProgressService {
   static Future<Map<String, dynamic>> getProgressById(
       String token, String id) async {
     try {
+      final url = Uri.parse('$_baseUrl/$id');
       final response = await http.get(
-        Uri.parse('$_baseUrl/$id'),
+        url,
         headers: _headers(token),
       );
+      _logResponse('GET', url, response);
       return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
-      print('SessionProgressService getProgressById Error: $e');
+      debugPrint('SessionProgressService getProgressById Error: $e');
       return {
         'success': false,
         'message': 'Network error. Please try again.'

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/controller/session_progress_controller.dart';
 import 'package:jonssony/services/session_progress_service.dart';
 
 class SessionCompletionService {
@@ -12,8 +13,15 @@ class SessionCompletionService {
   static final GetStorage _box = GetStorage();
   static final RxList<int> completedSessionNumbers = <int>[].obs;
 
-  static List<int> _readCompletedSessions() {
-    final raw = _box.read<List<dynamic>>(_key) ?? [];
+  static String _storageKeyForJourney(String journeyId) {
+    if (journeyId.isEmpty) return _key;
+
+    return '${_key}_$journeyId';
+  }
+
+  static List<int> _readCompletedSessions([String? journeyId]) {
+    final raw =
+        _box.read<List<dynamic>>(_storageKeyForJourney(journeyId ?? '')) ?? [];
     return raw
         .map((item) => int.tryParse(item.toString()) ?? 0)
         .where((session) => session >= 1 && session <= totalSessions)
@@ -23,7 +31,7 @@ class SessionCompletionService {
   }
 
   static void syncFromStorage() {
-    final sessions = _readCompletedSessions();
+    final sessions = _readCompletedSessions(activeJourneyId());
     if (completedSessionNumbers.length == sessions.length &&
         completedSessionNumbers.every(
           (session) => sessions.contains(session),
@@ -33,9 +41,14 @@ class SessionCompletionService {
     completedSessionNumbers.assignAll(sessions);
   }
 
-  static List<int> completedSessions() => _readCompletedSessions();
+  static List<int> completedSessions({String? journeyId}) =>
+      _readCompletedSessions(journeyId ?? activeJourneyId());
 
-  static int completedCount() => completedSessions().length;
+  static int completedCount({String? journeyId}) =>
+      completedSessions(journeyId: journeyId).length;
+
+  static String activeJourneyId() =>
+      _box.read<String>(_activeJourneyIdKey) ?? '';
 
   static Future<void> markCompleted(
     int sessionNumber, {
@@ -43,14 +56,18 @@ class SessionCompletionService {
   }) async {
     if (sessionNumber < 1 || sessionNumber > totalSessions) return;
 
-    final sessions = completedSessions().toSet();
-    sessions.add(sessionNumber);
+    final resolvedJourneyId = _resolveJourneyId(journeyId);
+    final sessions = completedSessions(journeyId: resolvedJourneyId).toSet();
+    for (var session = 1; session <= sessionNumber; session++) {
+      sessions.add(session);
+    }
+
     final sorted = sessions.toList()..sort();
-    await _box.write(_key, sorted);
+    await _box.write(_storageKeyForJourney(resolvedJourneyId), sorted);
     completedSessionNumbers.assignAll(sorted);
 
     await _syncRemoteProgress(
-      journeyId: _resolveJourneyId(journeyId),
+      journeyId: resolvedJourneyId,
       completedSessions: sorted.length,
     );
   }
@@ -87,6 +104,16 @@ class SessionCompletionService {
       'totalSession': totalSessions,
       'compledSession': completedSessions,
     });
+
+    if (result['success'] == true) {
+      if (Get.isRegistered<SessionProgressController>()) {
+        Get.find<SessionProgressController>().upsertJourneyProgress(
+          journeyId,
+          result['data'],
+        );
+      }
+      return;
+    }
 
     if (result['success'] != true) {
       debugPrint(

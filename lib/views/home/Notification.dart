@@ -8,6 +8,9 @@ class NotificationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final NotificationController controller = Get.find<NotificationController>();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.fetchNotifications();
+    });
 
     const Color bgColor = Color(0xFFFFF9F2);
     const Color iconBgColor = Color(0xFFC69C6D);
@@ -81,7 +84,7 @@ class NotificationScreen extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red.withOpacity(0.1),
+        color: Colors.red.withValues(alpha: 0.1),
 
         child: const Icon(Icons.delete, color: Colors.red),
       ),
@@ -99,7 +102,9 @@ class NotificationScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: notification.isRead ? iconBgColor.withOpacity(0.5) : iconBgColor,
+                  color: notification.isRead
+                      ? iconBgColor.withValues(alpha: 0.5)
+                      : iconBgColor,
 
                   shape: BoxShape.circle,
                 ),

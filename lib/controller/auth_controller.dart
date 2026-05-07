@@ -3,6 +3,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/auth_service.dart';
 import 'package:jonssony/services/gogle_sign.dart';
+import 'package:jonssony/services/notificationService.dart';
 
 class AuthController extends GetxController {
   final _box = GetStorage();
@@ -50,6 +51,7 @@ class AuthController extends GetxController {
     _box.remove(_tokenKey);
     _box.remove(_refreshTokenKey);
     _box.remove(_userKey);
+    _box.remove('registered_fcm_token');
   }
 
   // ─── 1. Signup ─────────────────────────────────────────────
@@ -145,6 +147,7 @@ class AuthController extends GetxController {
       final result = await AuthService.login(email: email, password: password);
       if (result['success'] == true) {
         _saveSession(result);
+        await NotificationService.registerCurrentDeviceToken();
         Get.offAllNamed(RouteHelper.main);
       } else {
         errorMessage.value = result['message'] ?? 'Login failed';
@@ -175,6 +178,7 @@ class AuthController extends GetxController {
           'token': await user.getIdToken(),
         };
         _saveSession(userData);
+        await NotificationService.registerCurrentDeviceToken();
         Get.offAllNamed(RouteHelper.main);
       } else {
         errorMessage.value = 'Sign-in canceled or failed quietly.';

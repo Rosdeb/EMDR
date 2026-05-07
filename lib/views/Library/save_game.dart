@@ -14,7 +14,10 @@ class SaveGame extends StatefulWidget {
 }
 
 class _SaveGameState extends State<SaveGame> {
-  final BilateralController _bilateralController = Get.find<BilateralController>();
+  final BilateralController _bilateralController =
+      Get.find<BilateralController>();
+  static const String _defaultVisualObject =
+      'assets/images/Butterfly Lottie Animation.gif';
   int? _playingIndex;
 
   final List<Map<String, String>> _tracks = [
@@ -99,6 +102,9 @@ class _SaveGameState extends State<SaveGame> {
     if (dirStr == 'top-bottom') dir = AnimationDirection.vertical;
     else if (dirStr == 'diagonal-down') dir = AnimationDirection.diagonal;
     else if (dirStr == 'diagonal-up') dir = AnimationDirection.diagonalReverse;
+    final visualObject = settings['iconUrl']?.toString().isNotEmpty == true
+        ? settings['iconUrl'].toString()
+        : _defaultVisualObject;
 
     return GestureDetector(
       onTap: () {
@@ -110,10 +116,12 @@ class _SaveGameState extends State<SaveGame> {
           MaterialPageRoute(
             builder: (context) => SimulationScreen(
               settings: SimulationSettings(
-                environmentImage: settings['environmentId'] ?? 'assets/images/mountain.jpg',
-                visualObject: settings['iconUrl'] ?? 'assets/images/butterfly.png',
+                environmentImage:
+                    settings['environmentId'] ?? 'assets/images/mountain.jpg',
+                visualObject: visualObject,
                 speed: speed,
-                audioAsset: settings['soundId'] ?? 'assets/audio/calm_place.wav',
+                audioAsset:
+                    settings['soundId'] ?? 'assets/audio/calm_place.wav',
                 direction: dir,
                 isNetworkImage: settings.isNotEmpty,
               ),

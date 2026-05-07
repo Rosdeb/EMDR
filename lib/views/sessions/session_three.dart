@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/services/media_service.dart';
@@ -38,7 +39,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
-  static const _mediaCategoryId = '69ebedf60bf438b36641eba1';
+  static const _mediaCategoryId = '69ebf0940bf438b36641ebd2';
 
   List<dynamic> _apiImages = [];
   List<dynamic> _apiAudios = [];
@@ -66,25 +67,32 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
         if (result['success'] == true && result['data'] != null) {
           final data = result['data'] as Map<String, dynamic>;
-          final media = data['media'] as Map<String, dynamic>?;
-          if (media != null) {
-            final apiImages = List<dynamic>.from(media['images'] ?? []);
-            final musics = List<dynamic>.from(media['musics'] ?? []);
-            final others = List<dynamic>.from(media['others'] ?? []);
-            final apiAudios = [...musics, ...others];
-
-            setState(() {
-              _apiImages = apiImages;
-              _apiAudios = apiAudios;
-              if (_apiImages.isNotEmpty && selectedImageUrl.isEmpty) {
-                selectedImageUrl = _apiImages.first['url'] ?? '';
-              }
-              if (_apiAudios.isNotEmpty) {
-                currentAudioName = _apiAudios.first['name'] ?? '';
-                currentAudioUrl = _apiAudios.first['url'] ?? '';
-              }
-            });
+          final media = data['media'] is Map
+              ? Map<String, dynamic>.from(data['media'] as Map)
+              : data;
+          final apiImages = _mediaList(media['images']);
+          final musics = _mediaList(media['musics']);
+          final others = _mediaList(media['others']);
+          final apiAudios = [...musics, ...others];
+          if (kDebugMode) {
+            debugPrint(
+              'SessionThree media category=$_mediaCategoryId '
+              'images=${apiImages.length} musics=${musics.length} '
+              'others=${others.length}',
+            );
           }
+
+          setState(() {
+            _apiImages = apiImages;
+            _apiAudios = apiAudios;
+            if (_apiImages.isNotEmpty && selectedImageUrl.isEmpty) {
+              selectedImageUrl = _apiImages.first['url'] ?? '';
+            }
+            if (_apiAudios.isNotEmpty) {
+              currentAudioName = _apiAudios.first['name'] ?? '';
+              currentAudioUrl = _apiAudios.first['url'] ?? '';
+            }
+          });
         }
       }
     } catch (e) {
@@ -98,6 +106,11 @@ class _SessionThreePageState extends State<SessionThreePage> {
     }
 
     await _initAudioPlayer();
+  }
+
+  List<dynamic> _mediaList(dynamic value) {
+    if (value is List) return List<dynamic>.from(value);
+    return [];
   }
 
   Future<void> _initAudioPlayer() async {

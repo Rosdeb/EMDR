@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -152,6 +153,7 @@ class HomeScreen extends StatelessWidget {
                               }
 
                               final journeys = journeyController.journeys;
+                              sessionProgressController.progressRevision.value;
                               if (journeys.isEmpty) {
                                 return const Center(
                                   child: Padding(
@@ -175,8 +177,7 @@ class HomeScreen extends StatelessWidget {
                                   final item = journey is Map
                                       ? Map<String, dynamic>.from(journey)
                                       : <String, dynamic>{};
-                                  final journeyId =
-                                      item['_id']?.toString() ?? '';
+                                  final journeyId = _journeyIdFrom(item);
                                   final progressData = sessionProgressController
                                       .journeyProgresses[journeyId];
                                   final details =
@@ -185,9 +186,17 @@ class HomeScreen extends StatelessWidget {
                                           progressData!['details'] as Map,
                                         )
                                       : <String, dynamic>{};
-                                  final totalFromApi = _asInt(
+                                  final totalFromApi = _firstInt([
+                                    details['totalSession'],
                                     details['totalSessions'],
-                                  );
+                                    details['total'],
+                                    progressData?['totalSession'],
+                                    progressData?['totalSessions'],
+                                    progressData?['total'],
+                                    item['totalSession'],
+                                    item['totalSessions'],
+                                    item['total'],
+                                  ]);
                                   final total = totalFromApi > 0
                                       ? totalFromApi
                                       : SessionCompletionService.totalSessions;
@@ -195,18 +204,50 @@ class HomeScreen extends StatelessWidget {
                                       SessionCompletionService
                                           .completedSessionNumbers
                                           .toList();
-                                  final apiCompleted = _firstInt([
+                                  final activeJourneyId =
+                                      SessionCompletionService.activeJourneyId();
+                                  final apiCompleted = _firstSessionCount([
+                                    details['compledSession'],
+                                    details['compledSessions'],
+                                    details['totalCompledSession'],
+                                    details['totalCompletedSession'],
+                                    details['totalCompletedSessions'],
+                                    details['completedSessionCount'],
                                     details['completedSessions'],
                                     details['completedSession'],
                                     details['completed'],
+                                    progressData?['compledSession'],
+                                    progressData?['compledSessions'],
+                                    progressData?['totalCompledSession'],
+                                    progressData?['totalCompletedSession'],
+                                    progressData?['totalCompletedSessions'],
+                                    progressData?['completedSessionCount'],
                                     progressData?['completedSessions'],
                                     progressData?['completedSession'],
                                     progressData?['completed'],
-                                  ]).clamp(0, total).toInt();
-                                  final localCompleted = localCompletedSessions
-                                      .length
-                                      .clamp(0, total)
-                                      .toInt();
+                                    item['compledSession'],
+                                    item['compledSessions'],
+                                    item['totalCompledSession'],
+                                    item['totalCompletedSession'],
+                                    item['totalCompletedSessions'],
+                                    item['completedSessionCount'],
+                                    item['completedSessions'],
+                                    item['completedSession'],
+                                    item['completed'],
+                                  ], total);
+                                  final hasRemoteProgress =
+                                      progressData != null &&
+                                      progressData.isNotEmpty;
+                                  final useLocalProgress =
+                                      (activeJourneyId.isNotEmpty &&
+                                          activeJourneyId == journeyId) ||
+                                      (!hasRemoteProgress &&
+                                          journeys.length == 1);
+                                  final localCompleted = useLocalProgress
+                                      ? localCompletedSessions.length
+                                            .clamp(0, total)
+                                            .toInt()
+                                      : 0;
                                   final apiPercent = _firstPercent([
                                     progressData?['totalCompledSession'],
                                     progressData?['totalCompletedSession'],
@@ -243,11 +284,21 @@ class HomeScreen extends StatelessWidget {
                                       .toDouble();
                                   final percentText =
                                       "${(percent * 100).round()}%";
+                                  if (kDebugMode) {
+                                    debugPrint(
+                                      'JourneyCard journeyId=$journeyId '
+                                      'progressData=$progressData '
+                                      'details=$details '
+                                      'completed=$completed total=$total '
+                                      'percent=$percentText',
+                                    );
+                                  }
                                   final nextSessionNumber = _nextSessionNumber(
                                     completed: completed,
                                     apiCompleted: apiCompleted,
-                                    localCompletedSessions:
-                                        localCompletedSessions,
+                                    localCompletedSessions: useLocalProgress
+                                        ? localCompletedSessions
+                                        : const [],
                                   );
                                   final journeyTitle =
                                       item['journeyName']?.toString() ??
@@ -447,13 +498,30 @@ class HomeScreen extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
           child: Container(
+            height: 132,
+            width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.4),
+              color: Colors.white.withValues(alpha: 0.80),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.48),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  blurRadius: 8,
+                  offset: const Offset(-2, -2),
+                ),
+              ],
             ),
 
             child: Column(
@@ -461,12 +529,20 @@ class HomeScreen extends StatelessWidget {
               children: [
                 SvgPicture.asset(iconPath, height: 28),
                 const SizedBox(height: 15),
-                AppText(title, fontWeight: FontWeight.w600, fontSize: 15),
+                AppText(
+                  title,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 AppText(
                   subtitle,
                   fontSize: 13,
                   color: AppColors.mainAppColor,
                   fontWeight: FontWeight.w600,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -479,13 +555,56 @@ class HomeScreen extends StatelessWidget {
   int _asInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    if (value is Iterable) return value.length;
+
+    final rawText = value?.toString().trim() ?? '';
+    if (rawText.isEmpty) return 0;
+
+    final countText = rawText.split('/').first.replaceAll('%', '').trim();
+    final parsed = num.tryParse(countText);
+    return parsed?.toInt() ?? 0;
+  }
+
+  String _journeyIdFrom(Map<String, dynamic> item) {
+    for (final key in ['_id', 'id', 'journeyId']) {
+      final value = _idValue(item[key]);
+      if (value.isNotEmpty) return value;
+    }
+
+    return '';
+  }
+
+  String _idValue(dynamic value) {
+    if (value == null) return '';
+
+    if (value is Map) {
+      for (final key in [r'$oid', 'oid', '_id', 'id']) {
+        final nested = _idValue(value[key]);
+        if (nested.isNotEmpty) return nested;
+      }
+      return '';
+    }
+
+    final text = value.toString();
+    if (text.isEmpty || text == 'null') return '';
+
+    return text;
   }
 
   int _firstInt(Iterable<dynamic> values) {
     for (final value in values) {
       final parsed = _asInt(value);
       if (parsed > 0) return parsed;
+    }
+    return 0;
+  }
+
+  int _firstSessionCount(Iterable<dynamic> values, int total) {
+    for (final value in values) {
+      if (value == null) continue;
+      if (value is String && value.contains('%')) continue;
+      final parsed = _asInt(value);
+      if (parsed > 0 && parsed <= total) return parsed;
     }
     return 0;
   }
