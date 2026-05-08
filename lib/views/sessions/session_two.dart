@@ -683,7 +683,7 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           _buildLinedBackground(),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              padding: const EdgeInsets.fromLTRB(20, 62, 20, 30),
               child: Column(
                 children: [
                   _buildTitle(),
@@ -730,6 +730,24 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
           ),
           // Doodle decorations
           const DoodleDecorations(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8, top: 8),
+              child: Material(
+                color: Colors.white.withOpacity(0.82),
+                shape: const CircleBorder(),
+                elevation: 2,
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Color(0xFF2E7D32),
+                  ),
+                  tooltip: 'Back',
+                  onPressed: () => Get.back(),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

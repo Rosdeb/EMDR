@@ -312,13 +312,21 @@ class _SessionfourpageState extends State<Sessionfourpage> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent + 200,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeOut,
-        );
+      if (!mounted || !_scrollController.hasClients) return;
+
+      final target = _scrollController.position.maxScrollExtent;
+      final distance = (target - _scrollController.offset).abs();
+
+      if (distance < 80) {
+        _scrollController.jumpTo(target);
+        return;
       }
+
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
     });
   }
 
@@ -366,7 +374,9 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       _uiState = _UIState.chat;
     });
 
-    Future.delayed(const Duration(milliseconds: 700), _askNext);
+    Future.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _askNext();
+    });
   }
 
   // ── Main flow logic ────────────────────────────────────────
@@ -391,7 +401,10 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       _addBotMessage(
         'What negative belief about yourself comes up when you hold that freeze frame?',
       );
-      setState(() => _uiState = _UIState.negativeBeliefs);
+      setState(() {
+        _uiState = _UIState.negativeBeliefs;
+        _showInput = false;
+      });
     } else if (question == '__POSITIVE_BELIEFS__') {
       if (_isAddictionFlow) {
         _currentStep++;
@@ -401,14 +414,20 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       _addBotMessage(
         'What would you prefer to believe about yourself in that situation instead?',
       );
-      setState(() => _uiState = _UIState.positiveBeliefs);
+      setState(() {
+        _uiState = _UIState.positiveBeliefs;
+        _showInput = false;
+      });
     } else if (question == '__VOC_RATING__') {
       if (_isAddictionFlow) {
         _currentStep++;
         _askNext();
         return;
       }
-      setState(() => _uiState = _UIState.vocRating);
+      setState(() {
+        _uiState = _UIState.vocRating;
+        _showInput = false;
+      });
       _scrollToBottom();
     } else if (question == '__SUD_RATING__') {
       if (_isAddictionFlow) {
@@ -416,10 +435,16 @@ class _SessionfourpageState extends State<Sessionfourpage> {
         _askNext();
         return;
       }
-      setState(() => _uiState = _UIState.sudRating);
+      setState(() {
+        _uiState = _UIState.sudRating;
+        _showInput = false;
+      });
       _scrollToBottom();
     } else if (question == '__PFS_RATING__') {
-      setState(() => _uiState = _UIState.pfsRating);
+      setState(() {
+        _uiState = _UIState.pfsRating;
+        _showInput = false;
+      });
       _scrollToBottom();
     } else if (question == '__BLS_INSTRUCTION__') {
       _addBotMessage(
@@ -429,17 +454,18 @@ class _SessionfourpageState extends State<Sessionfourpage> {
         _uiState = _UIState.done;
         _showInput = false;
       });
-      Future.delayed(const Duration(milliseconds: 2000), _finishSession);
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (mounted) _finishSession();
+      });
     } else {
       _addBotMessage(question);
       setState(() {
         _uiState = _UIState.chat;
         _showInput = true;
       });
-      Future.delayed(
-        const Duration(milliseconds: 300),
-        () => _focusNode.requestFocus(),
-      );
+      Future.delayed(const Duration(milliseconds: 120), () {
+        if (mounted) _focusNode.requestFocus();
+      });
     }
   }
 
@@ -501,8 +527,11 @@ class _SessionfourpageState extends State<Sessionfourpage> {
 
     _inputController.clear();
     _currentStep++;
-    setState(() => _showInput = false);
-    Future.delayed(const Duration(milliseconds: 700), _askNext);
+    _focusNode.requestFocus();
+    _scrollToBottom();
+    Future.delayed(const Duration(milliseconds: 450), () {
+      if (mounted) _askNext();
+    });
   }
 
   Future<void> _finishSession() async {
@@ -806,6 +835,8 @@ class _SessionfourpageState extends State<Sessionfourpage> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardInset = MediaQuery.of(context).viewInsets.bottom;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
@@ -813,6 +844,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
         await _handleBack();
       },
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.white,
         body: Stack(
           children: [
@@ -847,73 +879,35 @@ class _SessionfourpageState extends State<Sessionfourpage> {
                       ),
                       // Chat list
                       Positioned.fill(
-                        child: ListView(
+                        child: ListView.builder(
                           controller: _scrollController,
                           physics: const BouncingScrollPhysics(),
                           padding: EdgeInsets.only(
                             left: 16,
                             right: 16,
                             top: 24,
-                            bottom: _showInput ? 160 : 100,
+                            bottom: (_showInput ? 160 : 100) + keyboardInset,
                           ),
-                          children: [
-                            ..._messages.map((m) => _buildMessageBubble(m)),
-                            // Inline UI widgets based on state
-                            if (_uiState == _UIState.startOptions)
-                              _StartingOptionsWidget(
-                                onChoose: _handleStartingChoice,
-                              ),
-                            if (_uiState == _UIState.negativeBeliefs)
-                              _BeliefSelectionWidget(
-                                type: 'negative',
-                                beliefs: kNegativeBeliefs,
-                                onSubmit: (sel) => _submitNegativeBeliefs(sel),
-                              ),
-                            if (_uiState == _UIState.positiveBeliefs)
-                              _BeliefSelectionWidget(
-                                type: 'positive',
-                                beliefs: kPositiveBeliefs,
-                                currentNegative:
-                                    _negativeBeliefIndex <
-                                        _selectedNegativeBeliefs.length
-                                    ? _selectedNegativeBeliefs[_negativeBeliefIndex]
-                                    : null,
-                                onSubmitSingle: (s) => _submitPositiveBelief(s),
-                              ),
-                            if (_uiState == _UIState.vocRating)
-                              _RatingScaleWidget(
-                                type: 'voc',
-                                positiveBeliefs: _selectedPositiveBeliefs,
-                                negativeBeliefs: _selectedNegativeBeliefs,
-                                onSubmit: (v) => _submitRating('voc', v),
-                              ),
-                            if (_uiState == _UIState.sudRating)
-                              _RatingScaleWidget(
-                                type: 'sud',
-                                positiveBeliefs: _selectedPositiveBeliefs,
-                                negativeBeliefs: _selectedNegativeBeliefs,
-                                onSubmit: (v) => _submitRating('sud', v),
-                              ),
-                            if (_uiState == _UIState.pfsRating)
-                              _RatingScaleWidget(
-                                type: 'pfs',
-                                positiveBeliefs: const [],
-                                negativeBeliefs: const [],
-                                onSubmit: (v) => _submitRating('pfs', v),
-                              ),
-                            if (_uiState == _UIState.summary)
-                              _SummaryWidget(
-                                responses: _responses,
-                                beliefPairs: _beliefPairs,
-                                isAddiction: _isAddictionFlow,
-                              ),
-                          ],
+                          itemCount: _messages.length + 1,
+                          itemBuilder: (context, index) {
+                            if (index < _messages.length) {
+                              return RepaintBoundary(
+                                child: _buildMessageBubble(_messages[index]),
+                              );
+                            }
+
+                            return RepaintBoundary(
+                              child: _buildInlineStateWidget(),
+                            );
+                          },
                         ),
                       ),
                       // Input bar
                       if (_showInput && _uiState == _UIState.chat)
-                        Positioned(
-                          bottom: 0,
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOutCubic,
+                          bottom: keyboardInset,
                           left: 0,
                           right: 0,
                           child: _buildInputBar(context),
@@ -937,6 +931,68 @@ class _SessionfourpageState extends State<Sessionfourpage> {
     );
   }
 
+  Widget _buildInlineStateWidget() {
+    if (_uiState == _UIState.startOptions) {
+      return _StartingOptionsWidget(onChoose: _handleStartingChoice);
+    }
+
+    if (_uiState == _UIState.negativeBeliefs) {
+      return _BeliefSelectionWidget(
+        type: 'negative',
+        beliefs: kNegativeBeliefs,
+        onSubmit: (sel) => _submitNegativeBeliefs(sel),
+      );
+    }
+
+    if (_uiState == _UIState.positiveBeliefs) {
+      return _BeliefSelectionWidget(
+        type: 'positive',
+        beliefs: kPositiveBeliefs,
+        currentNegative: _negativeBeliefIndex < _selectedNegativeBeliefs.length
+            ? _selectedNegativeBeliefs[_negativeBeliefIndex]
+            : null,
+        onSubmitSingle: (s) => _submitPositiveBelief(s),
+      );
+    }
+
+    if (_uiState == _UIState.vocRating) {
+      return _RatingScaleWidget(
+        type: 'voc',
+        positiveBeliefs: _selectedPositiveBeliefs,
+        negativeBeliefs: _selectedNegativeBeliefs,
+        onSubmit: (v) => _submitRating('voc', v),
+      );
+    }
+
+    if (_uiState == _UIState.sudRating) {
+      return _RatingScaleWidget(
+        type: 'sud',
+        positiveBeliefs: _selectedPositiveBeliefs,
+        negativeBeliefs: _selectedNegativeBeliefs,
+        onSubmit: (v) => _submitRating('sud', v),
+      );
+    }
+
+    if (_uiState == _UIState.pfsRating) {
+      return _RatingScaleWidget(
+        type: 'pfs',
+        positiveBeliefs: const [],
+        negativeBeliefs: const [],
+        onSubmit: (v) => _submitRating('pfs', v),
+      );
+    }
+
+    if (_uiState == _UIState.summary) {
+      return _SummaryWidget(
+        responses: _responses,
+        beliefPairs: _beliefPairs,
+        isAddiction: _isAddictionFlow,
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
   Widget _buildMessageBubble(ChatMessage msg) {
     final isBot = msg.type == MessageType.bot;
     return Align(
@@ -953,44 +1009,49 @@ class _SessionfourpageState extends State<Sessionfourpage> {
             bottomLeft: Radius.circular(isBot ? 4 : 20),
             bottomRight: Radius.circular(isBot ? 20 : 4),
           ),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isBot
-                    ? Colors.white.withOpacity(0.75)
-                    : const Color(0xFF537E5D).withOpacity(0.9),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (isBot)
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.spa_outlined,
-                          size: 13,
-                          color: Color(0xFF537E5D),
-                        ),
-                        const SizedBox(width: 4),
-                        AppText(
-                          'EMDR Companion',
-                          fontSize: 11,
-                          color: const Color(0xFF537E5D),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ],
-                    ),
-                  if (isBot) const SizedBox(height: 5),
-                  AppText(
-                    msg.text,
-                    fontSize: 14,
-                    color: isBot ? Colors.black87 : Colors.white,
-                    fontWeight: FontWeight.w400,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isBot
+                  ? Colors.white.withOpacity(0.86)
+                  : const Color(0xFF537E5D).withOpacity(0.94),
+              border: isBot ? Border.all(color: Colors.white54) : null,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x14000000),
+                  blurRadius: 12,
+                  offset: Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isBot)
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.spa_outlined,
+                        size: 13,
+                        color: Color(0xFF537E5D),
+                      ),
+                      const SizedBox(width: 4),
+                      AppText(
+                        'EMDR Companion',
+                        fontSize: 11,
+                        color: const Color(0xFF537E5D),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                if (isBot) const SizedBox(height: 5),
+                AppText(
+                  msg.text,
+                  fontSize: 14,
+                  color: isBot ? Colors.black87 : Colors.white,
+                  fontWeight: FontWeight.w400,
+                ),
+              ],
             ),
           ),
         ),
@@ -999,6 +1060,9 @@ class _SessionfourpageState extends State<Sessionfourpage> {
   }
 
   Widget _buildInputBar(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final keyboardOpen = mediaQuery.viewInsets.bottom > 0;
+
     return ClipRRect(
       borderRadius: const BorderRadius.only(
         topLeft: Radius.circular(20),
@@ -1011,7 +1075,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
             left: 16,
             right: 16,
             top: 14,
-            bottom: MediaQuery.of(context).padding.bottom + 14,
+            bottom: (keyboardOpen ? 0 : mediaQuery.padding.bottom) + 14,
           ),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.45),

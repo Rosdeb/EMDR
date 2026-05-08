@@ -190,18 +190,17 @@ class _ProgressPageState extends State<ProgressPage> {
     if (mounted && latestResult['success'] == true) {
       final latestData = latestResult['data'];
       final latestMap = <String, Map<String, dynamic>>{};
-      if (latestData is List) {
-        for (final item in latestData) {
-          if (item is Map) {
-            final map = Map<String, dynamic>.from(item);
-            final type = map['trackerType']?.toString();
-            if (type != null) latestMap[type] = map;
-          }
+      for (final item in _dataList(latestData)) {
+        if (item is Map) {
+          final map = Map<String, dynamic>.from(item);
+          final type = map['trackerType']?.toString();
+          if (type != null && type.isNotEmpty) latestMap[type] = map;
         }
-      } else if (latestData is Map) {
+      }
+      if (latestMap.isEmpty && latestData is Map) {
         final map = Map<String, dynamic>.from(latestData);
         final type = map['trackerType']?.toString();
-        if (type != null) latestMap[type] = map;
+        if (type != null && type.isNotEmpty) latestMap[type] = map;
       }
       setState(() {
         _latestTrackerResults
@@ -219,8 +218,11 @@ class _ProgressPageState extends State<ProgressPage> {
         trackerType: type,
         limit: 10,
       );
-      if (trendResult['success'] == true && trendResult['data'] is List) {
-        trendMap[type] = List<dynamic>.from(trendResult['data']);
+      if (trendResult['success'] == true) {
+        final trendItems = _dataList(trendResult['data']);
+        if (trendItems.isNotEmpty) {
+          trendMap[type] = trendItems;
+        }
       }
     }
 
@@ -231,6 +233,17 @@ class _ProgressPageState extends State<ProgressPage> {
           ..addAll(trendMap);
       });
     }
+  }
+
+  List<dynamic> _dataList(dynamic value) {
+    if (value is List) return List<dynamic>.from(value);
+    if (value is Map) {
+      for (final key in ['results', 'submissions', 'history', 'items', 'data']) {
+        final nested = value[key];
+        if (nested is List) return List<dynamic>.from(nested);
+      }
+    }
+    return const [];
   }
 
   Map<String, dynamic>? _getTrackerResultData(String title) {
@@ -437,6 +450,7 @@ class _ProgressPageState extends State<ProgressPage> {
           setState(() => isResultsTab = label == "My Results");
           if (label == "My Results") {
             await _loadTrackerResults();
+            await _loadBackendTrackers();
           }
         },
 

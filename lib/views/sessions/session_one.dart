@@ -7,6 +7,7 @@ import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/media_service.dart';
 import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/utils/app_colors.dart';
+import 'package:jonssony/views/progress/progress_page.dart';
 import 'package:jonssony/views/sessions/session_two.dart';
 import 'package:video_player/video_player.dart';
 
@@ -31,7 +32,6 @@ class SessionOne extends StatefulWidget {
 
 class _SessionOneState extends State<SessionOne> {
   final AuthController _authController = Get.find<AuthController>();
-  final Map<String, bool> _checkedItems = {};
   final Map<String, int> _lastSyncedProgress = {
     'watchedSeconds': -1,
     'totalSeconds': -1,
@@ -45,36 +45,6 @@ class _SessionOneState extends State<SessionOne> {
   String _videoSrc = '';
   Duration _currentTime = Duration.zero;
   Duration _duration = Duration.zero;
-
-  final List<_ReflectionQuestion> _questions = const [
-    _ReflectionQuestion(
-      id: 1,
-      question: 'How did this session make you feel?',
-      options: [
-        'Calm and relaxed',
-        'Slightly uncomfortable',
-        'Emotionally triggered',
-      ],
-    ),
-    _ReflectionQuestion(
-      id: 2,
-      question: 'Were you able to focus on the bilateral stimulation?',
-      options: [
-        'Yes, throughout the entire session',
-        'Partially, I got distracted',
-        'No, I found it difficult to focus',
-      ],
-    ),
-    _ReflectionQuestion(
-      id: 3,
-      question: 'Did any memories or emotions surface during the session?',
-      options: [
-        'Yes, and I was able to process them',
-        'Yes, but I felt overwhelmed',
-        'No, nothing came up',
-      ],
-    ),
-  ];
 
   @override
   void initState() {
@@ -262,11 +232,8 @@ class _SessionOneState extends State<SessionOne> {
     }
   }
 
-  void _handleCheck(int questionId, int optionIndex) {
-    final key = '$questionId-$optionIndex';
-    setState(() {
-      _checkedItems[key] = !(_checkedItems[key] ?? false);
-    });
+  void _openOptionalQuestionnaires() {
+    Get.to(() => const ProgressPage());
   }
 
   Future<void> _goToNextStep() async {
@@ -347,18 +314,16 @@ class _SessionOneState extends State<SessionOne> {
                             return Column(
                               children: [
                                 _buildVideoStage(),
-                                if (_videoEnded) ...[
-                                  const SizedBox(height: 18),
-                                  Align(
-                                    alignment: Alignment.center,
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        maxWidth: isWide ? 520 : 640,
-                                      ),
-                                      child: _buildReflectionCard(),
+                                const SizedBox(height: 18),
+                                Align(
+                                  alignment: Alignment.center,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth: isWide ? 620 : 640,
                                     ),
+                                    child: _buildIntroductionCard(),
                                   ),
-                                ],
+                                ),
                               ],
                             );
                           },
@@ -560,7 +525,7 @@ class _SessionOneState extends State<SessionOne> {
     );
   }
 
-  Widget _buildReflectionCard() {
+  Widget _buildIntroductionCard() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -579,16 +544,65 @@ class _SessionOneState extends State<SessionOne> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text(
-            'Session Reflection',
+            'Session 1: Introduction to EMDR',
             style: TextStyle(
               color: Color(0xFF1F2933),
               fontSize: 19,
               fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: 10),
+          const Text(
+            'Watch the introduction video, then review what to expect before moving into Session 2.',
+            style: TextStyle(
+              color: Color(0xFF4B5563),
+              fontSize: 14,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 18),
-          Column(children: _questions.map(_buildQuestionBlock).toList()),
+          _buildInfoBlock(
+            icon: Icons.psychology_alt_rounded,
+            title: 'How EMDR works',
+            text:
+                'EMDR uses brief sets of bilateral stimulation while you notice thoughts, emotions, body sensations, and memories. The aim is to help your brain process distressing material in a more adaptive way.',
+          ),
+          const SizedBox(height: 12),
+          _buildInfoBlock(
+            icon: Icons.check_circle_outline_rounded,
+            title: 'Setting expectations',
+            text:
+                'Go at a steady pace, pause whenever you need to, and use your calm space if anything feels too intense. Progress is saved so you can continue from My Space.',
+          ),
           const SizedBox(height: 18),
+          OutlinedButton.icon(
+            onPressed: _openOptionalQuestionnaires,
+            icon: const Icon(Icons.insert_chart_outlined_rounded, size: 19),
+            label: const Text('Optional Questionnaires'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF4A7C59),
+              side: const BorderSide(color: Color(0xFF4A7C59), width: 1.3),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'PHQ, GAD, and problem-specific questionnaires are available in My Space. Weekly results are recorded there and shown in graphs as new questionnaires are completed.',
+            style: TextStyle(
+              color: Color(0xFF6B7280),
+              fontSize: 12.5,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -603,7 +617,7 @@ class _SessionOneState extends State<SessionOne> {
                 ),
               ),
               child: const Text(
-                'Next Step',
+                'Continue to Session 2',
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
@@ -613,59 +627,49 @@ class _SessionOneState extends State<SessionOne> {
     );
   }
 
-  Widget _buildQuestionBlock(_ReflectionQuestion question) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Column(
+  Widget _buildInfoBlock({
+    required IconData icon,
+    required String title,
+    required String text,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F7F0),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDCE8D8)),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${question.id}. ${question.question}',
-            style: const TextStyle(
-              color: Color(0xFF1F2933),
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              height: 1.35,
+          Icon(icon, color: const Color(0xFF4A7C59), size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF1F2933),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  text,
+                  style: const TextStyle(
+                    color: Color(0xFF4B5563),
+                    fontSize: 13,
+                    height: 1.45,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 10),
-          ...question.options.asMap().entries.map((entry) {
-            final key = '${question.id}-${entry.key}';
-            return InkWell(
-              onTap: () => _handleCheck(question.id, entry.key),
-              borderRadius: BorderRadius.circular(10),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: Checkbox(
-                        value: _checkedItems[key] ?? false,
-                        activeColor: const Color(0xFF4A7C59),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        onChanged: (_) => _handleCheck(question.id, entry.key),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        entry.value,
-                        style: const TextStyle(
-                          color: Color(0xFF4B5563),
-                          fontSize: 13,
-                          height: 1.35,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
         ],
       ),
     );
@@ -695,18 +699,6 @@ class _SessionOneState extends State<SessionOne> {
         ? message.substring('Exception: '.length)
         : message;
   }
-}
-
-class _ReflectionQuestion {
-  final int id;
-  final String question;
-  final List<String> options;
-
-  const _ReflectionQuestion({
-    required this.id,
-    required this.question,
-    required this.options,
-  });
 }
 
 class _RoundControlButton extends StatelessWidget {
