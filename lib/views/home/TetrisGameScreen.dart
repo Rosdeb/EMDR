@@ -28,17 +28,39 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
   };
 
   final Map<String, List<List<int>>> shapes = {
-    'I': [[1, 1, 1, 1]],
-    'O': [[1, 1], [1, 1]],
-    'T': [[0, 1, 0], [1, 1, 1]],
-    'S': [[0, 1, 1], [1, 1, 0]],
-    'Z': [[1, 1, 0], [0, 1, 1]],
-    'J': [[1, 0, 0], [1, 1, 1]],
-    'L': [[0, 0, 1], [1, 1, 1]],
+    'I': [
+      [1, 1, 1, 1],
+    ],
+    'O': [
+      [1, 1],
+      [1, 1],
+    ],
+    'T': [
+      [0, 1, 0],
+      [1, 1, 1],
+    ],
+    'S': [
+      [0, 1, 1],
+      [1, 1, 0],
+    ],
+    'Z': [
+      [1, 1, 0],
+      [0, 1, 1],
+    ],
+    'J': [
+      [1, 0, 0],
+      [1, 1, 1],
+    ],
+    'L': [
+      [0, 0, 1],
+      [1, 1, 1],
+    ],
   };
 
-  List<List<String?>> board =
-  List.generate(boardHeight, (_) => List.filled(boardWidth, null));
+  List<List<String?>> board = List.generate(
+    boardHeight,
+    (_) => List.filled(boardWidth, null),
+  );
   Timer? gameTimer;
   GameState gameState = GameState.start;
   int score = 0;
@@ -95,8 +117,12 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
         if (piece[r][c] == 1) {
           final nx = x + c;
           final ny = y + r;
-          if (nx < 0 || nx >= boardWidth || ny >= boardHeight ||
-              (ny >= 0 && board[ny][nx] != null)) return true;
+          if (nx < 0 ||
+              nx >= boardWidth ||
+              ny >= boardHeight ||
+              (ny >= 0 && board[ny][nx] != null)) {
+            return true;
+          }
         }
       }
     }
@@ -130,7 +156,9 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
   void hardDrop() {
     if (gameState != GameState.playing) return;
     setState(() {
-      while (!checkCollision(currentX, currentY + 1, currentPiece!)) currentY++;
+      while (!checkCollision(currentX, currentY + 1, currentPiece!)) {
+        currentY++;
+      }
       lockPiece();
     });
   }
@@ -139,9 +167,10 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
     if (currentPiece == null || gameState != GameState.playing) return;
     final rotated = List.generate(
       currentPiece![0].length,
-          (j) => List.generate(
-          currentPiece!.length,
-              (i) => currentPiece![currentPiece!.length - 1 - i][j]),
+      (j) => List.generate(
+        currentPiece!.length,
+        (i) => currentPiece![currentPiece!.length - 1 - i][j],
+      ),
     );
     if (!checkCollision(currentX, currentY, rotated)) {
       setState(() => currentPiece = rotated);
@@ -189,7 +218,10 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
         backgroundColor: const Color(0xFFF5E6D3),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF5A4A42)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF5A4A42),
+          ),
           onPressed: () {
             gameTimer?.cancel();
             Navigator.of(context).pop();
@@ -249,23 +281,28 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFFAF5EB),
                           border: Border.all(
-                              color: Colors.brown.withOpacity(0.25),
-                              width: 1.5),
+                            color: Colors.brown.withOpacity(0.25),
+                            width: 1.5,
+                          ),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: LayoutBuilder(builder: (ctx, bc) {
-                          // cell dimensions derived from actual rendered size
-                          final cw = bc.maxWidth / boardWidth;
-                          final ch = bc.maxHeight / boardHeight;
-                          return Stack(children: [
-                            _buildBoard(cw, ch),
-                            if (currentPiece != null &&
-                                gameState == GameState.playing)
-                              _buildCurrentPiece(cw, ch),
-                            if (gameState != GameState.playing)
-                              _buildOverlay(),
-                          ]);
-                        }),
+                        child: LayoutBuilder(
+                          builder: (ctx, bc) {
+                            // cell dimensions derived from actual rendered size
+                            final cw = bc.maxWidth / boardWidth;
+                            final ch = bc.maxHeight / boardHeight;
+                            return Stack(
+                              children: [
+                                _buildBoard(cw, ch),
+                                if (currentPiece != null &&
+                                    gameState == GameState.playing)
+                                  _buildCurrentPiece(cw, ch),
+                                if (gameState != GameState.playing)
+                                  _buildOverlay(),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -290,19 +327,27 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.brown.withOpacity(0.15)),
       ),
-      child: Column(children: [
-        Text(label,
+      child: Column(
+        children: [
+          Text(
+            label,
             style: const TextStyle(
-                fontSize: 11,
-                color: Color(0xFF8B7355),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1)),
-        Text('$value',
+              fontSize: 11,
+              color: Color(0xFF8B7355),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 1,
+            ),
+          ),
+          Text(
+            '$value',
             style: const TextStyle(
-                fontSize: 22,
-                color: Color(0xFF5A4A42),
-                fontWeight: FontWeight.bold)),
-      ]),
+              fontSize: 22,
+              color: Color(0xFF5A4A42),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -311,13 +356,13 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(
         boardHeight,
-            (y) => SizedBox(
+        (y) => SizedBox(
           height: ch,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
               boardWidth,
-                  (x) => Container(
+              (x) => Container(
                 width: cw,
                 height: ch,
                 decoration: BoxDecoration(
@@ -325,7 +370,9 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
                       ? pieceColors[board[y][x]]!.withOpacity(0.75)
                       : Colors.transparent,
                   border: Border.all(
-                      color: Colors.black.withOpacity(0.04), width: 0.5),
+                    color: Colors.black.withOpacity(0.04),
+                    width: 0.5,
+                  ),
                 ),
               ),
             ),
@@ -343,11 +390,11 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
         mainAxisSize: MainAxisSize.min,
         children: List.generate(
           currentPiece!.length,
-              (y) => Row(
+          (y) => Row(
             mainAxisSize: MainAxisSize.min,
             children: List.generate(
               currentPiece![y].length,
-                  (x) => Container(
+              (x) => Container(
                 width: cw,
                 height: ch,
                 color: currentPiece![y][x] == 1
@@ -371,36 +418,61 @@ class _TetrisGameScreenState extends State<TetrisGameScreen> {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(
-              isPaused ? '⏸ Paused' : isGameOver ? 'Game Over' : 'Ready to Focus?',
-              style: const TextStyle(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isPaused
+                    ? '⏸ Paused'
+                    : isGameOver
+                    ? 'Game Over'
+                    : 'Ready to Focus?',
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Georgia',
-                  color: Color(0xFF5A4A42)),
-            ),
-            if (isGameOver) ...[
-              const SizedBox(height: 8),
-              Text('Score: $score',
-                  style: const TextStyle(fontSize: 16, color: Color(0xFF8B7355))),
+                  color: Color(0xFF5A4A42),
+                ),
+              ),
+              if (isGameOver) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Score: $score',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF8B7355),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isPaused ? togglePause : startGame,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B7355),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isPaused
+                      ? 'Resume'
+                      : isGameOver
+                      ? 'Try Again'
+                      : 'Start Game',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isPaused ? togglePause : startGame,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF8B7355),
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              child: Text(
-                isPaused ? 'Resume' : isGameOver ? 'Try Again' : 'Start Game',
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ]),
+          ),
         ),
       ),
     );

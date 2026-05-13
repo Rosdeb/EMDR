@@ -7,7 +7,6 @@ import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/sessions/journry_page.dart';
 
-
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTap;
@@ -45,7 +44,7 @@ class CustomNavBar extends StatelessWidget {
                     children: [
                       _navItem(
                         AppIcons.home,
-                        "Home",
+                        "My Space",
                         0,
                         currentIndex == 0,
                         const Color(0xFF537E5D),
@@ -80,7 +79,7 @@ class CustomNavBar extends StatelessWidget {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: () {
-              Get.to(() =>  CreateJourneyPage());
+              Get.to(() => CreateJourneyPage());
             },
             child: Container(
               height: 65,
@@ -93,12 +92,12 @@ class CustomNavBar extends StatelessWidget {
                     color: Colors.black26,
                     blurRadius: 10,
                     offset: Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
               child: const Icon(Icons.add, color: Colors.white, size: 30),
             ),
-          )
+          ),
         ],
       ),
     );

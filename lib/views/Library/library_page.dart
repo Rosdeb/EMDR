@@ -1,13 +1,10 @@
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/Library/bilateral_settings.dart';
 import 'package:jonssony/views/Library/clam_space_ex.dart';
 import 'package:jonssony/views/Library/settings_screen.dart';
-import 'package:jonssony/views/home/act.dart';
 import 'package:jonssony/views/home/cbt.dart';
 
 class LibraryPage extends StatelessWidget {
@@ -26,10 +23,7 @@ class LibraryPage extends StatelessWidget {
             left: 0,
             right: 0,
             height: appBarImageHeight,
-            child: Image.asset(
-              'assets/images/my_emdr.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.cover),
           ),
 
           Column(
@@ -67,19 +61,19 @@ class LibraryPage extends StatelessWidget {
                             _resourceCard(
                               title: "Calm Place Exercise",
                               desc:
-                              "Access your saved safe place audio visualization.",
+                                  "Access your saved calm place audio visualisation.",
                               icon: Icons.anchor,
                               boxColor: const Color(0xFFC4FCEF),
                               iconColor: const Color(0xFF537E5D),
                               onTap: () {
-                                Get.to(() => MyCalmSpaceExercise ());
+                                Get.to(() => MyCalmSpaceExercise());
                               },
                             ),
 
                             _resourceCard(
                               title: "Bilateral Settings",
                               desc:
-                              "Customize your visual and audio stimulation preferences.",
+                                  "Customize your visual and audio stimulation preferences.",
                               icon: Icons.settings_outlined,
                               boxColor: const Color(0xFFF3F3F3),
                               iconColor: Colors.black54,
@@ -91,7 +85,7 @@ class LibraryPage extends StatelessWidget {
                             _resourceCard(
                               title: "My Story",
                               desc:
-                              "Access your saved safe place audio visualization.",
+                                  "Review your saved formulation and see how the pieces link together.",
                               icon: Icons.menu_book_outlined,
                               boxColor: const Color(0xFFFFF7CF),
                               iconColor: const Color(0xFFAD8C63),
@@ -114,7 +108,8 @@ class LibraryPage extends StatelessWidget {
       ),
     );
   }
-                       //// Appbar ///
+
+  //// Appbar ///
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
@@ -124,7 +119,6 @@ class LibraryPage extends StatelessWidget {
       ),
       child: Row(
         children: [
-
           // /// 🔙 BLUR BACK BUTTON
           // ClipRRect(
           //   borderRadius: BorderRadius.circular(14),
@@ -150,7 +144,6 @@ class LibraryPage extends StatelessWidget {
           //     ),
           //   ),
           // ),
-
           const SizedBox(width: 14),
 
           const AppText(
@@ -186,69 +179,68 @@ class LibraryPage extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(25),
             child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.4),
-              borderRadius: BorderRadius.circular(25),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: boxColor,
-                        borderRadius: BorderRadius.circular(15),
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withOpacity(0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: boxColor,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Icon(icon, color: iconColor, size: 28),
                       ),
-                      child: Icon(icon, color: iconColor, size: 28),
-                    ),
-                    const Icon(
-                      Icons.play_circle_outline,
-                      size: 28,
-                      color: Colors.black87,
-                    ),
-                  ],
-                ),
+                      const Icon(
+                        Icons.play_circle_outline,
+                        size: 28,
+                        color: Colors.black87,
+                      ),
+                    ],
+                  ),
 
-                const SizedBox(height: 18),
+                  const SizedBox(height: 18),
 
-                AppText(
-                  title,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF2E3E32),
-                ),
+                  AppText(
+                    title,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF2E3E32),
+                  ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                AppText(
-                  desc,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
+                  AppText(
+                    desc,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                const AppText(
-                  "Listen Now",
-                  fontSize: 14,
-                  color: AppColors.mainAppColor,
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                  decorationColor: AppColors.mainAppColor,
-                ),
-              ],
+                  const AppText(
+                    "Listen Now",
+                    fontSize: 14,
+                    color: AppColors.mainAppColor,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.mainAppColor,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      ),
     );
-
   }
 }

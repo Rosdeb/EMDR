@@ -50,9 +50,9 @@ class _SessionBilateralSimulationState
         _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [];
 
     final speedStr = settings['speed']?.toString() ?? 'medium';
-    double speed = 4.0;
-    if (speedStr == 'slow') speed = 8.0;
-    if (speedStr == 'fast') speed = 2.0;
+    double speed = 3.0;
+    if (speedStr == 'slow') speed = 5.0;
+    if (speedStr == 'fast') speed = 1.2;
 
     final dirStr = settings['direction']?.toString() ?? 'left-right';
     AnimationDirection direction = AnimationDirection.horizontal;

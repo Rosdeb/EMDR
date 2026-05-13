@@ -1,9 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jonssony/views/home/my_homework.dart';
 import 'package:jonssony/views/profile/Subscription.dart';
-import 'package:jonssony/views/profile/subcription/EMDRConsentForm.dart';
 
 class MyHomework extends StatefulWidget {
   const MyHomework({super.key});
@@ -16,7 +14,7 @@ class _MyHomeworkState extends State<MyHomework> {
   bool isOverlayVisible = true;
 
   Future<void> _onStartHealing() async {
-    await Get.to(() =>SubscriptionScreen());
+    await Get.to(() => SubscriptionScreen());
     setState(() {
       isOverlayVisible = false;
     });
@@ -32,17 +30,13 @@ class _MyHomeworkState extends State<MyHomework> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           // ── 1) Top header image (my_emdr.png) ──────────────────────────────
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: 180,
-            child: Image.asset(
-              'assets/images/my_emdr.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.cover),
           ),
 
           // ── 2) bg_library.jpg — starts below top image, rounded top corners ─
@@ -107,9 +101,7 @@ class _MyHomeworkState extends State<MyHomework> {
               child: ClipRect(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(
-                    color: Colors.white.withOpacity(0.18),
-                  ),
+                  child: Container(color: Colors.white.withOpacity(0.18)),
                 ),
               ),
             ),
@@ -129,17 +121,16 @@ class _MyHomeworkState extends State<MyHomework> {
                     foregroundColor: Colors.black,
                     elevation: 10,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 18),
+                      horizontal: 40,
+                      vertical: 18,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
                   child: const Text(
                     "Start Healing",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -181,7 +172,6 @@ class _MyHomeworkState extends State<MyHomework> {
               fontWeight: FontWeight.w500,
             ),
           ),
-
         ],
       ),
     );
@@ -215,8 +205,7 @@ class _MyHomeworkState extends State<MyHomework> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
           child: Padding(
-            padding:
-            const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
             child: Row(
               children: [
                 // Circular image

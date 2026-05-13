@@ -1,15 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:jonssony/utils/AppIcons/app_icons.dart';
-import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/views/Library/ACalmPage.dart';
 
 import 'package:jonssony/views/home/act.dart';
-import 'package:jonssony/widets/navbar.dart';
 import 'package:jonssony/views/home/VideoCalmPage.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'AudioCalmPage.dart';
 
 class MyCalmSpace extends StatelessWidget {
   const MyCalmSpace({super.key});
@@ -23,28 +18,22 @@ class MyCalmSpace extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             height: appBarImageHeight,
-            child: Image.asset(
-              'assets/images/my_emdr.png',
-              fit: BoxFit.fill,
-            ),
+            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
 
           Column(
             children: [
-
               _buildCalmAppBar(context),
 
               Expanded(
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-
                     Positioned.fill(
                       top: -overlapAmount,
                       child: Container(
@@ -62,7 +51,6 @@ class MyCalmSpace extends StatelessWidget {
                       ),
                     ),
 
-
                     Positioned.fill(
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
@@ -74,15 +62,19 @@ class MyCalmSpace extends StatelessWidget {
                             _buildThoughtsCard(
                               child: Column(
                                 children: [
-                                  _buildExerciseItem(Icons.description_outlined, "ACT Thoughts Exercise", "Text",
+                                  _buildExerciseItem(
+                                    Icons.description_outlined,
+                                    "ACT Thoughts Exercise",
+                                    "Text",
                                     onTap: () {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                            const act()),
+                                          builder: (context) => const act(),
+                                        ),
                                       );
-                                    },),
+                                    },
+                                  ),
                                   _buildExerciseItem(
                                     Icons.play_circle_outline,
                                     "ACT Thoughts Exercise",
@@ -91,9 +83,10 @@ class MyCalmSpace extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                            const VideoCalmPage()),
-                                         );
+                                          builder: (context) =>
+                                              const VideoCalmPage(),
+                                        ),
+                                      );
                                     },
                                   ),
                                   _buildExerciseItem(
@@ -104,8 +97,9 @@ class MyCalmSpace extends StatelessWidget {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ACalmPage()),
+                                          builder: (context) =>
+                                              const ACalmPage(),
+                                        ),
                                       );
                                     },
                                   ),
@@ -223,10 +217,7 @@ class MyCalmSpace extends StatelessWidget {
                 fontSize: 13,
                 color: Colors.black54,
               ),
-              if (child != null) ...[
-                const SizedBox(height: 20),
-                child,
-              ],
+              if (child != null) ...[const SizedBox(height: 20), child],
             ],
           ),
         ),
@@ -234,7 +225,12 @@ class MyCalmSpace extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseItem(IconData icon, String title, String type, {VoidCallback? onTap}) {
+  Widget _buildExerciseItem(
+    IconData icon,
+    String title,
+    String type, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -273,11 +269,7 @@ class MyCalmSpace extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        AppText(
-                          type,
-                          fontSize: 12,
-                          color: Colors.black54,
-                        ),
+                        AppText(type, fontSize: 12, color: Colors.black54),
                       ],
                     ),
                   ),

@@ -16,7 +16,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final BilateralController _bilateralController = Get.find<BilateralController>();
+  final BilateralController _bilateralController =
+      Get.find<BilateralController>();
   final MediaController _mediaController = Get.find<MediaController>();
   final AudioPlayer _audioPlayer = AudioPlayer();
   final Color primaryGreen = const Color(0xFF5A7D63);
@@ -25,8 +26,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? selectedObjUrl;
   String? selectedSoundUrl;
   String selectedSoundName = "Silent";
-  double selectedSpeed = 4.0;
+  double selectedSpeed = 3.0;
   AnimationDirection selectedDir = AnimationDirection.horizontal;
+
+  static const List<Map<String, String>> _fallbackEnvironmentOptions = [
+    {'name': 'Mountain', 'url': 'assets/images/mountain.jpg'},
+    {'name': 'Water', 'url': 'assets/images/water.png'},
+    {'name': 'Soft Light', 'url': 'assets/images/emdr_sun.jpg'},
+  ];
+
+  static const List<Map<String, String>> _fallbackObjectOptions = [
+    {
+      'name': 'Butterfly',
+      'url': 'assets/images/Butterfly Lottie Animation.gif',
+    },
+    {'name': 'Ball', 'url': 'assets/images/ball.png'},
+    {'name': 'Star', 'url': 'assets/images/star.png'},
+    {'name': 'Leaf', 'url': 'assets/images/leaf.png'},
+    {'name': 'Feather', 'url': 'assets/images/feather.png'},
+    {'name': 'Sun', 'url': 'assets/images/sun.png'},
+  ];
 
   @override
   void initState() {
@@ -35,7 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _initSettings() {
-    final envs = _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
+    final envs = _envOptions;
     if (envs.isNotEmpty) {
       selectedEnvUrl = envs.first['url'];
     }
@@ -48,27 +67,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_bilateralController.userSettings.isNotEmpty) {
       final userSettings = _bilateralController.userSettings;
       final savedEnvUrl = userSettings['environmentId']?.toString() ?? '';
-      if (_isNetworkUrl(savedEnvUrl)) {
+      if (_isSupportedImageSource(savedEnvUrl)) {
         selectedEnvUrl = savedEnvUrl;
       }
       final savedObjUrl = userSettings['iconUrl']?.toString() ?? '';
-      if (_isNetworkUrl(savedObjUrl)) {
+      if (_isSupportedImageSource(savedObjUrl)) {
         selectedObjUrl = savedObjUrl;
       }
       selectedSoundUrl = userSettings['soundId'];
 
       final speedStr = userSettings['speed'];
-      if (speedStr == 'slow') selectedSpeed = 8.0;
-      else if (speedStr == 'medium') selectedSpeed = 4.0;
-      else if (speedStr == 'fast') selectedSpeed = 2.0;
+      if (speedStr == 'slow') {
+        selectedSpeed = 5.0;
+      } else if (speedStr == 'medium')
+        selectedSpeed = 3.0;
+      else if (speedStr == 'fast')
+        selectedSpeed = 1.2;
 
       final dirStr = userSettings['direction'];
-      if (dirStr == 'left-right') selectedDir = AnimationDirection.horizontal;
-      else if (dirStr == 'diagonal-down') selectedDir = AnimationDirection.diagonal;
-      else if (dirStr == 'diagonal-up') selectedDir = AnimationDirection.diagonalReverse;
+      if (dirStr == 'left-right') {
+        selectedDir = AnimationDirection.horizontal;
+      } else if (dirStr == 'top-bottom') {
+        selectedDir = AnimationDirection.vertical;
+      } else if (dirStr == 'diagonal-down')
+        selectedDir = AnimationDirection.diagonal;
+      else if (dirStr == 'diagonal-up')
+        selectedDir = AnimationDirection.diagonalReverse;
 
       if (selectedSoundUrl != null && selectedSoundUrl!.isNotEmpty) {
-        final sounds = _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ?? [];
+        final sounds =
+            _mediaController.mediaByCategory['Bilateral Stimulation Sound'] ??
+            [];
         final soundObj = sounds.firstWhere(
           (s) => s['url'] == selectedSoundUrl,
           orElse: () => null,
@@ -90,7 +119,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.dispose();
   }
 
-  Widget _glassCard({required Widget child, bool isSelected = false, double borderRadius = 12, EdgeInsetsGeometry? padding}) {
+  Widget _glassCard({
+    required Widget child,
+    bool isSelected = false,
+    double borderRadius = 12,
+    EdgeInsetsGeometry? padding,
+  }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
@@ -98,7 +132,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Container(
           padding: padding ?? const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white.withOpacity(0.3) : Colors.white.withOpacity(0.15),
+            color: isSelected
+                ? Colors.white.withOpacity(0.3)
+                : Colors.white.withOpacity(0.15),
             borderRadius: BorderRadius.circular(borderRadius),
             border: Border.all(
               color: isSelected ? primaryGreen : Colors.white.withOpacity(0.3),
@@ -145,12 +181,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Positioned.fill(
             child: Opacity(
               opacity: 0.4,
-              child: Image.asset("assets/images/bg_library.jpg", fit: BoxFit.cover),
+              child: Image.asset(
+                "assets/images/bg_library.jpg",
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           SafeArea(
             child: Obx(() {
-              if (_bilateralController.isLoading.value || _mediaController.isLoading.value) {
+              if (_bilateralController.isLoading.value ||
+                  _mediaController.isLoading.value) {
                 return const Center(child: CircularProgressIndicator());
               }
               return SingleChildScrollView(
@@ -163,10 +203,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     _buildHeader(),
-                    _buildSection(title: "Visual Environments", child: _buildEnvList()),
-                    _buildSection(title: "Visual Object", child: _buildObjectGrid()),
+                    _buildSection(
+                      title: "Visual Environments",
+                      child: _buildEnvList(),
+                    ),
+                    _buildSection(
+                      title: "Visual Object",
+                      child: _buildObjectGrid(),
+                    ),
                     _buildSection(title: "Sound", child: _buildSoundGrid()),
-                    _buildSection(title: "Direction", child: _buildDirectionGrid()),
+                    _buildSection(
+                      title: "Direction",
+                      child: _buildDirectionGrid(),
+                    ),
                     _buildSection(title: "Speed", child: _buildSpeedRow()),
                     const SizedBox(height: 10),
                     _buildActionButtons(),
@@ -193,8 +242,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               borderRadius: BorderRadius.circular(20),
               child: const Padding(
                 padding: EdgeInsets.all(8.0),
-                child: Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Color(0xFF333333), size: 22),
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Color(0xFF333333),
+                  size: 22,
+                ),
               ),
             ),
           ),
@@ -203,16 +255,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text("Bilateral Stimulation",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 26,
-                        fontFamily: 'Serif',
-                        fontWeight: FontWeight.w500)),
+                Text(
+                  "Bilateral Stimulation",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontFamily: 'Serif',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
                 SizedBox(height: 4),
-                Text("Customise your calming experience",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54, fontSize: 13)),
+                Text(
+                  "Customise your calming experience",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54, fontSize: 13),
+                ),
               ],
             ),
           ),
@@ -223,10 +280,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Visual Environment (horizontal scroll) ──────────────────────────────────
   Widget _buildEnvList() {
-    final envs = _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [];
+    final envs = _envOptions;
     if (envs.isEmpty) return const Text("No environments available");
 
-    if (!_isNetworkUrl(selectedEnvUrl) && envs.isNotEmpty) {
+    if (!_isSupportedImageSource(selectedEnvUrl) && envs.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => selectedEnvUrl = envs.first['url']);
       });
@@ -254,15 +311,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: fileUrl.isNotEmpty
+                child: _isNetworkUrl(fileUrl)
                     ? CachedNetworkImage(
                         imageUrl: fileUrl,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                        errorWidget: (context, url, error) => const Icon(Icons.error),
+                        placeholder: (context, url) => const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        errorWidget: (context, url, error) =>
+                            const Icon(Icons.error),
                       )
-                    : const Icon(Icons.broken_image),
+                    : Image.asset(
+                        fileUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.broken_image),
+                      ),
               ),
             ),
           );
@@ -276,7 +340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final objects = _objectOptions;
     if (objects.isEmpty) return const Text("No objects available");
 
-    if (!_isNetworkUrl(selectedObjUrl)) {
+    if (!_isSupportedImageSource(selectedObjUrl)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) setState(() => selectedObjUrl = objects.first['url']);
       });
@@ -315,7 +379,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     color: isSelected ? primaryGreen : Colors.black54,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -327,20 +393,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   // Object thumbnails
+  List<Map<String, String>> get _envOptions {
+    final mediaEnvs = List<dynamic>.from(
+      _mediaController.mediaByCategory['Bilateral Stimulation img'] ?? [],
+    );
+
+    final apiOptions = _mediaImageOptions(mediaEnvs);
+    return apiOptions.isNotEmpty ? apiOptions : _fallbackEnvironmentOptions;
+  }
+
   List<Map<String, String>> get _objectOptions {
     final mediaObjects = List<dynamic>.from(
       _mediaController.mediaByCategory['Bilateral Stimulation Visual icon'] ??
           [],
     );
 
-    return mediaObjects
+    final apiOptions = mediaObjects
         .map(
           (object) => {
             'name': (object['name'] ?? 'Object').toString(),
             'url': (object['url'] ?? '').toString(),
           },
         )
-        .where((object) => _isNetworkUrl(object['url']))
+        .where((object) => _isSupportedImageSource(object['url']))
+        .toList();
+
+    return apiOptions.isNotEmpty ? apiOptions : _fallbackObjectOptions;
+  }
+
+  List<Map<String, String>> _mediaImageOptions(List<dynamic> mediaItems) {
+    return mediaItems
+        .map(
+          (item) => {
+            'name': (item['name'] ?? 'Image').toString(),
+            'url': (item['url'] ?? '').toString(),
+          },
+        )
+        .where((item) => _isSupportedImageSource(item['url']))
         .toList();
   }
 
@@ -350,6 +439,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return uri != null &&
         (uri.scheme == 'http' || uri.scheme == 'https') &&
         uri.host.isNotEmpty;
+  }
+
+  bool _isSupportedImageSource(String? value) {
+    if (value == null || value.trim().isEmpty) return false;
+    return _isNetworkUrl(value) || value.trim().startsWith('assets/');
   }
 
   Widget _buildObjectThumbnail(String path) {
@@ -438,7 +532,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: TextStyle(
                     fontSize: 10,
                     color: isSelected ? primaryGreen : Colors.black54,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -451,13 +547,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Direction (3-column row grid) ───────────────────────────────────────────
   Widget _buildDirectionGrid() {
-    return Row(
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 1.8,
       children: [
-        Expanded(child: _dirIcon("assets/images/horzental.png", AnimationDirection.horizontal, "Horizontal")),
-        const SizedBox(width: 10),
-        Expanded(child: _dirIcon("assets/images/digonal.png", AnimationDirection.diagonal, "Diagonal Down")),
-        const SizedBox(width: 10),
-        Expanded(child: _dirIcon("assets/images/arrow.png", AnimationDirection.diagonalReverse, "Diagonal Up")),
+        _dirIcon(
+          "assets/images/horzental.png",
+          AnimationDirection.horizontal,
+          "Horizontal",
+        ),
+        _dirIcon(
+          "assets/images/vertical.png",
+          AnimationDirection.vertical,
+          "Vertical",
+        ),
+        _dirIcon(
+          "assets/images/digonal.png",
+          AnimationDirection.diagonal,
+          "Diagonal Down",
+        ),
+        _dirIcon(
+          "assets/images/arrow.png",
+          AnimationDirection.diagonalReverse,
+          "Diagonal Up",
+        ),
       ],
     );
   }
@@ -495,11 +612,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSpeedRow() {
     return Row(
       children: [
-        Expanded(child: _speedBox("Slow", 8.0, "assets/images/slow.png")),
+        Expanded(child: _speedBox("Slow", 5.0, "assets/images/slow.png")),
         const SizedBox(width: 10),
-        Expanded(child: _speedBox("Medium", 4.0, "assets/images/medium.png")),
+        Expanded(child: _speedBox("Medium", 3.0, "assets/images/medium.png")),
         const SizedBox(width: 10),
-        Expanded(child: _speedBox("Fast", 2.0, "assets/images/fast.png")),
+        Expanded(child: _speedBox("Fast", 1.2, "assets/images/fast.png")),
       ],
     );
   }
@@ -525,7 +642,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
-            Text("${speed.toInt()}s", style: const TextStyle(fontSize: 9, color: Colors.black54)),
+            Text(
+              "${speed == speed.roundToDouble() ? speed.toInt() : speed.toStringAsFixed(1)}s",
+              style: const TextStyle(fontSize: 9, color: Colors.black54),
+            ),
           ],
         ),
       ),
@@ -545,33 +665,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   final objectUrl = selectedObjUrl?.trim() ?? '';
 
                   if (environmentUrl.isEmpty) {
-                    Get.snackbar('Error', 'Please select an environment',
-                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                    Get.snackbar(
+                      'Error',
+                      'Please select an environment',
+                      backgroundColor: Colors.redAccent,
+                      colorText: Colors.white,
+                    );
                     return;
                   }
                   if (objectUrl.isEmpty) {
-                    Get.snackbar('Error', 'Please select a visual object',
-                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                    Get.snackbar(
+                      'Error',
+                      'Please select a visual object',
+                      backgroundColor: Colors.redAccent,
+                      colorText: Colors.white,
+                    );
                     return;
                   }
-                  if (!_isNetworkUrl(environmentUrl)) {
-                    Get.snackbar('Error', 'Selected environment URL is invalid',
-                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                  if (!_isSupportedImageSource(environmentUrl)) {
+                    Get.snackbar(
+                      'Error',
+                      'Selected environment is invalid',
+                      backgroundColor: Colors.redAccent,
+                      colorText: Colors.white,
+                    );
                     return;
                   }
-                  if (!_isNetworkUrl(objectUrl)) {
-                    Get.snackbar('Error', 'Selected object URL is invalid',
-                        backgroundColor: Colors.redAccent, colorText: Colors.white);
+                  if (!_isSupportedImageSource(objectUrl)) {
+                    Get.snackbar(
+                      'Error',
+                      'Selected object is invalid',
+                      backgroundColor: Colors.redAccent,
+                      colorText: Colors.white,
+                    );
                     return;
                   }
 
                   String speedStr = 'medium';
-                  if (selectedSpeed == 8.0) speedStr = 'slow';
-                  if (selectedSpeed == 2.0) speedStr = 'fast';
+                  if (selectedSpeed == 5.0) speedStr = 'slow';
+                  if (selectedSpeed == 1.2) speedStr = 'fast';
 
                   String dirStr = 'left-right';
-                  if (selectedDir == AnimationDirection.diagonal) dirStr = 'diagonal-down';
-                  if (selectedDir == AnimationDirection.diagonalReverse) dirStr = 'diagonal-up';
+                  if (selectedDir == AnimationDirection.vertical) {
+                    dirStr = 'top-bottom';
+                  }
+                  if (selectedDir == AnimationDirection.diagonal) {
+                    dirStr = 'diagonal-down';
+                  }
+                  if (selectedDir == AnimationDirection.diagonalReverse) {
+                    dirStr = 'diagonal-up';
+                  }
 
                   await _bilateralController.saveSettings(
                     environmentUrl: environmentUrl,
@@ -584,20 +727,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: primaryGreen,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             padding: const EdgeInsets.all(16),
           ),
           child: _bilateralController.isSaving.value
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset("assets/images/save.png",
-                        width: 20, height: 20, fit: BoxFit.contain),
+                    Image.asset(
+                      "assets/images/save.png",
+                      width: 20,
+                      height: 20,
+                      fit: BoxFit.contain,
+                    ),
                     const SizedBox(width: 8),
                     const Flexible(
                       child: Text(

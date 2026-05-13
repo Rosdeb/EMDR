@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -23,8 +24,12 @@ class _SimulationScreenState extends State<SimulationScreen>
   late Animation<double> _wingAnimation;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  static const Duration _setDuration = Duration(seconds: 45);
+  Timer? _setTimer;
+  Duration _remainingSetTime = _setDuration;
   bool _isPaused = false; // Track pause state
   bool _isReversing = false; // Track animation direction
+  bool _setComplete = false;
 
   @override
   void initState() {
@@ -48,9 +53,10 @@ class _SimulationScreenState extends State<SimulationScreen>
       }
     });
 
-    _animation = Tween<double>(begin: -1.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.linear),
-    );
+    _animation = Tween<double>(
+      begin: -1.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
 
     _wingController = AnimationController(
       duration: const Duration(milliseconds: 360),
@@ -66,6 +72,37 @@ class _SimulationScreenState extends State<SimulationScreen>
       _wingController.repeat(reverse: true);
     }
     _setupAudio();
+    _startSetTimer();
+  }
+
+  void _startSetTimer() {
+    _setTimer?.cancel();
+    if (_setComplete || _isPaused) return;
+
+    _setTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      if (_remainingSetTime.inSeconds <= 1) {
+        _completeSet();
+        return;
+      }
+      setState(() {
+        _remainingSetTime -= const Duration(seconds: 1);
+      });
+    });
+  }
+
+  Future<void> _completeSet() async {
+    if (!mounted || _setComplete) return;
+    _setTimer?.cancel();
+    _controller.stop();
+    _wingController.stop();
+    await _audioPlayer.pause();
+    if (!mounted) return;
+    setState(() {
+      _setComplete = true;
+      _isPaused = true;
+      _remainingSetTime = Duration.zero;
+    });
   }
 
   Future<void> _setupAudio() async {
@@ -93,9 +130,15 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   void _togglePause() {
+    if (_setComplete) {
+      Navigator.pop(context);
+      return;
+    }
+
     setState(() {
       _isPaused = !_isPaused;
       if (_isPaused) {
+        _setTimer?.cancel();
         _controller.stop();
         if (_shouldFlapWings) {
           _wingController.stop();
@@ -111,6 +154,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           _wingController.repeat(reverse: true);
         }
         _audioPlayer.resume();
+        _startSetTimer();
       }
     });
   }
@@ -124,7 +168,6 @@ class _SimulationScreenState extends State<SimulationScreen>
       case AnimationDirection.diagonalReverse:
         return Alignment(value, -value);
       case AnimationDirection.horizontal:
-      default:
         return Alignment(value, 0.2);
     }
   }
@@ -137,6 +180,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     ]);
     _controller.dispose();
     _wingController.dispose();
+    _setTimer?.cancel();
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -163,10 +207,7 @@ class _SimulationScreenState extends State<SimulationScreen>
         return ClipRect(
           child: Transform.translate(
             offset: Offset(panX, 0),
-            child: Transform.scale(
-              scale: scale,
-              child: child,
-            ),
+            child: Transform.scale(scale: scale, child: child),
           ),
         );
       },
@@ -245,10 +286,7 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Widget _buildButterflyBodyStrip() {
     return ClipRect(
-      child: Align(
-        widthFactor: 0.22,
-        child: _buildVisualObject(size: 74),
-      ),
+      child: Align(widthFactor: 0.22, child: _buildVisualObject(size: 74)),
     );
   }
 
@@ -364,12 +402,15 @@ class _SimulationScreenState extends State<SimulationScreen>
                 children: [
                   // Back button + Title
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.black87, size: 18),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new,
+                      color: Colors.black87,
+                      size: 18,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Text(
-                    'Mountain Sanctuary',
+                    'Bilateral set',
                     style: TextStyle(
                       color: Colors.black87,
                       fontSize: 16,
@@ -378,6 +419,19 @@ class _SimulationScreenState extends State<SimulationScreen>
                   ),
 
                   const Spacer(),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: Text(
+                      _setComplete
+                          ? 'Set complete'
+                          : '${_remainingSetTime.inSeconds}s',
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
 
                   // Pause / Resume button
                   ElevatedButton(
@@ -386,13 +440,19 @@ class _SimulationScreenState extends State<SimulationScreen>
                       backgroundColor: const Color(0xFF537E5D),
                       elevation: 0,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 22, vertical: 10),
+                        horizontal: 22,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
                     child: Text(
-                      _isPaused ? 'Resume' : 'Pause',
+                      _setComplete
+                          ? 'Done'
+                          : _isPaused
+                          ? 'Resume'
+                          : 'Pause',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 14,

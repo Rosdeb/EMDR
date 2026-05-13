@@ -20,7 +20,8 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   Map<int, int> gad7Answers = {};
   Map<int, double> des2Answers = {};
 
-  final OnboardingController _onboardingController = Get.find<OnboardingController>();
+  final OnboardingController _onboardingController =
+      Get.find<OnboardingController>();
   bool _apiReportedNeedsSupport = false;
   String _apiRecommendation = '';
   Map<String, dynamic>? _apiScores; // Stores the full scores map from API
@@ -34,7 +35,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     "Feeling bad about yourself — or that you are a failure",
     "Trouble concentrating on things, such as reading the newspaper",
     "Moving or speaking so slowly that other people could have noticed",
-    "Thoughts that you would be better off dead, or of hurting yourself"
+    "Thoughts that you would be better off dead, or of hurting yourself",
   ];
 
   final List<String> gad7Questions = [
@@ -44,7 +45,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     "Trouble relaxing",
     "Being so restless that it is hard to sit still",
     "Becoming easily annoyed or irritable",
-    "Feeling afraid as if something awful might happen"
+    "Feeling afraid as if something awful might happen",
   ];
 
   final List<String> des2Questions = [
@@ -55,7 +56,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     "Finding new things among your belongings that you don't remember buying.",
     "Being approached by people you don't know who call you by another name.",
     "Feeling as though you are standing next to yourself or watching yourself do something.",
-    "Finding that you sometimes don't recognize friends or family members."
+    "Finding that you sometimes don't recognize friends or family members.",
   ];
 
   int getTotalScore(Map<int, int> answers) =>
@@ -105,24 +106,30 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     if (_currentStep == 3) {
       final controller = Get.find<SubscriptionController>();
       final plan = controller.selectedPlanForCheckout.value;
-      
+
       if (plan == null) {
-        Get.snackbar("Error", "No plan selected. Please go back and select a plan.");
+        Get.snackbar(
+          "Error",
+          "No plan selected. Please go back and select a plan.",
+        );
         return;
       }
 
       final rawPrice = plan['price'];
-      bool isFree = rawPrice == 0 || rawPrice == "0" || rawPrice.toString().toLowerCase() == "free";
+      bool isFree =
+          rawPrice == 0 ||
+          rawPrice == "0" ||
+          rawPrice.toString().toLowerCase() == "free";
 
       if (isFree) {
-         controller.subscribe(plan).then((success) {
-            if (success) {
-               Navigator.of(context).pushAndRemoveUntil(
-                 MaterialPageRoute(builder: (_) => const MyHomeworkPri()),
-                 (route) => false,
-               );
-            }
-         });
+        controller.subscribe(plan).then((success) {
+          if (success) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const MyHomeworkPri()),
+              (route) => false,
+            );
+          }
+        });
       } else {
         _processStripePayment(plan, controller);
       }
@@ -140,9 +147,18 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   }
 
   Future<bool> _submitToApi() async {
-    List<int> phqList = List.generate(phq9Questions.length, (i) => phq9Answers[i] ?? 0);
-    List<int> gadList = List.generate(gad7Questions.length, (i) => gad7Answers[i] ?? 0);
-    List<double> desList = List.generate(des2Questions.length, (i) => des2Answers[i] ?? 0.0);
+    List<int> phqList = List.generate(
+      phq9Questions.length,
+      (i) => phq9Answers[i] ?? 0,
+    );
+    List<int> gadList = List.generate(
+      gad7Questions.length,
+      (i) => gad7Answers[i] ?? 0,
+    );
+    List<double> desList = List.generate(
+      des2Questions.length,
+      (i) => des2Answers[i] ?? 0.0,
+    );
 
     final result = await _onboardingController.submitAssessment(
       phq9: phqList,
@@ -159,14 +175,15 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
       setState(() {
         _apiReportedNeedsSupport = data['requiresProfessionalSupport'] ?? false;
-        _apiRecommendation       = data['recommendation']?.toString() ?? '';
-        _apiScores               = data['scores'] as Map<String, dynamic>?;
+        _apiRecommendation = data['recommendation']?.toString() ?? '';
+        _apiScores = data['scores'] as Map<String, dynamic>?;
       });
       return true;
     } else {
       Get.snackbar(
         "Error",
-        result['message']?.toString() ?? "Failed to submit assessment. Please check your connection.",
+        result['message']?.toString() ??
+            "Failed to submit assessment. Please check your connection.",
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
@@ -188,11 +205,16 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
     return symbolMap[raw] ?? raw.toLowerCase();
   }
 
-  Future<void> _processStripePayment(Map<String, dynamic> plan, SubscriptionController controller) async {
+  Future<void> _processStripePayment(
+    Map<String, dynamic> plan,
+    SubscriptionController controller,
+  ) async {
     final double amount = double.tryParse(plan['price'].toString()) ?? 0.0;
     final String currency = _currencyToIso(plan['currency']?.toString());
 
-    print('💳 Plan price: ${plan['price']}, currency raw: ${plan['currency']}, ISO: $currency');
+    print(
+      '💳 Plan price: ${plan['price']}, currency raw: ${plan['currency']}, ISO: $currency',
+    );
 
     if (amount <= 0) {
       Get.snackbar("Error", "Invalid payment amount.");
@@ -207,7 +229,10 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
 
     if (response.result == PaymentResult.success) {
       // Payment Done -> Subscribe on Backend
-      final success = await controller.subscribe(plan, paymentId: response.paymentIntentId);
+      final success = await controller.subscribe(
+        plan,
+        paymentId: response.paymentIntentId,
+      );
       if (success) {
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
@@ -217,11 +242,15 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
         }
       }
     } else if (response.result == PaymentResult.failed) {
-      Get.snackbar("Payment Failed", "Something went wrong with the payment transaction.", 
-        backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar(
+        "Payment Failed",
+        "Something went wrong with the payment transaction.",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
     } else if (response.result == PaymentResult.canceled) {
-       // User simply closed the sheet, no snackbar needed usually
-       print("Payment canceled by user.");
+      // User simply closed the sheet, no snackbar needed usually
+      print("Payment canceled by user.");
     }
   }
 
@@ -363,16 +392,27 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   }
 
   Widget _buildBodyContent() {
-    if (_currentStep == 0) return _buildQuestionStep(phq9Questions, phq9Answers, "PHQ-9");
-    if (_currentStep == 1) return _buildQuestionStep(gad7Questions, gad7Answers, "GAD-7");
+    if (_currentStep == 0) {
+      return _buildQuestionStep(phq9Questions, phq9Answers, "PHQ-9");
+    }
+    if (_currentStep == 1) {
+      return _buildQuestionStep(gad7Questions, gad7Answers, "GAD-7");
+    }
     if (_currentStep == 2) return _buildSliderStep(des2Questions);
     return _buildResultStep();
   }
 
-  Widget _buildQuestionStep(List<String> questions, Map<int, int> answerMap, String title) {
+  Widget _buildQuestionStep(
+    List<String> questions,
+    Map<int, int> answerMap,
+    String title,
+  ) {
     return Column(
       children: [
-        _buildInfoCard(title, "Over the last 2 weeks, how often have you been bothered by the following?"),
+        _buildInfoCard(
+          title,
+          "Over the last 2 weeks, how often have you been bothered by the following?",
+        ),
         const SizedBox(height: 10),
         ...List.generate(questions.length, (index) {
           return Container(
@@ -387,12 +427,20 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               children: [
                 Text(
                   "QUESTION ${index + 1} OF ${questions.length}",
-                  style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black38,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   questions[index],
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w600, height: 1.3),
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
                 ),
                 const SizedBox(height: 25),
                 ...List.generate(4, (i) {
@@ -400,7 +448,7 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                     "Not at all",
                     "Several days",
                     "More than half the days",
-                    "Nearly every day"
+                    "Nearly every day",
                   ];
                   bool isSelected = answerMap[index] == i;
                   return GestureDetector(
@@ -409,26 +457,38 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                       margin: const EdgeInsets.symmetric(vertical: 8),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF52734D).withOpacity(0.1) : Colors.white,
+                        color: isSelected
+                            ? const Color(0xFF52734D).withOpacity(0.1)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFF52734D) : Colors.black12,
+                          color: isSelected
+                              ? const Color(0xFF52734D)
+                              : Colors.black12,
                           width: 1.5,
                         ),
                       ),
                       child: Row(
                         children: [
                           Icon(
-                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                            color: isSelected ? const Color(0xFF52734D) : Colors.black26,
+                            isSelected
+                                ? Icons.check_circle
+                                : Icons.circle_outlined,
+                            color: isSelected
+                                ? const Color(0xFF52734D)
+                                : Colors.black26,
                           ),
                           const SizedBox(width: 15),
                           Expanded(
                             child: Text(
                               labels[i],
                               style: TextStyle(
-                                color: isSelected ? const Color(0xFF52734D) : Colors.black87,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                color: isSelected
+                                    ? const Color(0xFF52734D)
+                                    : Colors.black87,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           ),
@@ -442,7 +502,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                                   : Colors.grey.shade100,
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: isSelected ? const Color(0xFF52734D) : Colors.black12,
+                                color: isSelected
+                                    ? const Color(0xFF52734D)
+                                    : Colors.black12,
                               ),
                             ),
                             child: Center(
@@ -451,7 +513,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: isSelected ? Colors.white : Colors.black54,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.black54,
                                 ),
                               ),
                             ),
@@ -473,7 +537,10 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
   Widget _buildSliderStep(List<String> questions) {
     return Column(
       children: [
-        _buildInfoCard("DES-II", "Indicate what percentage of the time this happens to you."),
+        _buildInfoCard(
+          "DES-II",
+          "Indicate what percentage of the time this happens to you.",
+        ),
         const SizedBox(height: 10),
         ...List.generate(questions.length, (index) {
           double currentVal = des2Answers[index] ?? 0.0;
@@ -488,7 +555,11 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               children: [
                 Text(
                   "QUESTION ${index + 1} OF ${questions.length}",
-                  style: const TextStyle(fontSize: 11, color: Colors.black38, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black38,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 15),
                 Text(
@@ -516,10 +587,16 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("0% (NEVER)", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    Text("100% (ALWAYS)", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text(
+                      "0% (NEVER)",
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
+                    Text(
+                      "100% (ALWAYS)",
+                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                    ),
                   ],
-                )
+                ),
               ],
             ),
           );
@@ -556,12 +633,20 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               children: [
                 Text(
                   "Assessment Result: Low Severity",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
                 ),
                 SizedBox(height: 10),
                 Text(
                   "Based on your assessment, your symptoms are in the normal range. Our self-guided EMDR programme is specifically designed for individuals experiencing clinical levels of distress (Score 30+).\n\nSince your score is below 30, you cannot proceed to subscription at this time. We recommend continuing with healthy habits or consulting a professional if you have specific concerns.",
-                  style: const TextStyle(fontSize: 13, height: 1.6, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.6,
+                    color: Colors.black87,
+                  ),
                 ),
               ],
             ),
@@ -576,12 +661,14 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
             color: _needsSupport
                 ? Colors.red.withOpacity(0.04)
                 : _isScoreTooLow
-                    ? Colors.blue.withOpacity(0.04)
-                    : const Color(0xFF52734D).withOpacity(0.05),
+                ? Colors.blue.withOpacity(0.04)
+                : const Color(0xFF52734D).withOpacity(0.05),
             borderRadius: BorderRadius.circular(14),
             border: Border(
               left: BorderSide(
-                color: _needsSupport ? Colors.redAccent : const Color(0xFF52734D),
+                color: _needsSupport
+                    ? Colors.redAccent
+                    : const Color(0xFF52734D),
                 width: 4,
               ),
             ),
@@ -592,11 +679,15 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               Text(
                 _needsSupport
                     ? "Important: Additional Support Recommended"
-                    : _isScoreTooLow ? "General Feedback" : "Assessment Complete",
+                    : _isScoreTooLow
+                    ? "General Feedback"
+                    : "Assessment Complete",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: _needsSupport ? Colors.redAccent : const Color(0xFF52734D),
+                  color: _needsSupport
+                      ? Colors.redAccent
+                      : const Color(0xFF52734D),
                 ),
               ),
               const SizedBox(height: 10),
@@ -605,9 +696,13 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                 _apiRecommendation.isNotEmpty
                     ? _apiRecommendation
                     : _needsSupport
-                        ? "Thank you for completing the assessment. Based on your responses, we believe you would benefit from immediate professional support before beginning a self-guided EMDR program.\n\nYour wellbeing is our priority."
-                        : "Thank you for completing the assessment. Your responses suggest you may be a good candidate for self-guided EMDR.",
-                style: const TextStyle(fontSize: 13, height: 1.6, color: Colors.black87),
+                    ? "Thank you for completing the assessment. Based on your responses, we believe you would benefit from immediate professional support before beginning a self-guided EMDR program.\n\nYour wellbeing is our priority."
+                    : "Thank you for completing the assessment. Your responses suggest you may be a good candidate for self-guided EMDR.",
+                style: const TextStyle(
+                  fontSize: 13,
+                  height: 1.6,
+                  color: Colors.black87,
+                ),
               ),
             ],
           ),
@@ -639,7 +734,10 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               _resultRow(
                 label: "Depression (PHQ-9)",
                 interpretation: _apiScores != null
-                    ? _capitalizeFirst(_apiScores!['depression']?['severity']?.toString() ?? getPhqInterpretation(phq))
+                    ? _capitalizeFirst(
+                        _apiScores!['depression']?['severity']?.toString() ??
+                            getPhqInterpretation(phq),
+                      )
                     : getPhqInterpretation(phq),
                 scoreText: _apiScores != null
                     ? "Score: ${_apiScores!['depression']?['score'] ?? phq}/${_apiScores!['depression']?['outOf'] ?? 27}"
@@ -650,7 +748,10 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               _resultRow(
                 label: "Anxiety (GAD-7)",
                 interpretation: _apiScores != null
-                    ? _capitalizeFirst(_apiScores!['anxiety']?['severity']?.toString() ?? getGadInterpretation(gad))
+                    ? _capitalizeFirst(
+                        _apiScores!['anxiety']?['severity']?.toString() ??
+                            getGadInterpretation(gad),
+                      )
                     : getGadInterpretation(gad),
                 scoreText: _apiScores != null
                     ? "Score: ${_apiScores!['anxiety']?['score'] ?? gad}/${_apiScores!['anxiety']?['outOf'] ?? 21}"
@@ -661,7 +762,9 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               _resultRow(
                 label: "Dissociation (DES-II)",
                 interpretation: _apiScores != null
-                    ? ((_apiScores!['dissociation']?['score'] ?? 0) >= 30 ? "Consultation Advised" : "Normal Range")
+                    ? ((_apiScores!['dissociation']?['score'] ?? 0) >= 30
+                          ? "Consultation Advised"
+                          : "Normal Range")
                     : (des >= 30 ? "Consultation Advised" : "Normal Range"),
                 scoreText: _apiScores != null
                     ? "Score: ${_apiScores!['dissociation']?['score']}%"
@@ -719,7 +822,11 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
         const Center(
           child: Text(
             "Note: This screening is not a clinical diagnosis.",
-            style: TextStyle(fontSize: 11, color: Colors.grey, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -752,19 +859,33 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                   const SizedBox(height: 4),
                   Text(
                     interpretation,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ],
               ),
               Text(
                 scoreText,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ],
           ),
         ),
         if (!isLast)
-          const Divider(height: 1, thickness: 1, indent: 18, endIndent: 18, color: Colors.black12),
+          const Divider(
+            height: 1,
+            thickness: 1,
+            indent: 18,
+            endIndent: 18,
+            color: Colors.black12,
+          ),
       ],
     );
   }
@@ -780,9 +901,19 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          Text(sub, style: const TextStyle(color: Colors.black54, fontSize: 13, height: 1.4)),
+          Text(
+            sub,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
         ],
       ),
     );
@@ -805,16 +936,29 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          ),
           const SizedBox(height: 4),
-          Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.black54)),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12, color: Colors.black54),
+          ),
           const SizedBox(height: 6),
           Text(
             contact,
-            style: const TextStyle(color: Color(0xFF1565C0), fontWeight: FontWeight.bold, fontSize: 13),
+            style: const TextStyle(
+              color: Color(0xFF1565C0),
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
           ),
           if (contactNote.isNotEmpty)
-            Text(contactNote, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              contactNote,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
         ],
       ),
     );
@@ -844,14 +988,22 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
               child: ElevatedButton(
                 onPressed: _isScoreTooLow ? null : _handleNext,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: _isScoreTooLow ? Colors.grey : const Color(0xFF52734D),
+                  backgroundColor: _isScoreTooLow
+                      ? Colors.grey
+                      : const Color(0xFF52734D),
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
                 child: const Text(
                   "Complete Assessment",
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -869,7 +1021,11 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                 ),
                 child: const Text(
                   "Save Results & Exit",
-                  style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(
+                    color: Colors.black54,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ),
             ),
@@ -886,7 +1042,13 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
           Expanded(
             child: TextButton(
               onPressed: _handleBack,
-              child: const Text("Back", style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Back",
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -898,12 +1060,18 @@ class _FullAssessmentFlowState extends State<FullAssessmentFlow> {
                 backgroundColor: const Color(0xFF52734D),
                 disabledBackgroundColor: Colors.grey.shade300,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 0,
               ),
               child: const Text(
                 "Continue",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),

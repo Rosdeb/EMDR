@@ -39,14 +39,15 @@ class _SessionThreePageState extends State<SessionThreePage> {
   Duration duration = Duration.zero;
   Duration position = Duration.zero;
 
-  static const _mediaCategoryId = '69ebf0940bf438b36641ebd2';
+  static const _visualImageSlug = 'visual-image';
+  static const _visualSoundsSlug = 'visual-sounds';
 
   List<dynamic> _apiImages = [];
   List<dynamic> _apiAudios = [];
   static const List<String> _fallbackImages = [
-    'assets/images/comunity.jpg',
-    'assets/images/make_more.jpg',
-    'assets/images/night.jpg',
+    'assets/images/mountain.jpg',
+    'assets/images/water.png',
+    'assets/images/emdr_sun.jpg',
   ];
 
   @override
@@ -60,28 +61,22 @@ class _SessionThreePageState extends State<SessionThreePage> {
       final authController = Get.find<AuthController>();
       final token = authController.token;
       if (token != null) {
-        final result = await MediaService.getMediaByCategoryId(
-          token: token,
-          categoryId: _mediaCategoryId,
-        );
+        final result = await MediaService.getAllMedia(token: token, limit: 100);
 
         if (result['success'] == true && result['data'] != null) {
-          final data = result['data'] as Map<String, dynamic>;
-          final media = data['media'] is Map
-              ? Map<String, dynamic>.from(data['media'] as Map)
-              : data;
-          final apiImages = _mediaList(media['images']);
-          final musics = _mediaList(media['musics']);
-          final others = _mediaList(media['others']);
-          final apiAudios = [...musics, ...others];
+          final allMedia = _mediaList(result['data']);
+          final apiImages = allMedia.where(_isSessionImage).toList();
+          final apiAudios = allMedia.where(_isSessionAudio).toList()
+            ..sort(_compareAudioPriority);
           if (kDebugMode) {
             debugPrint(
-              'SessionThree media category=$_mediaCategoryId '
-              'images=${apiImages.length} musics=${musics.length} '
-              'others=${others.length}',
+              'SessionThree media all=${allMedia.length} '
+              'visualImages=${apiImages.length} '
+              'visualSounds=${apiAudios.length}',
             );
           }
 
+          if (!mounted) return;
           setState(() {
             _apiImages = apiImages;
             _apiAudios = apiAudios;
@@ -109,9 +104,72 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   List<dynamic> _mediaList(dynamic value) {
-    if (value is List) return List<dynamic>.from(value);
+    final rawList = value is Map ? value['media'] : value;
+    if (rawList is List) {
+      return rawList
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .where((item) => _mediaUrl(item).isNotEmpty && _isActiveMedia(item))
+          .toList();
+    }
     return [];
   }
+
+  bool _isActiveMedia(Map<String, dynamic> item) {
+    final status = item['status']?.toString().trim().toLowerCase();
+    return status == null || status.isEmpty || status == 'active';
+  }
+
+  bool _isSessionImage(dynamic item) {
+    if (item is! Map<String, dynamic>) return false;
+
+    return _mediaType(item) == 'image' &&
+        _categorySlug(item) == _visualImageSlug;
+  }
+
+  bool _isSessionAudio(dynamic item) {
+    if (item is! Map<String, dynamic>) return false;
+
+    final type = _mediaType(item);
+    return (type == 'audio' || type == 'raw') &&
+        _categorySlug(item) == _visualSoundsSlug;
+  }
+
+  int _compareAudioPriority(dynamic a, dynamic b) {
+    if (a is! Map<String, dynamic> || b is! Map<String, dynamic>) return 0;
+
+    final priority = _audioPriority(a).compareTo(_audioPriority(b));
+    if (priority != 0) return priority;
+
+    return _createdAt(b).compareTo(_createdAt(a));
+  }
+
+  int _audioPriority(Map<String, dynamic> item) {
+    final text = '${item['name'] ?? ''} ${item['originalName'] ?? ''}'
+        .toLowerCase();
+    if (text.contains('calm place')) return 0;
+    if (text.contains('calm space')) return 1;
+    if (text.contains('calm')) return 2;
+    if (_mediaType(item) == 'audio') return 3;
+    return 4;
+  }
+
+  String _mediaType(Map<String, dynamic> item) =>
+      item['mediaType']?.toString().trim().toLowerCase() ?? '';
+
+  String _mediaUrl(Map<String, dynamic> item) =>
+      item['url']?.toString().trim() ?? '';
+
+  String _categorySlug(Map<String, dynamic> item) {
+    final category = item['categoryId'];
+    if (category is Map) {
+      return category['slug']?.toString().trim().toLowerCase() ?? '';
+    }
+    return '';
+  }
+
+  String _createdAt(Map<String, dynamic> item) =>
+      item['createdAt']?.toString() ?? '';
 
   Future<void> _initAudioPlayer() async {
     await _setAudioSource(name: currentAudioName, url: currentAudioUrl);

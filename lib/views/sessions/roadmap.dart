@@ -8,9 +8,8 @@ class CreateRoadmapPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Color(0xFFFFF8F0),
+      backgroundColor: const Color(0xFFF5F1EA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -31,20 +30,18 @@ class CreateRoadmapPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Column(
           children: [
-
             _buildRoadmapCard(
               context,
               imagePath: 'assets/images/ai_guide_bg.jpg',
-              icon: Icons.assignment_turned_in_outlined,
-              title: "Session",
-              description: "Chat with our intelligent assistant to identify your target memory, negative beliefs, and emotions.",
-              buttonText: "View Sessions",
+              icon: Icons.psychology_alt_outlined,
+              title: "Chat to virtual assistant Sigmund",
+              description:
+                  "With the help of Sigmund and his psychological assessment questions you can begin to create your EMDR roadmap.",
+              buttonText: "Start now",
               buttonColor: AppColors.mainAppColor,
               onTap: () {
-                Get.to(() => SessionOne());
+                _showSessionIntro(context);
               },
-
-
             ),
 
             const SizedBox(height: 25),
@@ -52,10 +49,11 @@ class CreateRoadmapPage extends StatelessWidget {
             _buildRoadmapCard(
               context,
               imagePath: 'assets/images/book_bg.jpg',
-              icon: Icons.bar_chart_rounded,
+              icon: Icons.calendar_month_outlined,
               title: "Book Consultation",
-              description: "Schedule a video call with a qualified psychologist to help you create your roadmap.",
-              buttonText: "Book Session",
+              description:
+                  "Book a 60 minute consultation (Price not included in your plan) with one of our EMDR trained clinical psychologists.",
+              buttonText: "Book now",
               buttonColor: AppColors.mainAppColor,
               onTap: () {},
             ),
@@ -67,16 +65,78 @@ class CreateRoadmapPage extends StatelessWidget {
     );
   }
 
+  void _showSessionIntro(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(24, 22, 24, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Before you start",
+                style: TextStyle(
+                  color: Color(0xFF2E3E32),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Please watch this video to help understand about EMDR.",
+                style: TextStyle(
+                  color: Color(0xFF4B5563),
+                  fontSize: 15,
+                  height: 1.45,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Get.to(() => const SessionOne(), arguments: Get.arguments);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.mainAppColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    "Watch video",
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildRoadmapCard(
-      BuildContext context, {
-        required String imagePath,
-        required IconData icon,
-        required String title,
-        required String description,
-        required String buttonText,
-        required Color buttonColor,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String imagePath,
+    required IconData icon,
+    required String title,
+    required String description,
+    required String buttonText,
+    required Color buttonColor,
+    required VoidCallback onTap,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -92,7 +152,6 @@ class CreateRoadmapPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-
           Stack(
             alignment: Alignment.center,
             children: [

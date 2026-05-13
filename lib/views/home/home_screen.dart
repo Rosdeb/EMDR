@@ -96,7 +96,7 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             const SizedBox(height: 35),
                             const AppText(
-                              "Quick Access",
+                              "My Space",
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF2E3E32),
@@ -124,7 +124,7 @@ class HomeScreen extends StatelessWidget {
                                 const SizedBox(width: 15),
                                 Expanded(
                                   child: _buildQuickAccessCard(
-                                    "My HomeWork",
+                                    "My Homework",
                                     "Prime+",
                                     AppIcons.homework,
                                     onTap: () {

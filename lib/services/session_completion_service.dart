@@ -50,6 +50,12 @@ class SessionCompletionService {
   static String activeJourneyId() =>
       _box.read<String>(_activeJourneyIdKey) ?? '';
 
+  static void setActiveJourney(String journeyId) {
+    if (journeyId.isEmpty) return;
+    _box.write(_activeJourneyIdKey, journeyId);
+    syncFromStorage();
+  }
+
   static Future<void> markCompleted(
     int sessionNumber, {
     String? journeyId,

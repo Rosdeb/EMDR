@@ -1,10 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/views/home/BehaviourScreen.dart';
-import 'package:jonssony/views/home/emdr2.dart';
-import 'package:jonssony/views/home/InKindChatBot.dart';
 import 'package:jonssony/views/home/Thoughts.dart';
 import 'package:jonssony/views/home/emotion_start.dart';
 
@@ -35,14 +32,13 @@ class MyHomeworkPri extends StatelessWidget {
       ),
       body: Stack(
         children: [
-// Custom_AppBar(context, "My Resourc"),
+          // Custom_AppBar(context, "My Resourc"),
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_library.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
 
           SafeArea(
             child: SingleChildScrollView(
@@ -57,7 +53,9 @@ class MyHomeworkPri extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => BehaviourScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => BehaviourScreen(),
+                        ),
                       );
                     },
                   ),
@@ -81,7 +79,9 @@ class MyHomeworkPri extends StatelessWidget {
                         context,
                         // MaterialPageRoute(builder: (context) => const EmotionBodyMap()),
                         // MaterialPageRoute(builder: (context) => EmotionsScreen()),
-                        MaterialPageRoute(builder: (context) => EmotionStartScreen()),
+                        MaterialPageRoute(
+                          builder: (context) => EmotionStartScreen(),
+                        ),
                       );
                     },
                   ),
@@ -95,7 +95,12 @@ class MyHomeworkPri extends StatelessWidget {
     );
   }
 
-  Widget _buildResourceCard(String title, String desc, String imagePath, {VoidCallback? onTap}) {
+  Widget _buildResourceCard(
+    String title,
+    String desc,
+    String imagePath, {
+    VoidCallback? onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -124,7 +129,6 @@ class MyHomeworkPri extends StatelessWidget {
               ),
               const SizedBox(height: 25),
 
-
               Text(
                 title,
                 textAlign: TextAlign.center,
@@ -135,7 +139,6 @@ class MyHomeworkPri extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-
 
               Text(
                 desc,

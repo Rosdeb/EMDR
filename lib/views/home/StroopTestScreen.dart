@@ -34,7 +34,7 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
   Color _feedbackColor = Colors.transparent;
 
   // Timer [cite: 330-331]
-  Stopwatch _stopwatch = Stopwatch();
+  final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
   String _elapsedTime = "0.0s";
 
@@ -54,7 +54,8 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
   void _startTimer() {
     _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       setState(() {
-        _elapsedTime = "${(_stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1)}s";
+        _elapsedTime =
+            "${(_stopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1)}s";
       });
     });
   }
@@ -127,8 +128,10 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
         backgroundColor: const Color(0xFFF5E6D3),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF5A4A42)),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Color(0xFF5A4A42),
+          ),
           onPressed: () {
             _timer?.cancel();
             _stopwatch.stop();
@@ -159,7 +162,9 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
                 BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
               ],
             ),
-            child: _gameStarted ? (_isFinished ? _buildResults() : _buildGame()) : _buildInstructions(),
+            child: _gameStarted
+                ? (_isFinished ? _buildResults() : _buildGame())
+                : _buildInstructions(),
           ),
         ),
       ),
@@ -170,19 +175,35 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
   Widget _buildInstructions() {
     return Column(
       children: [
-        const Text("The Stroop Test", style: TextStyle(fontSize: 32, fontFamily: 'Georgia', color: Color(0xFF5A4A42))),
-        const Text("A Focus & Attention Exercise", style: TextStyle(fontStyle: FontStyle.italic, color: Color(0xFF8B7355))),
+        const Text(
+          "The Stroop Test",
+          style: TextStyle(
+            fontSize: 32,
+            fontFamily: 'Georgia',
+            color: Color(0xFF5A4A42),
+          ),
+        ),
+        const Text(
+          "A Focus & Attention Exercise",
+          style: TextStyle(
+            fontStyle: FontStyle.italic,
+            color: Color(0xFF8B7355),
+          ),
+        ),
         const SizedBox(height: 30),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.5),
-            border: Border.all(color: const Color(0xFF8B7355).withOpacity(0.2), width: 2),
+            border: Border.all(
+              color: const Color(0xFF8B7355).withOpacity(0.2),
+              width: 2,
+            ),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Text(
             "Look at the colour the word is displayed in (not the word itself), then select the matching colour button below.\n\n"
-                "This creates mental friction - a workout for your brain's ability to focus.",
+            "This creates mental friction - a workout for your brain's ability to focus.",
             textAlign: TextAlign.center,
             style: TextStyle(height: 1.6, color: Color(0xFF5A4A42)),
           ),
@@ -194,7 +215,10 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
             backgroundColor: const Color(0xFF6B8E23),
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
           ),
-          child: const Text("Begin Exercise", style: TextStyle(color: Colors.white, fontSize: 18)),
+          child: const Text(
+            "Begin Exercise",
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
         ),
       ],
     );
@@ -232,21 +256,39 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
           alignment: WrapAlignment.center,
           children: _words.map((colorName) {
             return OutlinedButton(
-              onPressed: _buttonsDisabled ? null : () => _checkAnswer(colorName),
+              onPressed: _buttonsDisabled
+                  ? null
+                  : () => _checkAnswer(colorName),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: _colors[colorName]!, width: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 25,
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
               ),
               child: Text(
                 colorName,
-                style: TextStyle(color: _colors[colorName], fontWeight: FontWeight.bold, fontSize: 18),
+                style: TextStyle(
+                  color: _colors[colorName],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
             );
           }).toList(),
         ),
         const SizedBox(height: 30),
-        Text(_feedbackText, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _feedbackColor)),
+        Text(
+          _feedbackText,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: _feedbackColor,
+          ),
+        ),
       ],
     );
   }
@@ -257,7 +299,14 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
       children: [
         const Icon(Icons.stars, color: Color(0xFF6B8E23), size: 80),
         const SizedBox(height: 20),
-        const Text("Well Done!", style: TextStyle(fontSize: 28, fontFamily: 'Georgia', color: Color(0xFF6B8E23))),
+        const Text(
+          "Well Done!",
+          style: TextStyle(
+            fontSize: 28,
+            fontFamily: 'Georgia',
+            color: Color(0xFF6B8E23),
+          ),
+        ),
         const SizedBox(height: 20),
         Text(
           "You got $_correctAnswers out of $_totalRounds correct (${accuracy.toStringAsFixed(0)}% accuracy) in $_elapsedTime.", // [cite: 397]
@@ -267,7 +316,9 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
         const SizedBox(height: 30),
         ElevatedButton(
           onPressed: _startGame,
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6B8E23)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6B8E23),
+          ),
           child: const Text("Try Again", style: TextStyle(color: Colors.white)),
         ),
       ],
@@ -277,8 +328,18 @@ class _StroopTestScreenState extends State<StroopTestScreen> {
   Widget _scoreItem(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF8B7355))),
-        Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF5A4A42))),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 14, color: Color(0xFF8B7355)),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF5A4A42),
+          ),
+        ),
       ],
     );
   }

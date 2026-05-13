@@ -37,9 +37,7 @@ class _SessionFiveState extends State<SessionFive> {
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
-    // Attempt to get video from API category
-    // Using a generic search or a specific category if known.
-    // For now, using 'session-5' as the category for Session 5.
+
     final videoObj = _mediaController.getFirstMedia('session-5', 'video');
 
     if (videoObj != null && videoObj['url'] != null) {
@@ -163,43 +161,6 @@ class _SessionFiveState extends State<SessionFive> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Your Journey Guide",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  "When I was little (Childhood)",
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF444444),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "This may or may not be relevant to what you would like to work on so skip it if not.",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black.withOpacity(0.7),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  "Float back in time and see if you remember feeling this way (from your situation) as a child or any other time?",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.black.withOpacity(0.7),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 25),
-
                 Row(
                   children: [
                     Expanded(

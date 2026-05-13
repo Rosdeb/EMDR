@@ -33,7 +33,10 @@ class _SaveGameState extends State<SaveGame> {
         children: [
           // Header image
           Positioned(
-            top: 0, left: 0, right: 0, height: 180,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 180,
             child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
 
@@ -64,11 +67,14 @@ class _SaveGameState extends State<SaveGame> {
                       if (_bilateralController.isLoading.value) {
                         return const Center(child: CircularProgressIndicator());
                       }
-                      
+
                       return ListView.builder(
                         physics: const BouncingScrollPhysics(),
                         padding: const EdgeInsets.only(
-                          left: 20, right: 20, top: 30, bottom: 30,
+                          left: 20,
+                          right: 20,
+                          top: 30,
+                          bottom: 30,
                         ),
                         itemCount: _tracks.length,
                         itemBuilder: (context, index) {
@@ -89,19 +95,24 @@ class _SaveGameState extends State<SaveGame> {
   Widget _buildTrackCard(int index) {
     final track = _tracks[index];
     final isPlaying = _playingIndex == index;
-    
+
     // Convert backend formats to SimulationSettings
     final settings = _bilateralController.userSettings;
     final speedStr = settings['speed'] ?? 'medium';
     double speed = 4.0;
-    if (speedStr == 'slow') speed = 8.0;
-    else if (speedStr == 'fast') speed = 2.0;
+    if (speedStr == 'slow') {
+      speed = 8.0;
+    } else if (speedStr == 'fast')
+      speed = 2.0;
 
     final dirStr = settings['direction'] ?? 'left-right';
     AnimationDirection dir = AnimationDirection.horizontal;
-    if (dirStr == 'top-bottom') dir = AnimationDirection.vertical;
-    else if (dirStr == 'diagonal-down') dir = AnimationDirection.diagonal;
-    else if (dirStr == 'diagonal-up') dir = AnimationDirection.diagonalReverse;
+    if (dirStr == 'top-bottom') {
+      dir = AnimationDirection.vertical;
+    } else if (dirStr == 'diagonal-down')
+      dir = AnimationDirection.diagonal;
+    else if (dirStr == 'diagonal-up')
+      dir = AnimationDirection.diagonalReverse;
     final visualObject = settings['iconUrl']?.toString().isNotEmpty == true
         ? settings['iconUrl'].toString()
         : _defaultVisualObject;
@@ -171,16 +182,12 @@ class _SaveGameState extends State<SaveGame> {
                           color: Colors.black87,
                           fontWeight: FontWeight.w600,
                         ),
-                        if (isPlaying) ...[
-                          const SizedBox(height: 8),
-
-                        ],
+                        if (isPlaying) ...[const SizedBox(height: 8)],
                       ],
                     ),
                   ),
 
                   const SizedBox(width: 8),
-
                 ],
               ),
             ),
@@ -190,8 +197,6 @@ class _SaveGameState extends State<SaveGame> {
     );
   }
 
-
-
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
@@ -199,14 +204,19 @@ class _SaveGameState extends State<SaveGame> {
         left: 10,
         bottom: 10,
       ),
-      child: Row(children: [
-        IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-        const AppText('Bilateral Stimulation',
-            fontSize: 20, fontWeight: FontWeight.bold),
-      ]),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
+          const AppText(
+            'Bilateral Stimulation',
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ],
+      ),
     );
   }
 }
