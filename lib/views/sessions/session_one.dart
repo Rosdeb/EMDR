@@ -160,7 +160,6 @@ class _SessionOneState extends State<SessionOne> {
       if (!mounted) return;
       setState(() {
         _currentTime = Duration.zero;
-        _videoEnded = false;
       });
     }
 
@@ -180,6 +179,17 @@ class _SessionOneState extends State<SessionOne> {
     await _syncVideoProgress();
     if (mounted) {
       setState(() => _isPlaying = false);
+    }
+  }
+
+  Future<void> _handleSeek(double seconds) async {
+    final controller = _videoPlayerController;
+    if (controller == null || !controller.value.isInitialized) return;
+
+    final target = Duration(seconds: seconds.round());
+    await controller.seekTo(target);
+    if (mounted) {
+      setState(() => _currentTime = target);
     }
   }
 
@@ -465,6 +475,7 @@ class _SessionOneState extends State<SessionOne> {
     final remainingTime = _duration - _currentTime;
 
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.72),
@@ -512,6 +523,24 @@ class _SessionOneState extends State<SessionOne> {
             ],
           ),
           const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              activeTrackColor: AppColors.mainAppColor,
+              inactiveTrackColor: Colors.white.withOpacity(0.22),
+              thumbColor: Colors.white,
+              overlayColor: Colors.white.withOpacity(0.18),
+            ),
+            child: Slider(
+              min: 0,
+              max: _duration.inSeconds > 0 ? _duration.inSeconds.toDouble() : 1,
+              value: _currentTime.inSeconds
+                  .clamp(0, _duration.inSeconds > 0 ? _duration.inSeconds : 1)
+                  .toDouble(),
+              onChanged: _duration > Duration.zero ? _handleSeek : null,
+            ),
+          ),
+          const SizedBox(height: 2),
           Text(
             'Remaining ${_formatTime(remainingTime.isNegative ? Duration.zero : remainingTime)}',
             style: TextStyle(
@@ -526,6 +555,8 @@ class _SessionOneState extends State<SessionOne> {
   }
 
   Widget _buildIntroductionCard() {
+    final canContinue = _videoEnded;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -606,19 +637,26 @@ class _SessionOneState extends State<SessionOne> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _goToNextStep,
+              onPressed: canContinue ? _goToNextStep : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF4A7C59),
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFFAAB8AE),
+                disabledForegroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: const Text(
-                'Continue to Session 2',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              child: Text(
+                canContinue
+                    ? 'Continue to Session 2'
+                    : 'Watch full video to continue',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),

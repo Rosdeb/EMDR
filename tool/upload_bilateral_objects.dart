@@ -8,11 +8,10 @@ const _defaultCategoryName = 'Bilateral Stimulation Visual icon';
 const _defaultFiles = ['assets/images/Butterfly Lottie Animation.gif'];
 
 Future<void> main(List<String> args) async {
-  final token = _argValue(args, '--token') ?? Platform.environment['AUTH_TOKEN'];
-  final baseUrl = (_argValue(args, '--base-url') ?? AppUrl.baseUrl).replaceFirst(
-    RegExp(r'/$'),
-    '',
-  );
+  final token =
+      _argValue(args, '--token') ?? Platform.environment['AUTH_TOKEN'];
+  final baseUrl = (_argValue(args, '--base-url') ?? AppUrl.baseUrl)
+      .replaceFirst(RegExp(r'/$'), '');
   final categoryName = _argValue(args, '--category') ?? _defaultCategoryName;
   final files = _argValues(args, '--file');
 
@@ -23,7 +22,7 @@ Future<void> main(List<String> args) async {
   final filePaths = files.isEmpty ? _defaultFiles : files;
   final categoryId = await _resolveCategoryId(
     baseUrl: baseUrl,
-    token: token!,
+    token: token,
     categoryName: categoryName,
   );
 
@@ -56,12 +55,12 @@ Future<String> _resolveCategoryId({
   }
 
   final category = data.cast<dynamic>().firstWhere(
-        (item) =>
-            item is Map &&
-            item['categoryName']?.toString().trim().toLowerCase() ==
-                categoryName.trim().toLowerCase(),
-        orElse: () => null,
-      );
+    (item) =>
+        item is Map &&
+        item['categoryName']?.toString().trim().toLowerCase() ==
+            categoryName.trim().toLowerCase(),
+    orElse: () => null,
+  );
 
   if (category is! Map) {
     _fail('Category "$categoryName" was not found.');
@@ -73,7 +72,7 @@ Future<String> _resolveCategoryId({
   }
 
   stdout.writeln('Category: $categoryName ($id)');
-  return id!;
+  return id;
 }
 
 Future<void> _uploadMedia({
@@ -102,10 +101,10 @@ Future<void> _uploadMedia({
 }
 
 Map<String, String> _headers(String token) => {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'Authorization': 'Bearer $token',
+};
 
 Map<String, dynamic> _decodeResponse(http.Response response) {
   Map<String, dynamic> body;

@@ -10,9 +10,11 @@ import 'package:jonssony/utils/app_text.dart';
 
 import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/controller/my_tests_controller.dart';
+import 'package:jonssony/services/questionnaire_service.dart';
 import 'package:jonssony/services/symptom_tracker_service.dart';
 import 'package:jonssony/services/tracker_storage_service.dart';
 import 'package:jonssony/views/progress/category_items_screen.dart';
+import 'package:jonssony/views/progress/local_assessment_screen.dart';
 import 'package:jonssony/views/progress/symptom_tracker_screen.dart';
 import 'package:get/get.dart';
 import 'result_step_screen.dart';
@@ -24,16 +26,100 @@ class ProgressPage extends StatefulWidget {
   State<ProgressPage> createState() => _ProgressPageState();
 }
 
+class _ProgressChartPoint {
+  final double score;
+  final DateTime? date;
+
+  const _ProgressChartPoint({required this.score, this.date});
+}
+
 class _ProgressPageState extends State<ProgressPage> {
   bool isResultsTab = false;
   String? _selectedResultTrackerTitle;
   final Map<String, Map<String, dynamic>> _testResults = {};
   final Map<String, Map<String, dynamic>> _latestTrackerResults = {};
   final Map<String, List<dynamic>> _trackerTrends = {};
+  final Map<String, List<dynamic>> _questionnaireSubmissions = {};
   Map<String, List<TrackerResult>> _storedTrackerResults = {};
   List<Map<String, dynamic>> _trackerConfigs = [];
   bool _isTrackerLoading = false;
   String? _trackerError;
+
+  static final List<LocalAssessmentConfig> _localAssessmentConfigs = [
+    LocalAssessmentConfig(
+      title: 'PHQ-9',
+      trackerType: 'phq9',
+      description:
+          'Over the last 2 weeks, how often have you been bothered by the following problems?',
+      questions: const [
+        'Little interest or pleasure in doing things',
+        'Feeling down, depressed, or hopeless',
+        'Trouble falling or staying asleep, or sleeping too much',
+        'Feeling tired or having little energy',
+        'Poor appetite or overeating',
+        'Feeling bad about yourself or that you are a failure',
+        'Trouble concentrating on things, such as reading or watching TV',
+        'Moving or speaking so slowly that other people could have noticed, or being so fidgety/restless that you moved around more than usual',
+        'Thoughts that you would be better off dead, or of hurting yourself',
+      ],
+      optionLabels: const [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day',
+      ],
+      maxOptionValue: 3,
+      usePercentageSlider: false,
+      maxScore: 27,
+      bandForScore: _phqBand,
+    ),
+    LocalAssessmentConfig(
+      title: 'GAD-7',
+      trackerType: 'gad7',
+      description:
+          'Over the last 2 weeks, how often have you been bothered by the following problems?',
+      questions: const [
+        'Feeling nervous, anxious or on edge',
+        'Not being able to stop or control worrying',
+        'Worrying too much about different things',
+        'Trouble relaxing',
+        'Being so restless that it is hard to sit still',
+        'Becoming easily annoyed or irritable',
+        'Feeling afraid as if something awful might happen',
+      ],
+      optionLabels: const [
+        'Not at all',
+        'Several days',
+        'More than half the days',
+        'Nearly every day',
+      ],
+      maxOptionValue: 3,
+      usePercentageSlider: false,
+      maxScore: 21,
+      bandForScore: _gadBand,
+    ),
+    LocalAssessmentConfig(
+      title: 'DES-11',
+      trackerType: 'des11',
+      description:
+          'Indicate what percentage of the time each experience happens to you.',
+      questions: const [
+        "Driving or riding in a car and realizing you do not remember part of the trip.",
+        'Realizing you did not hear part or all of what was said during a conversation.',
+        'Finding yourself in a place and having no idea how you got there.',
+        "Finding yourself dressed in clothes that you do not remember putting on.",
+        "Finding new things among your belongings that you do not remember buying.",
+        'Being approached by people you do not know who call you by another name.',
+        'Feeling as though you are standing next to yourself or watching yourself do something.',
+        "Finding that you sometimes do not recognize friends or family members.",
+      ],
+      optionLabels: const [],
+      maxOptionValue: 100,
+      usePercentageSlider: true,
+      maxScore: 100,
+      bandForScore: _desBand,
+    ),
+  ];
 
   final List<Map<String, dynamic>> _trackers = [
     {
@@ -56,16 +142,8 @@ class _ProgressPageState extends State<ProgressPage> {
       'trackerType': 'depression',
       'image': 'assets/images/depression.jpg',
     },
-    {
-      'name': 'OCD',
-      'trackerType': 'ocd',
-      'image': 'assets/images/ocd.jpg',
-    },
-    {
-      'name': 'Pain',
-      'trackerType': 'pain',
-      'image': 'assets/images/fire.jpg',
-    },
+    {'name': 'OCD', 'trackerType': 'ocd', 'image': 'assets/images/ocd.jpg'},
+    {'name': 'Pain', 'trackerType': 'pain', 'image': 'assets/images/fire.jpg'},
     {
       'name': 'Self-Esteem',
       'trackerType': 'self-esteem',
@@ -104,11 +182,72 @@ class _ProgressPageState extends State<ProgressPage> {
     final controller = Get.find<MyTestsController>();
     controller.fetchCategories();
     _loadBackendTrackers();
+    _loadQuestionnaireResults();
     _loadTrackerResults();
   }
 
   String _trackerKeyForTitle(String title) =>
       title.toLowerCase().replaceAll(' & ', '-').replaceAll(' ', '-');
+
+  static String _phqBand(int score) {
+    if (score <= 4) return 'Minimal';
+    if (score <= 9) return 'Mild';
+    if (score <= 14) return 'Moderate';
+    if (score <= 19) return 'Moderately Severe';
+    return 'Severe';
+  }
+
+  static String _gadBand(int score) {
+    if (score <= 4) return 'Minimal';
+    if (score <= 9) return 'Mild';
+    if (score <= 14) return 'Moderate';
+    return 'Severe';
+  }
+
+  static String _desBand(int score) {
+    if (score >= 30) return 'Consultation Advised';
+    return 'Normal Range';
+  }
+
+  bool _isLocalAssessmentType(String trackerType) {
+    return _localAssessmentConfigs.any(
+      (config) => config.trackerType == trackerType,
+    );
+  }
+
+  LocalAssessmentConfig? _localAssessmentConfig(String trackerType) {
+    for (final config in _localAssessmentConfigs) {
+      if (config.trackerType == trackerType) return config;
+    }
+    return null;
+  }
+
+  Map<String, dynamic>? _latestQuestionnaireSubmission(String trackerType) {
+    final submissions = _questionnaireSubmissions[trackerType];
+    if (submissions == null || submissions.isEmpty) return null;
+    final first = submissions.first;
+    if (first is Map) return Map<String, dynamic>.from(first);
+    return null;
+  }
+
+  String _questionnaireBandLabel(
+    String trackerType,
+    Map<String, dynamic> submission,
+  ) {
+    final severity = submission['severity']?.toString();
+    if (severity != null && severity.isNotEmpty && severity != 'null') {
+      return severity
+          .split(RegExp(r'[\s_-]+'))
+          .where((part) => part.isNotEmpty)
+          .map(
+            (part) => part[0].toUpperCase() + part.substring(1).toLowerCase(),
+          )
+          .join(' ');
+    }
+
+    final score = (submission['score'] as num?)?.round() ?? 0;
+    return _localAssessmentConfig(trackerType)?.bandForScore(score) ?? '-';
+  }
 
   Future<void> _loadTrackerResults() async {
     final results = await TrackerStorageService.instance.getAllResults();
@@ -118,9 +257,35 @@ class _ProgressPageState extends State<ProgressPage> {
     });
   }
 
+  Future<void> _loadQuestionnaireResults() async {
+    final token = Get.find<AuthController>().token;
+    if (token == null || token.isEmpty) return;
+
+    final next = <String, List<dynamic>>{};
+    for (final config in _localAssessmentConfigs) {
+      final result = await QuestionnaireService.getAll(
+        token: token,
+        type: config.trackerType,
+      );
+      if (result['success'] == true && result['data'] is Map) {
+        final data = Map<String, dynamic>.from(result['data'] as Map);
+        final submissions = data['submissions'];
+        if (submissions is List) {
+          next[config.trackerType] = List<dynamic>.from(submissions);
+        }
+      }
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _questionnaireSubmissions
+        ..clear()
+        ..addAll(next);
+    });
+  }
+
   List<Map<String, dynamic>> get _visibleTrackers {
-    if (_trackerConfigs.isEmpty) return _trackers;
-    return _trackerConfigs.map((config) {
+    final visible = _trackerConfigs.map((config) {
       final trackerType = config['trackerType']?.toString() ?? '';
       return <String, dynamic>{
         'name': config['name']?.toString() ?? trackerType,
@@ -129,6 +294,31 @@ class _ProgressPageState extends State<ProgressPage> {
         'config': config,
       };
     }).toList();
+
+    for (final tracker in _trackers) {
+      final trackerType = tracker['trackerType']?.toString();
+      final exists = visible.any(
+        (item) => item['trackerType']?.toString() == trackerType,
+      );
+      if (!exists) {
+        visible.add(Map<String, dynamic>.from(tracker));
+      }
+    }
+
+    for (final config in _localAssessmentConfigs) {
+      final exists = visible.any(
+        (tracker) => tracker['trackerType']?.toString() == config.trackerType,
+      );
+      if (!exists) {
+        visible.add({
+          'name': config.title,
+          'trackerType': config.trackerType,
+          'image': _imageForTracker(config.trackerType),
+        });
+      }
+    }
+
+    return visible;
   }
 
   String _imageForTracker(String trackerType) {
@@ -145,6 +335,9 @@ class _ProgressPageState extends State<ProgressPage> {
       'stress-burnout': 'assets/images/burnout.jpg',
       'trauma': 'assets/images/trauma.jpg',
       'worry': 'assets/images/worry.jpg',
+      'phq9': 'assets/images/depression.jpg',
+      'gad7': 'assets/images/stress.jpg',
+      'des11': 'assets/images/trauma.jpg',
     };
     return images[trackerType] ?? 'assets/images/bg_progress.jpg';
   }
@@ -238,7 +431,13 @@ class _ProgressPageState extends State<ProgressPage> {
   List<dynamic> _dataList(dynamic value) {
     if (value is List) return List<dynamic>.from(value);
     if (value is Map) {
-      for (final key in ['results', 'submissions', 'history', 'items', 'data']) {
+      for (final key in [
+        'results',
+        'submissions',
+        'history',
+        'items',
+        'data',
+      ]) {
         final nested = value[key];
         if (nested is List) return List<dynamic>.from(nested);
       }
@@ -252,8 +451,9 @@ class _ProgressPageState extends State<ProgressPage> {
 
     final tracker = _trackerByTitle(title);
     final trackerType = tracker?['trackerType']?.toString();
-    final latestBackend =
-        trackerType != null ? _latestTrackerResults[trackerType] : null;
+    final latestBackend = trackerType != null
+        ? _latestTrackerResults[trackerType]
+        : null;
     if (latestBackend != null) {
       return {
         'score': latestBackend['totalScore'],
@@ -262,7 +462,20 @@ class _ProgressPageState extends State<ProgressPage> {
       };
     }
 
-    final storedResults = _storedTrackerResults[_trackerKeyForTitle(title)];
+    final questionnaireLatest = trackerType != null
+        ? _latestQuestionnaireSubmission(trackerType)
+        : null;
+    if (questionnaireLatest != null) {
+      return {
+        'score': questionnaireLatest['score'],
+        'maxScore': _maxScoreForTracker(trackerType!),
+        'bandLabel': _questionnaireBandLabel(trackerType, questionnaireLatest),
+      };
+    }
+
+    final storedResults =
+        _storedTrackerResults[trackerType] ??
+        _storedTrackerResults[_trackerKeyForTitle(title)];
     if (storedResults == null || storedResults.isEmpty) return null;
 
     final latestStored = storedResults.last;
@@ -274,6 +487,9 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   int _maxScoreForTracker(String trackerType) {
+    final localConfig = _localAssessmentConfig(trackerType);
+    if (localConfig != null) return localConfig.maxScore;
+
     Map<String, dynamic>? config;
     for (final item in _trackerConfigs) {
       if (item['trackerType']?.toString() == trackerType) {
@@ -316,6 +532,7 @@ class _ProgressPageState extends State<ProgressPage> {
   Future<void> _refreshCategories() async {
     final controller = Get.find<MyTestsController>();
     await _loadBackendTrackers();
+    await _loadQuestionnaireResults();
     await controller.fetchCategories();
     await _loadTrackerResults();
   }
@@ -426,7 +643,7 @@ class _ProgressPageState extends State<ProgressPage> {
       padding: const EdgeInsets.all(5),
 
       decoration: BoxDecoration(
-        color: Color(0xFF0C326347),
+        color: Color(0xff0c326347),
 
         borderRadius: BorderRadius.circular(30),
 
@@ -451,6 +668,7 @@ class _ProgressPageState extends State<ProgressPage> {
           if (label == "My Results") {
             await _loadTrackerResults();
             await _loadBackendTrackers();
+            await _loadQuestionnaireResults();
           }
         },
 
@@ -592,9 +810,8 @@ class _ProgressPageState extends State<ProgressPage> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const SymptomTrackerScreen(
-                trackerType: 'anxiety',
-              ),
+              builder: (context) =>
+                  const SymptomTrackerScreen(trackerType: 'anxiety'),
             ),
           );
           if (result is Map<String, dynamic>) {
@@ -701,6 +918,31 @@ class _ProgressPageState extends State<ProgressPage> {
   }) {
     return GestureDetector(
       onTap: () async {
+        if (_isLocalAssessmentType(trackerType)) {
+          final config = _localAssessmentConfig(trackerType);
+          if (config == null) return;
+
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LocalAssessmentScreen(config: config),
+            ),
+          );
+          if (result is Map<String, dynamic>) {
+            if (!mounted) return;
+            setState(() {
+              _testResults[title] = result;
+              if (result['showResultsTab'] == true) {
+                isResultsTab = true;
+                _selectedResultTrackerTitle = title;
+              }
+            });
+            await _loadTrackerResults();
+            await _loadQuestionnaireResults();
+          }
+          return;
+        }
+
         final result = await Navigator.push(
           context,
           MaterialPageRoute(
@@ -799,104 +1041,104 @@ class _ProgressPageState extends State<ProgressPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.45),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AppText(name, fontSize: 16, fontWeight: FontWeight.bold),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 100,
-                child: BarChart(
-                  BarChartData(
-                    barGroups: [
-                      BarChartGroupData(
-                        x: 0,
-                        barRods: [
-                          BarChartRodData(
-                            toY: result != null
-                                ? (result['score'] as num?)?.toDouble() ?? 0.0
-                                : 0.0,
-                            color: result != null
-                                ? const Color(0xFF4A7373)
-                                : Colors.grey,
-                            width: 30,
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(name, fontSize: 16, fontWeight: FontWeight.bold),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 100,
+                  child: BarChart(
+                    BarChartData(
+                      barGroups: [
+                        BarChartGroupData(
+                          x: 0,
+                          barRods: [
+                            BarChartRodData(
+                              toY: result != null
+                                  ? (result['score'] as num?)?.toDouble() ?? 0.0
+                                  : 0.0,
+                              color: result != null
+                                  ? const Color(0xFF4A7373)
+                                  : Colors.grey,
+                              width: 30,
+                            ),
+                          ],
+                        ),
+                      ],
+                      titlesData: FlTitlesData(
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toInt().toString(),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.black,
+                                ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                    ],
-                    titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          getTitlesWidget: (value, meta) {
-                            return Text(
-                              value.toInt().toString(),
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: Colors.black,
-                              ),
-                            );
-                          },
+                        ),
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
                         ),
                       ),
-                      topTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
-                      rightTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: false),
-                      ),
+                      borderData: FlBorderData(show: false),
+                      gridData: FlGridData(show: false),
                     ),
-                    borderData: FlBorderData(show: false),
-                    gridData: FlGridData(show: false),
                   ),
                 ),
-              ),
-              if (result != null) ...[
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _statLabel(
-                      'Score',
-                      '${result['score'] ?? '-'} / ${result['maxScore'] ?? ''}',
+                if (result != null) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _statLabel(
+                        'Score',
+                        '${result['score'] ?? '-'} / ${result['maxScore'] ?? ''}',
+                      ),
+                      _statLabel('Level', '${result['bandLabel'] ?? '-'}'),
+                    ],
+                  ),
+                  if (result['bandDescription'] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: AppText(
+                        result['bandDescription'].toString(),
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
                     ),
-                    _statLabel('Level', '${result['bandLabel'] ?? '-'}'),
-                  ],
-                ),
-                if (result['bandDescription'] != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
                     child: AppText(
-                      result['bandDescription'].toString(),
+                      'No result saved yet.',
                       fontSize: 12,
                       color: Colors.black54,
                     ),
                   ),
-              ] else
-                const Padding(
-                  padding: EdgeInsets.only(top: 10),
-                  child: AppText(
-                    'No result saved yet.',
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
@@ -980,11 +1222,14 @@ class _ProgressPageState extends State<ProgressPage> {
 
   String? _defaultResultTrackerTitle() {
     if (_selectedResultTrackerTitle != null) {
-      final selectedKey = _trackerKeyForTitle(_selectedResultTrackerTitle!);
       final selectedTracker = _trackerByTitle(_selectedResultTrackerTitle!);
       final selectedType = selectedTracker?['trackerType']?.toString();
+      final selectedKey =
+          selectedType ?? _trackerKeyForTitle(_selectedResultTrackerTitle!);
       if ((_storedTrackerResults[selectedKey]?.isNotEmpty ?? false) ||
-          (selectedType != null && _latestTrackerResults[selectedType] != null) ||
+          (_questionnaireSubmissions[selectedKey]?.isNotEmpty ?? false) ||
+          (selectedType != null &&
+              _latestTrackerResults[selectedType] != null) ||
           _testResults.containsKey(_selectedResultTrackerTitle)) {
         return _selectedResultTrackerTitle;
       }
@@ -992,9 +1237,10 @@ class _ProgressPageState extends State<ProgressPage> {
 
     for (final tracker in _visibleTrackers) {
       final title = tracker['name'] as String;
-      final key = _trackerKeyForTitle(title);
       final trackerType = tracker['trackerType']?.toString();
+      final key = trackerType ?? _trackerKeyForTitle(title);
       if ((_storedTrackerResults[key]?.isNotEmpty ?? false) ||
+          (_questionnaireSubmissions[key]?.isNotEmpty ?? false) ||
           (trackerType != null && _latestTrackerResults[trackerType] != null) ||
           _testResults.containsKey(title)) {
         return title;
@@ -1009,11 +1255,12 @@ class _ProgressPageState extends State<ProgressPage> {
 
     for (final tracker in _visibleTrackers) {
       final title = tracker['name'] as String;
-      final key = _trackerKeyForTitle(title);
       final trackerType = tracker['trackerType']?.toString();
+      final key = trackerType ?? _trackerKeyForTitle(title);
       final hasResult =
           _testResults.containsKey(title) ||
           (_storedTrackerResults[key]?.isNotEmpty ?? false) ||
+          (_questionnaireSubmissions[key]?.isNotEmpty ?? false) ||
           (trackerType != null && _latestTrackerResults[trackerType] != null);
 
       if (hasResult && !titles.contains(title)) {
@@ -1031,20 +1278,28 @@ class _ProgressPageState extends State<ProgressPage> {
   }
 
   Widget _buildInlineProgressView(String title) {
-    final key = _trackerKeyForTitle(title);
-    final storedResults = _storedTrackerResults[key] ?? [];
     final localResult = _testResults[title];
-    final latestStored = storedResults.isNotEmpty ? storedResults.last : null;
     final tracker = _trackerByTitle(title);
     final trackerType = tracker?['trackerType']?.toString();
-    final latestBackend =
-        trackerType != null ? _latestTrackerResults[trackerType] : null;
+    final key = trackerType ?? _trackerKeyForTitle(title);
+    final storedResults = _storedTrackerResults[key] ?? [];
+    final latestStored = storedResults.isNotEmpty ? storedResults.last : null;
+    final latestBackend = trackerType != null
+        ? _latestTrackerResults[trackerType]
+        : null;
+    final latestQuestionnaire = trackerType != null
+        ? _latestQuestionnaireSubmission(trackerType)
+        : null;
 
-    final score =
-        (localResult?['score'] as num?)?.toInt() ??
-        (latestBackend?['totalScore'] as num?)?.toInt() ??
+    final rawScore =
+        (localResult?['score'] as num?) ??
+        (latestBackend?['totalScore'] as num?) ??
+        (latestQuestionnaire?['score'] as num?) ??
         latestStored?.score ??
         0;
+    final scoreLabel = rawScore % 1 == 0
+        ? rawScore.toInt().toString()
+        : rawScore.toStringAsFixed(1);
     final maxScore =
         (localResult?['maxScore'] as num?)?.toInt() ??
         (trackerType != null ? _maxScoreForTracker(trackerType) : null) ??
@@ -1053,22 +1308,26 @@ class _ProgressPageState extends State<ProgressPage> {
     final band =
         localResult?['bandLabel']?.toString() ??
         latestBackend?['severityBand']?.toString() ??
+        (trackerType != null && latestQuestionnaire != null
+            ? _questionnaireBandLabel(trackerType, latestQuestionnaire)
+            : null) ??
         latestStored?.band ??
         '-';
     final description =
         localResult?['bandDescription']?.toString() ??
-        'Your latest $title score is $score/$maxScore, which falls in the $band range. Keep tracking weekly to notice changes over time.';
-    final backendTrend = trackerType != null ? _trackerTrends[trackerType] : null;
-    final chartValues = backendTrend != null && backendTrend.isNotEmpty
-        ? backendTrend
-            .map((item) => item is Map
-                ? ((item['totalScore'] as num?)?.toDouble() ?? 0.0)
-                : 0.0)
-            .toList()
-        : _buildCurrentWeekChartValues(
-            storedResults,
-            fallbackScore: score,
-          );
+        'Your latest $title score is $scoreLabel/$maxScore, which falls in the $band range. Keep tracking weekly to notice changes over time.';
+    final backendTrend = trackerType != null
+        ? _trackerTrends[trackerType]
+        : null;
+    final questionnaireTrend = trackerType != null
+        ? _questionnaireSubmissions[trackerType]
+        : null;
+    final chartPoints = _buildProgressChartPoints(
+      backendTrend: backendTrend,
+      questionnaireTrend: questionnaireTrend,
+      storedResults: storedResults,
+      fallbackScore: rawScore.toDouble(),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1087,18 +1346,28 @@ class _ProgressPageState extends State<ProgressPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Flexible(child: _progressBadge('Score', '$score/$maxScore')),
+                  Flexible(
+                    child: _progressBadge('Score', '$scoreLabel/$maxScore'),
+                  ),
                   Flexible(child: _progressBadge('Level', band)),
                   Flexible(
                     child: _progressBadge(
                       'Date',
-                      latestBackend?['submittedAt'] != null
+                      latestQuestionnaire?['submittedAt'] != null
+                          ? _formatDate(
+                              DateTime.parse(
+                                latestQuestionnaire!['submittedAt'].toString(),
+                              ),
+                            )
+                          : latestBackend?['submittedAt'] != null
                           ? _formatDate(
                               DateTime.parse(
                                 latestBackend!['submittedAt'].toString(),
                               ),
                             )
-                          : latestStored != null ? _formatDate(latestStored.savedAt) : 'Today',
+                          : latestStored != null
+                          ? _formatDate(latestStored.savedAt)
+                          : 'Today',
                     ),
                   ),
                 ],
@@ -1122,7 +1391,10 @@ class _ProgressPageState extends State<ProgressPage> {
                 width: double.infinity,
                 height: 200,
                 child: LineChart(
-                  _buildTrackerProgressChartData(chartValues, storedResults),
+                  _buildTrackerProgressChartData(
+                    chartPoints,
+                    maxScoreOverride: maxScore,
+                  ),
                 ),
               ),
             ],
@@ -1206,47 +1478,111 @@ class _ProgressPageState extends State<ProgressPage> {
     return '$day/$month/${date.year}';
   }
 
-  List<double> _buildCurrentWeekChartValues(
-    List<TrackerResult> results, {
-    required int fallbackScore,
+  List<_ProgressChartPoint> _buildProgressChartPoints({
+    required List<dynamic>? backendTrend,
+    required List<dynamic>? questionnaireTrend,
+    required List<TrackerResult> storedResults,
+    required double fallbackScore,
   }) {
-    final values = List<double>.filled(7, 0);
-    final now = DateTime.now();
-    final weekStart = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: now.weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 7));
+    if (backendTrend != null && backendTrend.isNotEmpty) {
+      final points = backendTrend.whereType<Map>().map((item) {
+        final rawScore =
+            (item['totalScore'] as num?) ?? (item['score'] as num?) ?? 0;
+        return _ProgressChartPoint(
+          score: rawScore.toDouble(),
+          date: _parseDate(item['submittedAt'] ?? item['createdAt']),
+        );
+      }).toList();
+      return _sortChartPoints(points);
+    }
 
-    for (final result in results) {
-      final savedDay = DateTime(
-        result.savedAt.year,
-        result.savedAt.month,
-        result.savedAt.day,
-      );
-      if (!savedDay.isBefore(weekStart) && savedDay.isBefore(weekEnd)) {
-        values[result.savedAt.weekday - 1] = result.score.toDouble();
+    if (questionnaireTrend != null && questionnaireTrend.isNotEmpty) {
+      final points = questionnaireTrend.whereType<Map>().map((item) {
+        return _ProgressChartPoint(
+          score: ((item['score'] as num?) ?? 0).toDouble(),
+          date: _parseDate(item['submittedAt'] ?? item['createdAt']),
+        );
+      }).toList();
+      return _sortChartPoints(points);
+    }
+
+    if (storedResults.isNotEmpty) {
+      return storedResults
+          .map(
+            (result) => _ProgressChartPoint(
+              score: result.score.toDouble(),
+              date: result.savedAt,
+            ),
+          )
+          .toList();
+    }
+
+    return [_ProgressChartPoint(score: fallbackScore, date: DateTime.now())];
+  }
+
+  List<_ProgressChartPoint> _sortChartPoints(List<_ProgressChartPoint> points) {
+    points.sort((a, b) {
+      final aDate = a.date;
+      final bDate = b.date;
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return aDate.compareTo(bDate);
+    });
+
+    final collapsed = <_ProgressChartPoint>[];
+    for (final point in points) {
+      final date = point.date;
+      if (date == null || collapsed.isEmpty) {
+        collapsed.add(point);
+        continue;
+      }
+
+      final last = collapsed.last.date;
+      final isSameDay =
+          last != null &&
+          last.year == date.year &&
+          last.month == date.month &&
+          last.day == date.day;
+
+      if (isSameDay) {
+        collapsed[collapsed.length - 1] = point;
+      } else {
+        collapsed.add(point);
       }
     }
 
-    if (values.every((value) => value == 0) && fallbackScore > 0) {
-      values[now.weekday - 1] = fallbackScore.toDouble();
-    }
+    return collapsed;
+  }
 
-    return values;
+  DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
+  }
+
+  String _chartDateLabel(DateTime? date, int index) {
+    if (date == null) return '${index + 1}';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month';
   }
 
   LineChartData _buildTrackerProgressChartData(
-    List<double> data,
-    List<TrackerResult> results,
-  ) {
-    final safeData = data.isEmpty ? [0.0] : data;
-    final maxScore = results.isNotEmpty
-        ? results.last.maxScore.toDouble()
-        : (safeData.reduce((a, b) => a > b ? a : b).clamp(1.0, 40.0)
-                  as num)
-              .toDouble();
+    List<_ProgressChartPoint> data, {
+    int? maxScoreOverride,
+  }) {
+    final safeData = data.isEmpty
+        ? [_ProgressChartPoint(score: 0, date: DateTime.now())]
+        : data;
+    final maxScore =
+        maxScoreOverride?.toDouble() ??
+        (safeData
+                    .map((point) => point.score)
+                    .reduce((a, b) => a > b ? a : b)
+                    .clamp(1.0, 40.0)
+                as num)
+            .toDouble();
+    final maxX = safeData.length > 1 ? (safeData.length - 1).toDouble() : 1.0;
 
     return LineChartData(
       gridData: FlGridData(
@@ -1278,15 +1614,16 @@ class _ProgressPageState extends State<ProgressPage> {
             showTitles: true,
             reservedSize: 34,
             getTitlesWidget: (v, m) {
-              const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
               final index = v.toInt();
-              if (index < 0 || index >= days.length) {
+              if (index < 0 ||
+                  index >= safeData.length ||
+                  v != index.toDouble()) {
                 return const SizedBox.shrink();
               }
               return Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: AppText(
-                  days[index],
+                  _chartDateLabel(safeData[index].date, index),
                   fontSize: 11,
                   color: AppColors.mainAppColor,
                 ),
@@ -1303,14 +1640,14 @@ class _ProgressPageState extends State<ProgressPage> {
         ),
       ),
       minX: 0,
-      maxX: 6,
+      maxX: maxX,
       minY: 0,
       maxY: maxScore,
       lineBarsData: [
         LineChartBarData(
           spots: List.generate(
             safeData.length,
-            (index) => FlSpot(index.toDouble(), safeData[index]),
+            (index) => FlSpot(index.toDouble(), safeData[index].score),
           ),
           isCurved: true,
           color: const Color(0xFF537E5D),

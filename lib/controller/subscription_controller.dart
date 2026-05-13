@@ -12,7 +12,8 @@ class SubscriptionController extends GetxController {
 
   final RxList<dynamic> plans = [].obs;
   final RxMap<String, dynamic> mySubscription = <String, dynamic>{}.obs;
-  final Rx<Map<String, dynamic>?> selectedPlanForCheckout = Rx<Map<String, dynamic>?>(null);
+  final Rx<Map<String, dynamic>?> selectedPlanForCheckout =
+      Rx<Map<String, dynamic>?>(null);
 
   @override
   void onInit() {
@@ -26,16 +27,26 @@ class SubscriptionController extends GetxController {
   Future<void> fetchPlans() async {
     isLoadingPlans.value = true;
     try {
-       // If token is null, this will still get plans since it might not be protected
-       // or user might not be fully logged in. Adjust based on API requirements.
+      // If token is null, this will still get plans since it might not be protected
+      // or user might not be fully logged in. Adjust based on API requirements.
       final result = await SubscriptionService.getPlans(_authController.token);
       if (result['success'] == true) {
         plans.value = result['data'] ?? [];
       } else {
-        Get.snackbar("Error", result['message'] ?? "Failed to load plans", backgroundColor: Colors.redAccent, colorText: Colors.white);
+        Get.snackbar(
+          "Error",
+          result['message'] ?? "Failed to load plans",
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
       }
     } catch (e) {
-       Get.snackbar("Error", "Network error while loading plans.", backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Network error while loading plans.",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
     } finally {
       isLoadingPlans.value = false;
     }
@@ -61,7 +72,7 @@ class SubscriptionController extends GetxController {
   Future<bool> subscribe(Map<String, dynamic> plan, {String? paymentId}) async {
     final token = _authController.token;
     final planId = plan['_id'];
-    
+
     if (token == null) {
       Get.snackbar("Login Required", "Please log in to subscribe.");
       return false;
@@ -75,29 +86,37 @@ class SubscriptionController extends GetxController {
     isSubscribing.value = true;
     try {
       Map<String, dynamic> result;
-      // Determine if it's a paid plan or free community access application. 
-      // The /apply endpoint is specifically for Community Access.
-      final String name = (plan['name'] ?? "").toString().toLowerCase();
-      final String tagline = (plan['tagline'] ?? "").toString().toLowerCase();
-      
-      bool isCommunityPlan = name.contains('community') || tagline.contains('community');
-      bool isFreePrice = plan['price'] == 0 || plan['price'] == "0" || plan['price']?.toString().toLowerCase() == "free";
+      // Free plans must go through the apply endpoint; paid plans subscribe
+      // after payment confirmation.
+      bool isFreePrice =
+          plan['price'] == 0 ||
+          plan['price'] == "0" ||
+          plan['price']?.toString().toLowerCase() == "free";
 
-      if (isCommunityPlan && isFreePrice) {
-        result = await SubscriptionService.applyForCommunityAccess(token, planId);
+      if (isFreePrice) {
+        result = await SubscriptionService.applyForCommunityAccess(
+          token,
+          planId,
+        );
       } else {
-        result = await SubscriptionService.subscribe(token, planId, paymentId: paymentId);
+        result = await SubscriptionService.subscribe(
+          token,
+          planId,
+          paymentId: paymentId,
+        );
       }
 
       if (result['success'] == true) {
-        final String name = (plan['name'] ?? "").toString().toLowerCase();
-        final String tagline = (plan['tagline'] ?? "").toString().toLowerCase();
-        bool isCommunity = name.contains('community') || tagline.contains('community');
-        bool isFree = plan['price'] == 0 || plan['price'] == "0" || plan['price']?.toString().toLowerCase() == "free";
+        bool isFree =
+            plan['price'] == 0 ||
+            plan['price'] == "0" ||
+            plan['price']?.toString().toLowerCase() == "free";
 
         Get.snackbar(
-          "Success", 
-          (isCommunity && isFree) ? "Application submitted successfully." : "Subscribed successfully.",
+          "Success",
+          isFree
+              ? "Application submitted successfully."
+              : "Subscribed successfully.",
           backgroundColor: const Color(0xFF4F7957).withOpacity(0.7),
           colorText: Colors.white,
           snackPosition: SnackPosition.TOP,
@@ -105,11 +124,21 @@ class SubscriptionController extends GetxController {
         fetchMySubscription(); // Refresh current subscription
         return true;
       } else {
-        Get.snackbar("Error", result['message'] ?? "Operation failed.", backgroundColor: Colors.redAccent, colorText: Colors.white);
+        Get.snackbar(
+          "Error",
+          result['message'] ?? "Operation failed.",
+          backgroundColor: Colors.redAccent,
+          colorText: Colors.white,
+        );
         return false;
       }
     } catch (e) {
-      Get.snackbar("Error", "Network error. Please try again.", backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar(
+        "Error",
+        "Network error. Please try again.",
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
       return false;
     } finally {
       isSubscribing.value = false;

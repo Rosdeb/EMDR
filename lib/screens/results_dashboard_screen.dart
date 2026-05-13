@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jonssony/services/tracker_storage_service.dart';
-import 'package:jonssony/utils/app_colors.dart';
-import 'package:jonssony/utils/app_text.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ResultsDashboardScreen extends StatefulWidget {
@@ -71,7 +68,9 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
 
     final selectedResults = _getSelectedResults();
     final latest = _getLatestResult(_selectedTrackerKey!);
-    final previous = selectedResults.length > 1 ? selectedResults[selectedResults.length - 2] : null;
+    final previous = selectedResults.length > 1
+        ? selectedResults[selectedResults.length - 2]
+        : null;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F1EA),
@@ -127,10 +126,7 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        Container(
-          height: 1,
-          color: const Color(0xFFDDD5C5),
-        ),
+        Container(height: 1, color: const Color(0xFFDDD5C5)),
       ],
     );
   }
@@ -187,10 +183,8 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
             show: true,
             horizontalInterval: 10,
             drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: const Color(0xFFDDD5C5),
-              strokeWidth: 1,
-            ),
+            getDrawingHorizontalLine: (value) =>
+                FlLine(color: const Color(0xFFDDD5C5), strokeWidth: 1),
           ),
           titlesData: FlTitlesData(
             bottomTitles: AxisTitles(
@@ -234,18 +228,25 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
           maxY: maxScore.toDouble(),
           lineBarsData: [
             LineChartBarData(
-              spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.score.toDouble())).toList(),
+              spots: data
+                  .asMap()
+                  .entries
+                  .map(
+                    (e) => FlSpot(e.key.toDouble(), e.value.score.toDouble()),
+                  )
+                  .toList(),
               isCurved: false,
               color: const Color(0xFF4A7373),
               barWidth: 2.5,
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                  radius: 4,
-                  color: const Color(0xFF4A7373),
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                ),
+                getDotPainter: (spot, percent, barData, index) =>
+                    FlDotCirclePainter(
+                      radius: 4,
+                      color: const Color(0xFF4A7373),
+                      strokeWidth: 2,
+                      strokeColor: Colors.white,
+                    ),
               ),
             ),
           ],
@@ -378,10 +379,7 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
           const SizedBox(height: 8),
           Text(
             changeText,
-            style: GoogleFonts.instrumentSans(
-              fontSize: 16,
-              color: changeColor,
-            ),
+            style: GoogleFonts.instrumentSans(fontSize: 16, color: changeColor),
           ),
         ],
       ),
@@ -484,7 +482,10 @@ class _ResultsDashboardScreenState extends State<ResultsDashboardScreen> {
               onPressed: () => Navigator.pop(context),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Color(0xFF4A7373)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: Text(
                 'Go to trackers',

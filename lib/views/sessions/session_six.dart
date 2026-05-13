@@ -1,11 +1,9 @@
 import 'dart:async';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/views/sessions/session_seven.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/widets/custom_home_bg.dart';
@@ -23,14 +21,12 @@ class SessionSix extends StatefulWidget {
 
 class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
   final box = GetStorage();
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   EMDRPhase _currentPhase = EMDRPhase.phase1;
   Phase1State _p1State = Phase1State.intro;
 
   // Phase 1 Data
   int _sudsScore = 10;
-  bool _isChanging = true;
 
   // Phase 2 Data
   int _vocScore = 1;
@@ -50,7 +46,7 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     _blsController =
         AnimationController(
           vsync: this,
-          duration: const Duration(milliseconds: 1000),
+          duration: const Duration(milliseconds: 750),
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             _blsController.reverse();
@@ -66,7 +62,6 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    _audioPlayer.dispose();
     _blsController.dispose();
     _sessionTimer?.cancel();
     super.dispose();
@@ -87,42 +82,25 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
     });
   }
 
-  void _playVoice(String assetPath) async {
-    try {
-      await _audioPlayer.setAsset(assetPath);
-      await _audioPlayer.play();
-    } catch (e) {
-      print("Error playing audio: $e");
-    }
-  }
-
   void _startBLS() {
     setState(() {
       _p1State = Phase1State.bls;
     });
     _blsController.forward();
-    // Play BLS sound if available
-    _playVoice('assets/audio/calm place.wav'); // Placeholder for BLS ticking
 
-    // BLS set typically lasts 30-60 seconds in some protocols,
-    // but here it seems manual or automatic based on user input.
-    // For now, let's stop after 30 seconds and show check-in.
     Future.delayed(const Duration(seconds: 30), () {
-      if (_p1State == Phase1State.bls) {
+      if (mounted && _p1State == Phase1State.bls) {
         _stopBLS();
       }
     });
   }
 
   void _stopBLS() {
+    if (!mounted) return;
     _blsController.stop();
-    _audioPlayer.stop();
     setState(() {
       _p1State = Phase1State.checkin;
     });
-    _playVoice(
-      'assets/audio/calm place.wav',
-    ); // Placeholder: "Is it changing and still connected?"
   }
 
   @override
@@ -173,7 +151,7 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
   String _getPhaseTitle() {
     switch (_currentPhase) {
       case EMDRPhase.phase1:
-        return "Phase 1: Desensitization";
+        return "Phase 1: Desensitisation";
       case EMDRPhase.phase2:
         return "Phase 2: Installation";
       case EMDRPhase.phase3:
@@ -311,6 +289,21 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
               Navigator.pop(context);
               setState(() => _p1State = Phase1State.ready);
             }),
+            _buildListTile("5 min", () {
+              _startSessionTimer(5);
+              Navigator.pop(context);
+              setState(() => _p1State = Phase1State.ready);
+            }),
+            _buildListTile("10 min", () {
+              _startSessionTimer(10);
+              Navigator.pop(context);
+              setState(() => _p1State = Phase1State.ready);
+            }),
+            _buildListTile("20 min", () {
+              _startSessionTimer(20);
+              Navigator.pop(context);
+              setState(() => _p1State = Phase1State.ready);
+            }),
           ],
         ),
       ),
@@ -339,7 +332,7 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const AppText(
-          "Follow the ball with your eyes",
+          "Follow the moving object with your eyes",
           fontSize: 16,
           color: Colors.black54,
         ),
@@ -349,19 +342,20 @@ class _SessionSixState extends State<SessionSix> with TickerProviderStateMixin {
           builder: (context, child) {
             return Align(
               alignment: Alignment(_blsAnimation.value, 0),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF537E5D),
-                  shape: BoxShape.circle,
-                ),
+              child: Image.asset(
+                'assets/images/Butterfly Lottie Animation.gif',
+                width: 72,
+                height: 72,
+                fit: BoxFit.contain,
               ),
             );
           },
         ),
         const SizedBox(height: 100),
-        OutlinedButton(onPressed: _stopBLS, child: const Text("Stop Set")),
+        OutlinedButton(
+          onPressed: _stopBLS,
+          child: const Text("Stop set and check in"),
+        ),
       ],
     );
   }

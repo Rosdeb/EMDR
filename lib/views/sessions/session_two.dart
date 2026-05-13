@@ -153,6 +153,18 @@ class BubbleConfig {
 
 const List<BubbleConfig> mainBubbles = [
   BubbleConfig(
+    id: 'recent-happening',
+    label: 'Situation',
+    subtitle: 'The here-and-now situation',
+    sectionTitle: 'Right Now',
+    borderColor: Color(0xFF66BB6A),
+    bgColor1: Colors.white,
+    bgColor2: Color(0xFFE8F5E9),
+  ),
+];
+
+const List<BubbleConfig> contextBubbles = [
+  BubbleConfig(
     id: 'childhood',
     label: 'When I Was Little',
     subtitle: 'Early memories & experiences',
@@ -181,21 +193,12 @@ const List<BubbleConfig> mainBubbles = [
   ),
   BubbleConfig(
     id: 'triggers',
-    label: 'Triggers',
+    label: 'The Trigger',
     subtitle: 'What activates my patterns',
     sectionTitle: 'Life Happens',
     borderColor: Color(0xFF4CAF50),
     bgColor1: Colors.white,
     bgColor2: Color(0xFFF1F8E9),
-  ),
-  BubbleConfig(
-    id: 'recent-happening',
-    label: 'A Recent Happening',
-    subtitle: 'The situation that brought me here',
-    sectionTitle: 'Right Now',
-    borderColor: Color(0xFF66BB6A),
-    bgColor1: Colors.white,
-    bgColor2: Color(0xFFE8F5E9),
   ),
 ];
 
@@ -222,7 +225,7 @@ const List<BubbleConfig> responseBubbles = [
   ),
   BubbleConfig(
     id: 'behaviors',
-    label: 'Behaviors',
+    label: 'Behaviours',
     subtitle: 'What I did',
     sectionTitle: '',
     borderColor: Color(0xFF689F38),
@@ -230,18 +233,19 @@ const List<BubbleConfig> responseBubbles = [
     bgColor2: Color(0xFFF1F8E9),
     isResponseBubble: true,
   ),
-];
-
-const List<BubbleConfig> bottomBubbles = [
   BubbleConfig(
     id: 'consequences',
-    label: 'The Consequences',
+    label: 'Consequences',
     subtitle: 'How the cycle continues',
-    sectionTitle: 'The Loop',
+    sectionTitle: '',
     borderColor: Color(0xFF7CB342),
     bgColor1: Colors.white,
     bgColor2: Color(0xFFE8F5E9),
+    isResponseBubble: true,
   ),
+];
+
+const List<BubbleConfig> bottomBubbles = [
   BubbleConfig(
     id: 'superpowers',
     label: 'Your Superpowers',
@@ -459,8 +463,9 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         return _data.behaviors;
       case 'consequences':
         final all = [..._data.consequences];
-        if (_data.consequencesOther.isNotEmpty)
+        if (_data.consequencesOther.isNotEmpty) {
           all.add(_data.consequencesOther);
+        }
         return all.join('; ');
       case 'superpowers':
         return _data.superpowers;
@@ -496,8 +501,9 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
     // Save to local storage using cbt_answers format that cbt.dart reads
     final box = GetStorage();
     final allConsequences = [..._data.consequences];
-    if (_data.consequencesOther.isNotEmpty)
+    if (_data.consequencesOther.isNotEmpty) {
       allConsequences.add(_data.consequencesOther);
+    }
 
     final answers = <String, String>{
       'When I Was Little': _data.childhood,
@@ -597,8 +603,9 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
     // Auto-save to local storage and backend without UI feedback
     final box = GetStorage();
     final allConsequences = [..._data.consequences];
-    if (_data.consequencesOther.isNotEmpty)
+    if (_data.consequencesOther.isNotEmpty) {
       allConsequences.add(_data.consequencesOther);
+    }
 
     final answers = <String, String>{
       'When I Was Little': _data.childhood,
@@ -687,6 +694,8 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
               child: Column(
                 children: [
                   _buildTitle(),
+                  const SizedBox(height: 16),
+                  _buildAboutYouCard(),
                   const SizedBox(height: 30),
                   // Main flow bubbles
                   ...mainBubbles.map(
@@ -707,6 +716,17 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
                   const SizedBox(height: 12),
                   _buildCycleIndicator(),
                   _buildWavyArrow(),
+                  ...contextBubbles.map(
+                    (cfg) => Column(
+                      children: [
+                        _buildSectionLabel(cfg.sectionTitle),
+                        const SizedBox(height: 12),
+                        _buildMainBubble(cfg),
+                        const SizedBox(height: 8),
+                        _buildWavyArrow(),
+                      ],
+                    ),
+                  ),
                   // Bottom bubbles
                   ...bottomBubbles.map(
                     (cfg) => Column(
@@ -771,6 +791,50 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
             color: Colors.black.withOpacity(0.1),
             offset: const Offset(2, 2),
             blurRadius: 4,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAboutYouCard() {
+    return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(maxWidth: 520),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.88),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFCDE8D0), width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'About You',
+            style: TextStyle(
+              color: Color(0xFF2E7D32),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Kalam',
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            "Before the processing work begins, we'd like to build up a picture of you: where you've come from, how you tend to think and feel, and what life has been like up until now. This formulation is a map that helps make sense of why certain experiences affect you the way they do. Take your time. Honest and approximate is more useful than precise and uncomfortable. We will start with the here and now.",
+            style: TextStyle(
+              color: Color(0xFF4B5563),
+              fontSize: 14,
+              height: 1.45,
+              fontFamily: 'Caveat',
+            ),
           ),
         ],
       ),
@@ -883,113 +947,94 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
   }
 
   Widget _buildResponseRow() {
-    return Row(
-      children: responseBubbles.asMap().entries.map((entry) {
-        final i = entry.key;
-        final cfg = entry.value;
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 1.5,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: responseBubbles.length,
+      itemBuilder: (context, i) {
+        final cfg = responseBubbles[i];
         final filled = _isFilled(cfg.id);
         final display = _getBubbleDisplay(cfg.id);
-        final angle = [-0.05, 0.05, -0.03][i];
+        final angle = [-0.04, 0.04, -0.03, 0.03][i];
 
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: GestureDetector(
-              onTap: () => _openHelper(cfg),
-              child: Transform.rotate(
-                angle: angle,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  decoration: BoxDecoration(
-                    gradient: filled
-                        ? const LinearGradient(
-                            colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          )
-                        : LinearGradient(
-                            colors: [cfg.bgColor1, cfg.bgColor2],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                    border: Border.all(color: cfg.borderColor, width: 3),
-                    borderRadius: [
-                      const BorderRadius.only(
-                        topLeft: Radius.circular(55),
-                        topRight: Radius.circular(45),
-                        bottomLeft: Radius.circular(45),
-                        bottomRight: Radius.circular(55),
+        return GestureDetector(
+          onTap: () => _openHelper(cfg),
+          child: Transform.rotate(
+            angle: angle,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              decoration: BoxDecoration(
+                gradient: filled
+                    ? const LinearGradient(
+                        colors: [Color(0xFFD4EDDA), Color(0xFFC3E6CB)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [cfg.bgColor1, cfg.bgColor2],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      const BorderRadius.only(
-                        topLeft: Radius.circular(45),
-                        topRight: Radius.circular(55),
-                        bottomLeft: Radius.circular(55),
-                        bottomRight: Radius.circular(45),
-                      ),
-                      const BorderRadius.only(
-                        topLeft: Radius.circular(50),
-                        topRight: Radius.circular(50),
-                        bottomLeft: Radius.circular(45),
-                        bottomRight: Radius.circular(55),
-                      ),
-                    ][i],
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        offset: const Offset(3, 3),
-                        blurRadius: 0,
-                      ),
-                    ],
+                border: Border.all(color: cfg.borderColor, width: 3),
+                borderRadius: BorderRadius.circular(34),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    offset: const Offset(3, 3),
+                    blurRadius: 0,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 16,
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    cfg.label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2D3436),
+                      fontFamily: 'Kalam',
+                    ),
                   ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        cfg.label,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF2D3436),
-                          fontFamily: 'Kalam',
-                        ),
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: Text(
+                      filled
+                          ? (display.length > 32
+                                ? '${display.substring(0, 29)}...'
+                                : display)
+                          : cfg.subtitle,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: filled
+                            ? const Color(0xFF2D3436)
+                            : const Color(0xFF636E72),
+                        fontStyle: filled ? FontStyle.italic : FontStyle.normal,
+                        fontWeight: filled
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        fontFamily: 'Caveat',
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        filled
-                            ? (display.length > 25
-                                  ? '${display.substring(0, 22)}...'
-                                  : display)
-                            : cfg.subtitle,
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: filled
-                              ? const Color(0xFF2D3436)
-                              : const Color(0xFF636E72),
-                          fontStyle: filled
-                              ? FontStyle.italic
-                              : FontStyle.normal,
-                          fontWeight: filled
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          fontFamily: 'Caveat',
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         );
-      }).toList(),
+      },
     );
   }
 
@@ -1043,7 +1088,7 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
             elevation: canSave ? 4 : 0,
           ),
           child: const Text(
-            'Save My Journey Map to Dashboard',
+            'Save My Journey Map to My Space',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -1054,7 +1099,7 @@ class _CBTFormulationPageState extends State<CBTFormulationPage>
         if (!canSave) ...[
           const SizedBox(height: 8),
           Text(
-            'Fill in Recent Happening, Thoughts, Feelings & Behaviors to save',
+            'Fill in Situation, Thoughts, Feelings & Behaviours to save',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -1152,9 +1197,9 @@ class _HelperSheetState extends State<HelperSheet> {
     switch (widget.config.id) {
       case 'recent-happening':
         return {
-          'title': 'A Recent Happening',
+          'title': 'Situation',
           'intro':
-              'Write the situation where you last felt the feeling as to why you are here today. We want an actual situation that happened.',
+              'Write the here-and-now situation where you last felt the feeling connected to why you are here today. We want an actual situation that happened.',
           'example':
               'Examples:\n• "I had an argument with my partner"\n• "I had feedback from my boss"\n• "I tried to go to work"',
           'type': 'text',
@@ -1206,9 +1251,9 @@ class _HelperSheetState extends State<HelperSheet> {
         };
       case 'deep-beliefs':
         return {
-          'title': 'My deep-down negative beliefs',
+          'title': 'What this meant negatively',
           'intro':
-              'These are deep beliefs about yourself. Choose all that apply:',
+              'Choose what this situation meant or means to you negatively. It does not have to be the exact thought you had in the moment.',
           'type': 'beliefs',
         };
       case 'childhood':

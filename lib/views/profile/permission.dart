@@ -11,7 +11,8 @@ class PermissionScreen extends StatefulWidget {
   State<PermissionScreen> createState() => _PermissionScreenState();
 }
 
-class _PermissionScreenState extends State<PermissionScreen> with WidgetsBindingObserver {
+class _PermissionScreenState extends State<PermissionScreen>
+    with WidgetsBindingObserver {
   bool isLocationEnabled = false;
   bool isNotificationEnabled = false;
   bool isCameraEnabled = false;
@@ -37,7 +38,6 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
     }
   }
 
-
   Future<void> _checkAllPermissions() async {
     final locationStatus = await Permission.location.isGranted;
     final notificationStatus = await Permission.notification.isGranted;
@@ -50,12 +50,17 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
     });
   }
 
-  Future<void> _handlePermissionRequest(Permission permission, bool isEnabled) async {
+  Future<void> _handlePermissionRequest(
+    Permission permission,
+    bool isEnabled,
+  ) async {
     if (!isEnabled) {
       // User turned OFF -> Soft disable (update UI only)
       setState(() {
         if (permission == Permission.location) isLocationEnabled = false;
-        if (permission == Permission.notification) isNotificationEnabled = false;
+        if (permission == Permission.notification) {
+          isNotificationEnabled = false;
+        }
         if (permission == Permission.camera) isCameraEnabled = false;
       });
       return;
@@ -77,7 +82,9 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
       if (requestStatus.isGranted) {
         setState(() {
           if (permission == Permission.location) isLocationEnabled = true;
-          if (permission == Permission.notification) isNotificationEnabled = true;
+          if (permission == Permission.notification) {
+            isNotificationEnabled = true;
+          }
           if (permission == Permission.camera) isCameraEnabled = true;
         });
       } else if (requestStatus.isPermanentlyDenied) {
@@ -94,7 +101,10 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
       body: Stack(
         children: [
           Positioned(
-            top: 0, left: 0, right: 0, height: appBarImageHeight,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: appBarImageHeight,
             child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
 
@@ -104,29 +114,48 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
-                    borderRadius: BorderRadius.only(topLeft: Radius.circular(35), topRight: Radius.circular(35)),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(35),
+                      topRight: Radius.circular(35),
+                    ),
                     image: DecorationImage(
                       image: AssetImage('assets/images/bg_profile.jpg'),
                       fit: BoxFit.cover,
                     ),
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 30,
+                    ),
                     child: Column(
                       children: [
                         _permissionTile(
-                            Icons.location_on_outlined, "Location Access",
-                            isLocationEnabled, (val) => _handlePermissionRequest(Permission.location, val)
+                          Icons.location_on_outlined,
+                          "Location Access",
+                          isLocationEnabled,
+                          (val) => _handlePermissionRequest(
+                            Permission.location,
+                            val,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         _permissionTile(
-                            Icons.notifications_none_outlined, "Allow Notifications",
-                            isNotificationEnabled, (val) => _handlePermissionRequest(Permission.notification, val)
+                          Icons.notifications_none_outlined,
+                          "Allow Notifications",
+                          isNotificationEnabled,
+                          (val) => _handlePermissionRequest(
+                            Permission.notification,
+                            val,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         _permissionTile(
-                            Icons.camera_alt_outlined, "Camera Access",
-                            isCameraEnabled, (val) => _handlePermissionRequest(Permission.camera, val)
+                          Icons.camera_alt_outlined,
+                          "Camera Access",
+                          isCameraEnabled,
+                          (val) =>
+                              _handlePermissionRequest(Permission.camera, val),
                         ),
                       ],
                     ),
@@ -142,17 +171,33 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
 
   Widget _buildAppBar(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, left: 10, bottom: 10),
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top + 10,
+        left: 10,
+        bottom: 10,
+      ),
       child: Row(
         children: [
-          IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
-          const AppText("Permission", fontSize: 20, fontWeight: FontWeight.bold),
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
+          const AppText(
+            "Permission",
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ],
       ),
     );
   }
 
-  Widget _permissionTile(IconData icon, String title, bool value, Function(bool) onChanged) {
+  Widget _permissionTile(
+    IconData icon,
+    String title,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -168,11 +213,17 @@ class _PermissionScreenState extends State<PermissionScreen> with WidgetsBinding
             children: [
               Icon(icon, color: const Color(0xFF2E3E32), size: 28),
               const SizedBox(width: 15),
-              Expanded(child: AppText(title, fontSize: 16, fontWeight: FontWeight.w500)),
+              Expanded(
+                child: AppText(
+                  title,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeColor: const Color(0xFF4F7957),
+                activeThumbColor: const Color(0xFF4F7957),
               ),
             ],
           ),

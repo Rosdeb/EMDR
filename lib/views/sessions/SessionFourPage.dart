@@ -259,7 +259,8 @@ class _SessionfourpageState extends State<Sessionfourpage> {
   // File attachments for target/freeze-frame
   File? _targetFile;
   File? _freezeFrameFile;
-  bool _isCapturingTarget = false; // true = next attachment goes to targetFile
+  final bool _isCapturingTarget =
+      false; // true = next attachment goes to targetFile
 
   // Flow state
   List<String>? _currentFlow;
@@ -399,7 +400,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       _negativeBeliefIndex = 0;
       _beliefPairs.clear();
       _addBotMessage(
-        'What negative belief about yourself comes up when you hold that freeze frame?',
+        'Choose what this situation meant or means to you negatively. It does not need to be the exact thought from the moment.',
       );
       setState(() {
         _uiState = _UIState.negativeBeliefs;
@@ -784,7 +785,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
 
     if (_negativeBeliefIndex < _selectedNegativeBeliefs.length) {
       _addBotMessage(
-        'Now, what would you prefer to believe about yourself instead of the next negative belief?',
+        'Now, what would you prefer to believe about yourself instead of that negative meaning?',
       );
       setState(() => _uiState = _UIState.positiveBeliefs);
     } else {
@@ -1422,33 +1423,31 @@ class _OptionCard extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                 ),
                 const SizedBox(height: 6),
-                ...(option['examples'] as List<String>)
-                    .map(
-                      (e) => Padding(
-                        padding: const EdgeInsets.only(bottom: 2),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.circle,
-                              size: 5,
-                              color: Colors.black38,
-                            ),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                e,
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black54,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                ...(option['examples'] as List<String>).map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.circle,
+                          size: 5,
+                          color: Colors.black38,
                         ),
-                      ),
-                    )
-                    .toList(),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            e,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black54,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1622,7 +1621,7 @@ class _BeliefSelectionWidgetState extends State<_BeliefSelectionWidget> {
                     Center(
                       child: Text(
                         isNegative
-                            ? 'Select belief(s) that resonate with you:'
+                            ? 'Choose what this situation meant or means to you negatively:'
                             : 'Select your preferred positive belief:',
                         style: const TextStyle(
                           fontSize: 13,
@@ -1703,7 +1702,7 @@ class _BeliefSelectionWidgetState extends State<_BeliefSelectionWidget> {
                                 ),
                               ),
                             );
-                          }).toList(),
+                          }),
                         ],
                       );
                     }).toList(),
@@ -1722,7 +1721,7 @@ class _BeliefSelectionWidgetState extends State<_BeliefSelectionWidget> {
                           SnackBar(
                             content: Text(
                               isNegative
-                                  ? 'Please select at least one negative belief'
+                                  ? 'Please select at least one meaning'
                                   : 'Please select a positive belief',
                             ),
                             backgroundColor: const Color(0xFF537E5D),
@@ -1746,7 +1745,7 @@ class _BeliefSelectionWidgetState extends State<_BeliefSelectionWidget> {
                     ),
                     child: Text(
                       isNegative
-                          ? 'Continue with selected belief(s)'
+                          ? 'Continue with selected meaning(s)'
                           : 'Continue with positive belief',
                       style: const TextStyle(
                         color: Colors.white,

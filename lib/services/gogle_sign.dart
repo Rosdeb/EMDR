@@ -10,7 +10,8 @@ class GoogleSignInService {
     if (!isInitialized) {
       // Required to get idToken and serverAuthCode (client_type: 3 from google-services.json)
       await _googleSignIn.initialize(
-        serverClientId: "920630961042-m8fuhq1u4gb7q4pks19t413m790a52jv.apps.googleusercontent.com",
+        serverClientId:
+            "920630961042-m8fuhq1u4gb7q4pks19t413m790a52jv.apps.googleusercontent.com",
       );
       isInitialized = true;
     }
@@ -20,16 +21,11 @@ class GoogleSignInService {
   static Future<User?> signInWithGoogle() async {
     try {
       await _initSignIn();
-      
+
       // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.authenticate(
+      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate(
         scopeHint: ['email', 'profile'],
       );
-
-      if (googleUser == null) {
-        // The user canceled the sign-in
-        return null;
-      }
 
       // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
@@ -37,14 +33,17 @@ class GoogleSignInService {
 
       // Get access token using authorization client
       final authorizationClient = googleUser.authorizationClient;
-      GoogleSignInClientAuthorization? authorization =
-          await authorizationClient.authorizationForScopes(['email', 'profile']);
-          
+      GoogleSignInClientAuthorization? authorization = await authorizationClient
+          .authorizationForScopes(['email', 'profile']);
+
       String? accessToken = authorization?.accessToken;
 
       // If access token is null, try to prompt for it
       if (accessToken == null) {
-        authorization = await authorizationClient.authorizeScopes(['email', 'profile']);
+        authorization = await authorizationClient.authorizeScopes([
+          'email',
+          'profile',
+        ]);
         accessToken = authorization.accessToken;
       }
 
@@ -55,7 +54,9 @@ class GoogleSignInService {
       );
 
       // Once signed in, return the UserCredential
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential = await _auth.signInWithCredential(
+        credential,
+      );
       return userCredential.user;
     } catch (e) {
       rethrow;

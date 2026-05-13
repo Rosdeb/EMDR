@@ -1,10 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:just_audio/just_audio.dart';
 
-import 'package:jonssony/utils/AppIcons/app_icons.dart';
-import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
 class AudioCalmPage extends StatefulWidget {
@@ -18,10 +15,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
   late AudioPlayer _audioPlayer;
 
   String currentAudio = "calm place.wav";
-  final List<String> audioList = [
-    "calm place.wav",
-    "puppies_v1.mp3",
-  ];
+  final List<String> audioList = ["calm place.wav", "puppies_v1.mp3"];
 
   @override
   void initState() {
@@ -56,10 +50,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
           SizedBox(
             height: appBarImageHeight,
             width: double.infinity,
-            child: Image.asset(
-              'assets/images/my_emdr.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.cover),
           ),
 
           /// Main Layout
@@ -123,7 +114,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                                       maxLines: 4,
                                       decoration: InputDecoration(
                                         hintText:
-                                        "Why does this place make you feel safe? E.g., 'The air is crisp...'",
+                                            "Why does this place make you feel safe? E.g., 'The air is crisp...'",
                                         border: InputBorder.none,
                                         hintStyle: TextStyle(
                                           fontSize: 12,
@@ -174,9 +165,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  playing
-                      ? Icons.pause_rounded
-                      : Icons.play_arrow_rounded,
+                  playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   color: Colors.white,
                   size: 36,
                 ),
@@ -192,11 +181,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppText(
-                currentAudio,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-              ),
+              AppText(currentAudio, fontSize: 15, fontWeight: FontWeight.bold),
               const SizedBox(height: 8),
               StreamBuilder<Duration>(
                 stream: _audioPlayer.positionStream,
@@ -208,20 +193,17 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
                     children: [
                       LinearProgressIndicator(
                         value: duration.inMilliseconds > 0
-                            ? position.inMilliseconds /
-                            duration.inMilliseconds
+                            ? position.inMilliseconds / duration.inMilliseconds
                             : 0,
                         backgroundColor: Colors.black12,
-                        valueColor:
-                        const AlwaysStoppedAnimation<Color>(
+                        valueColor: const AlwaysStoppedAnimation<Color>(
                           Color(0xFF537E5D),
                         ),
                         minHeight: 6,
                       ),
                       const SizedBox(height: 6),
                       Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           AppText(
                             _formatDuration(position),
@@ -251,8 +233,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF537E5D),
             minimumSize: const Size(60, 30),
-            padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -281,8 +262,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
           padding: const EdgeInsets.all(20),
           decoration: const BoxDecoration(
             color: Colors.white,
-            borderRadius:
-            BorderRadius.vertical(top: Radius.circular(30)),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -291,24 +271,19 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
               return ListTile(
                 leading: Icon(
                   Icons.music_note,
-                  color: isSelected
-                      ? const Color(0xFF537E5D)
-                      : Colors.grey,
+                  color: isSelected ? const Color(0xFF537E5D) : Colors.grey,
                 ),
                 title: AppText(
                   audio,
-                  fontWeight:
-                  isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
                 trailing: isSelected
-                    ? const Icon(Icons.check_circle,
-                    color: Color(0xFF537E5D))
+                    ? const Icon(Icons.check_circle, color: Color(0xFF537E5D))
                     : null,
                 onTap: () async {
                   setState(() => currentAudio = audio);
                   await _audioPlayer.stop();
-                  await _audioPlayer
-                      .setAsset('assets/audio/$audio');
+                  await _audioPlayer.setAsset('assets/audio/$audio');
                   await _audioPlayer.play();
                   Navigator.pop(context);
                 },
@@ -334,8 +309,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back,
-                color: Color(0xFF2E3E32)),
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3E32)),
             onPressed: () => Navigator.pop(context),
           ),
           const AppText(
@@ -359,8 +333,7 @@ class _AudioCalmPageState extends State<AudioCalmPage> {
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.3),
             borderRadius: BorderRadius.circular(25),
-            border:
-            Border.all(color: Colors.white.withOpacity(0.2)),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
             image: const DecorationImage(
               image: AssetImage('assets/images/home_bg2.jpg'),
               fit: BoxFit.cover,

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/my_tests_controller.dart';
@@ -34,7 +33,10 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       body: Stack(
         children: [
           Positioned(
-            top: 0, left: 0, right: 0, height: 150,
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 150,
             child: Image.asset('assets/images/my_emdr.png', fit: BoxFit.fill),
           ),
           Column(
@@ -58,14 +60,22 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                       ),
                     ),
                     Obx(() {
-                      if (_controller.isLoading.value && _controller.items.isEmpty) {
+                      if (_controller.isLoading.value &&
+                          _controller.items.isEmpty) {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (_controller.items.isEmpty) {
-                        return const Center(child: AppText("No items found in this category"));
+                        return const Center(
+                          child: AppText("No items found in this category"),
+                        );
                       }
                       return ListView.builder(
-                        padding: const EdgeInsets.only(top: 20, left: 20, right: 20, bottom: 100),
+                        padding: const EdgeInsets.only(
+                          top: 20,
+                          left: 20,
+                          right: 20,
+                          bottom: 100,
+                        ),
                         itemCount: _controller.items.length,
                         itemBuilder: (context, index) {
                           final item = _controller.items[index];
@@ -98,8 +108,11 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Color(0xFF2E3E32), size: 22),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Color(0xFF2E3E32),
+              size: 22,
+            ),
             onPressed: () => Navigator.of(context).pop(),
           ),
           Expanded(
@@ -136,17 +149,17 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
                   fontWeight: FontWeight.bold,
                 ),
                 if (item['day'] != null)
-                  AppText(
-                    item['day'],
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                if (item['description'] != null && item['description'].isNotEmpty)
+                  AppText(item['day'], fontSize: 12, color: Colors.black54),
+                if (item['description'] != null &&
+                    item['description'].isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       item['description'],
-                      style: const TextStyle(fontSize: 13, color: Colors.black87),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
               ],
@@ -157,7 +170,7 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
             onChanged: (val) {
               // Not implemented in backend patch yet or just local toggle
             },
-            activeColor: const Color(0xFF537E5D),
+            activeThumbColor: const Color(0xFF537E5D),
           ),
         ],
       ),
@@ -171,13 +184,28 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
 
     Get.dialog(
       AlertDialog(
-        title: const AppText("Add New Item", fontSize: 18, fontWeight: FontWeight.bold),
+        title: const AppText(
+          "Add New Item",
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Item Name")),
-            TextField(controller: dayController, decoration: const InputDecoration(labelText: "Day (e.g. Wednesday)")),
-            TextField(controller: descController, decoration: const InputDecoration(labelText: "Description")),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "Item Name"),
+            ),
+            TextField(
+              controller: dayController,
+              decoration: const InputDecoration(
+                labelText: "Day (e.g. Wednesday)",
+              ),
+            ),
+            TextField(
+              controller: descController,
+              decoration: const InputDecoration(labelText: "Description"),
+            ),
           ],
         ),
         actions: [

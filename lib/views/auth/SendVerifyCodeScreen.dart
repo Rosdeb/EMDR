@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/auth_controller.dart';
-import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
@@ -15,7 +14,10 @@ class Verification extends StatefulWidget {
 
 class _VerificationState extends State<Verification> {
   final AuthController authController = Get.find<AuthController>();
-  final List<TextEditingController> _controllers = List.generate(6, (index) => TextEditingController());
+  final List<TextEditingController> _controllers = List.generate(
+    6,
+    (index) => TextEditingController(),
+  );
   final List<FocusNode> _focusNodes = List.generate(6, (index) => FocusNode());
 
   @override
@@ -66,17 +68,14 @@ class _VerificationState extends State<Verification> {
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
-                  )
+                  ),
                 ],
               ),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Image.asset(
-                      'assets/images/splash_log.png',
-                      height: 50,
-                    ),
+                    Image.asset('assets/images/splash_log.png', height: 50),
                     const SizedBox(height: 20),
 
                     const AppText(
@@ -86,12 +85,14 @@ class _VerificationState extends State<Verification> {
                     ),
                     const SizedBox(height: 12),
 
-                    Obx(() => AppText(
-                      "Enter the 6-digit code sent to ${authController.pendingEmail.value.isNotEmpty ? authController.pendingEmail.value : 'your email'}.",
-                      textAlign: TextAlign.center,
-                      fontSize: 13,
-                      color: Colors.black54,
-                    )),
+                    Obx(
+                      () => AppText(
+                        "Enter the 6-digit code sent to ${authController.pendingEmail.value.isNotEmpty ? authController.pendingEmail.value : 'your email'}.",
+                        textAlign: TextAlign.center,
+                        fontSize: 13,
+                        color: Colors.black54,
+                      ),
+                    ),
                     const SizedBox(height: 30),
 
                     // --- OTP Input Row ---
@@ -107,7 +108,10 @@ class _VerificationState extends State<Verification> {
                             textAlign: TextAlign.center,
                             keyboardType: TextInputType.number,
                             maxLength: 1,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                             decoration: InputDecoration(
                               counterText: '',
                               filled: true,
@@ -115,14 +119,21 @@ class _VerificationState extends State<Verification> {
                               contentPadding: EdgeInsets.zero,
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: Color(0xFFE3E6F0)),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE3E6F0),
+                                ),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: primaryGreen, width: 1.5),
+                                borderSide: const BorderSide(
+                                  color: primaryGreen,
+                                  width: 1.5,
+                                ),
                               ),
                             ),
-                            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
                             onChanged: (value) {
                               if (value.isNotEmpty && index < 5) {
                                 _focusNodes[index + 1].requestFocus();
@@ -140,8 +151,11 @@ class _VerificationState extends State<Verification> {
                     // --- Paste Code ---
                     GestureDetector(
                       onTap: () async {
-                        ClipboardData? clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-                        if (clipboardData != null && clipboardData.text != null) {
+                        ClipboardData? clipboardData = await Clipboard.getData(
+                          Clipboard.kTextPlain,
+                        );
+                        if (clipboardData != null &&
+                            clipboardData.text != null) {
                           String text = clipboardData.text!.trim();
                           if (text.length == 6 && int.tryParse(text) != null) {
                             for (int i = 0; i < 6; i++) {
@@ -161,34 +175,49 @@ class _VerificationState extends State<Verification> {
                     const SizedBox(height: 30),
 
                     // --- Verify Button ---
-                    Obx(() => ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.mainAppColor,
-                        minimumSize: const Size(double.infinity, 54),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
+                    Obx(
+                      () => ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.mainAppColor,
+                          minimumSize: const Size(double.infinity, 54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 0,
+                        onPressed: authController.isLoading.value
+                            ? null
+                            : () {
+                                String otp = _controllers
+                                    .map((c) => c.text)
+                                    .join();
+                                if (otp.length < 6) {
+                                  Get.snackbar(
+                                    'Error',
+                                    'Please enter a valid 6-digit code',
+                                  );
+                                  return;
+                                }
+                                // Use verifyPasswordOtp which redirects to Reset Password
+                                authController.verifyPasswordOtp(otp: otp);
+                              },
+                        child: authController.isLoading.value
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const AppText(
+                                "Verify",
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                       ),
-                      onPressed: authController.isLoading.value ? null : () {
-                        String otp = _controllers.map((c) => c.text).join();
-                        if (otp.length < 6) {
-                          Get.snackbar('Error', 'Please enter a valid 6-digit code');
-                          return;
-                        }
-                        // Use verifyPasswordOtp which redirects to Reset Password
-                        authController.verifyPasswordOtp(otp: otp);
-                      },
-                      child: authController.isLoading.value ? const SizedBox(
-                        height: 20, width: 20,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                      ) : const AppText(
-                        "Verify",
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    )),
+                    ),
 
                     const SizedBox(height: 20),
 
@@ -196,7 +225,11 @@ class _VerificationState extends State<Verification> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const AppText("Didn't receive the code? ", fontSize: 13, color: Colors.black54),
+                        const AppText(
+                          "Didn't receive the code? ",
+                          fontSize: 13,
+                          color: Colors.black54,
+                        ),
                         GestureDetector(
                           onTap: () {
                             authController.resendForgotPasswordOtp();

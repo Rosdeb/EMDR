@@ -25,9 +25,12 @@ class StripeService {
       // Stripe requires lowercase currency codes (e.g. "gbp", "usd")
       final lowerCurrency = currency.toLowerCase();
 
-      print('💳 Creating payment intent: ${amountInCents} $lowerCurrency');
+      print('💳 Creating payment intent: $amountInCents $lowerCurrency');
 
-      final paymentIntentData = await _createPaymentIntent(amountInCents, lowerCurrency);
+      final paymentIntentData = await _createPaymentIntent(
+        amountInCents,
+        lowerCurrency,
+      );
 
       if (paymentIntentData == null) {
         print('❌ Payment intent creation failed');
@@ -43,7 +46,6 @@ class StripeService {
       final result = await _presentPaymentSheet();
 
       return PaymentResponse(result, paymentIntentId: paymentIntentId);
-
     } on StripeException catch (e) {
       print('Stripe Error: ${e.error.localizedMessage}');
       return PaymentResponse(_mapStripeError(e));
@@ -53,7 +55,10 @@ class StripeService {
     }
   }
 
-  Future<Map<String, String>?> _createPaymentIntent(int amount, String currency) async {
+  Future<Map<String, String>?> _createPaymentIntent(
+    int amount,
+    String currency,
+  ) async {
     try {
       final secretKey = AppConstants.Secret_key;
       if (secretKey.isEmpty) {
@@ -78,10 +83,7 @@ class StripeService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print('✅ Intent ID: ${data['id']}');
-        return {
-          'id': data['id'],
-          'client_secret': data['client_secret'],
-        };
+        return {'id': data['id'], 'client_secret': data['client_secret']};
       } else {
         print('❌ Stripe API Error (${response.statusCode}): ${response.body}');
         return null;
@@ -100,13 +102,8 @@ class StripeService {
         style: ThemeMode.light,
         allowsDelayedPaymentMethods: false,
         appearance: const PaymentSheetAppearance(
-          colors: PaymentSheetAppearanceColors(
-            primary: Color(0xFF52734D),
-          ),
-          shapes: PaymentSheetShape(
-            borderRadius: 12,
-            borderWidth: 1.0,
-          ),
+          colors: PaymentSheetAppearanceColors(primary: Color(0xFF52734D)),
+          shapes: PaymentSheetShape(borderRadius: 12, borderWidth: 1.0),
         ),
       ),
     );
@@ -141,9 +138,7 @@ class StripeService {
     try {
       final response = await http.get(
         Uri.parse('https://api.stripe.com/v1/payment_intents/$paymentIntentId'),
-        headers: {
-          'Authorization': 'Bearer ${AppConstants.Secret_key}',
-        },
+        headers: {'Authorization': 'Bearer ${AppConstants.Secret_key}'},
       );
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
