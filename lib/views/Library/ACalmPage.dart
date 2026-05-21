@@ -8,10 +8,18 @@ import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/services/calm_place_service.dart';
 
 class ACalmPage extends StatefulWidget {
-  const ACalmPage({super.key, this.mediaName, this.mediaUrl});
+  const ACalmPage({
+    super.key,
+    this.mediaName,
+    this.mediaUrl,
+    this.description,
+    this.imageUrl,
+  });
 
   final String? mediaName;
   final String? mediaUrl;
+  final String? description;
+  final String? imageUrl;
 
   @override
   State<ACalmPage> createState() => _ACalmPageState();
@@ -32,7 +40,9 @@ class _ACalmPageState extends State<ACalmPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    if ((widget.mediaUrl ?? '').trim().isNotEmpty) {
+    if ((widget.mediaUrl ?? '').trim().isNotEmpty ||
+        (widget.imageUrl ?? '').trim().isNotEmpty ||
+        (widget.description ?? '').trim().isNotEmpty) {
       _applyProvidedMedia();
       _initProvidedMediaAudio();
     } else {
@@ -44,9 +54,13 @@ class _ACalmPageState extends State<ACalmPage> {
   void _applyProvidedMedia() {
     final mediaName = widget.mediaName?.trim() ?? '';
     final mediaUrl = widget.mediaUrl?.trim() ?? '';
+    final description = widget.description?.trim() ?? '';
+    final imageUrl = widget.imageUrl?.trim() ?? '';
 
     if (mediaName.isNotEmpty) currentAudio = mediaName;
     currentAudioUrl = mediaUrl;
+    if (description.isNotEmpty) currentDescription = description;
+    if (imageUrl.isNotEmpty) backgroundImageUrl = imageUrl;
   }
 
   Future<void> _initProvidedMediaAudio() async {

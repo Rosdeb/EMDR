@@ -1,4 +1,4 @@
 class AppEnv {
   // Update this single URL whenever your Cloudflare Tunnel changes.
-    static const String baseUrl = 'https://fill-montreal-appearance-meyer.trycloudflare.com/api';
+    static const String baseUrl = 'https://relating-plastic-mia-achievement.trycloudflare.com/api';
 }

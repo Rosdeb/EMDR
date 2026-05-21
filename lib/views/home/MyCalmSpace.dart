@@ -1,13 +1,111 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/views/Library/ACalmPage.dart';
-
-import 'package:jonssony/views/home/act.dart';
-import 'package:jonssony/views/home/VideoCalmPage.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/controller/journey_controller.dart';
+import 'package:jonssony/services/calm_place_service.dart';
 
-class MyCalmSpace extends StatelessWidget {
+class MyCalmSpace extends StatefulWidget {
   const MyCalmSpace({super.key});
+
+  @override
+  State<MyCalmSpace> createState() => _MyCalmSpaceState();
+}
+
+class _MyCalmSpaceState extends State<MyCalmSpace> {
+  bool _isLoading = true;
+  List<dynamic> _calmPlaces = [];
+  String _errorMessage = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCalmPlaces();
+  }
+
+  Future<void> _fetchCalmPlaces() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = "";
+    });
+
+    List<dynamic> loadedPlaces = [];
+
+    try {
+      final authController = Get.find<AuthController>();
+      final token = authController.token;
+      if (token != null) {
+        final result = await CalmPlaceService.getCalmPlace(token);
+        if (result['success'] == true && result['data'] != null) {
+          final data = result['data'];
+          if (data is List) {
+            loadedPlaces = List.from(data);
+          } else if (data is Map) {
+            loadedPlaces = [data];
+          }
+        } else {
+          _errorMessage = result['message'] ?? "Failed to load calm spaces.";
+        }
+      }
+    } catch (e) {
+      print("Error fetching calm spaces: $e");
+      _errorMessage = "An error occurred while loading calm spaces.";
+    }
+
+    // Load from local storage and merge with server data to ensure
+    // we show every single session 3 calm space saved across all journeys
+    final box = GetStorage();
+    final saved = box.read<bool>('calm_place_saved') ?? false;
+    if (saved) {
+      final rawList = box.read('calm_places_list');
+      List<dynamic> localList = [];
+      if (rawList is List && rawList.isNotEmpty) {
+        localList = List.from(rawList);
+      } else {
+        // Fallback for older single-item local storage
+        final description = box.read<String>('calm_place_description') ?? '';
+        final audioName = box.read<String>('calm_place_audio_name') ?? '';
+        final audioUrl = box.read<String>('calm_place_audio_url') ?? '';
+        final imageUrl = box.read<String>('calm_place_image_url') ?? '';
+        if (description.isNotEmpty || audioName.isNotEmpty || imageUrl.isNotEmpty) {
+          localList = [
+            {
+              'description': description,
+              'audioName': audioName,
+              'audioUrl': audioUrl,
+              'imageUrl': imageUrl,
+            }
+          ];
+        }
+      }
+
+      loadedPlaces.addAll(localList);
+    }
+
+    // Deduplicate the combined list
+    final List<dynamic> uniquePlaces = [];
+    final Set<String> seenIdentifiers = {};
+    for (final place in loadedPlaces) {
+      final desc = place['description']?.toString() ?? '';
+      final img = place['imageUrl']?.toString() ?? '';
+      // Create a unique key based on description and imageUrl
+      final key = '${desc}_$img';
+      // We only skip if both desc and img are exactly identical and the key has been seen
+      if (!seenIdentifiers.contains(key)) {
+        seenIdentifiers.add(key);
+        uniquePlaces.add(place);
+      }
+    }
+
+    setState(() {
+      _calmPlaces = uniquePlaces.reversed.toList();
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,51 +158,41 @@ class MyCalmSpace extends StatelessWidget {
                           children: [
                             const SizedBox(height: 40),
                             _buildThoughtsCard(
-                              child: Column(
-                                children: [
-                                  _buildExerciseItem(
-                                    Icons.description_outlined,
-                                    "ACT Thoughts Exercise",
-                                    "Text",
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const act(),
+                              child: _isLoading
+                                  ? const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(vertical: 30),
+                                        child: CircularProgressIndicator(
+                                          color: Color(0xFF5A7D63),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  _buildExerciseItem(
-                                    Icons.play_circle_outline,
-                                    "ACT Thoughts Exercise",
-                                    "Video",
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const VideoCalmPage(),
+                                      ),
+                                    )
+                                  : _calmPlaces.isEmpty
+                                      ? Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 30),
+                                            child: AppText(
+                                              _errorMessage.isNotEmpty
+                                                  ? _errorMessage
+                                                  : "No saved Calm Space found.",
+                                              fontSize: 14,
+                                              color: Colors.black54,
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        )
+                                      : Column(
+                                          children: List.generate(
+                                            _calmPlaces.length,
+                                            (index) {
+                                              final place = _calmPlaces[index];
+                                              final dataMap = place is Map
+                                                  ? Map<String, dynamic>.from(place)
+                                                  : <String, dynamic>{};
+                                              return _buildCalmSpaceItem(dataMap, index);
+                                            },
+                                          ),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  _buildExerciseItem(
-                                    Icons.music_note_outlined,
-                                    "ACT Thoughts Exercise",
-                                    "Audio",
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const ACalmPage(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
                             ),
 
                             const SizedBox(height: 150),
@@ -117,38 +205,10 @@ class MyCalmSpace extends StatelessWidget {
               ),
             ],
           ),
-
-          // // Custom NavBar
-          // CustomNavBar(
-          //   currentIndex: 0,
-          //   onTap: (index) => _handleNavigation(context, index),
-          //   primaryColor: AppColors.mainAppColor,
-          // ),
         ],
       ),
     );
   }
-
-  // void _handleNavigation(BuildContext context, int index) {
-  //   switch (index) {
-  //     case 0:
-  //       // Go back to Home - just pop this page
-  //       Navigator.pop(context);
-  //       break;
-  //     case 1:
-  //       // Navigate to Progress
-  //       Navigator.pushReplacementNamed(context, '/progress');
-  //       break;
-  //     case 2:
-  //       // Navigate to Library
-  //       Navigator.pushReplacementNamed(context, '/library');
-  //       break;
-  //     case 3:
-  //       // Navigate to Profile
-  //       Navigator.pushReplacementNamed(context, '/profile');
-  //       break;
-  //   }
-  // }
 
   Widget _buildCalmAppBar(BuildContext context) {
     return Padding(
@@ -204,7 +264,7 @@ class MyCalmSpace extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   AppText(
-                    "Thoughts",
+                    "Saved Calm Spaces",
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.black.withOpacity(0.7),
@@ -213,7 +273,7 @@ class MyCalmSpace extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               const AppText(
-                "Creating distance from our thoughts helps us see them clearly.",
+                "Access your personalized safe spaces designed during your EMDR therapeutic journey.",
                 fontSize: 13,
                 color: Colors.black54,
               ),
@@ -225,14 +285,26 @@ class MyCalmSpace extends StatelessWidget {
     );
   }
 
-  Widget _buildExerciseItem(
-    IconData icon,
-    String title,
-    String type, {
-    VoidCallback? onTap,
-  }) {
+  Widget _buildCalmSpaceItem(Map<String, dynamic> data, int index) {
+    final description = data['description']?.toString() ?? '';
+    final audioName = data['audioName']?.toString() ?? 'calm place.wav';
+    final audioUrl = data['audioUrl']?.toString() ?? '';
+    final imageUrl = data['imageUrl']?.toString() ?? '';
+
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ACalmPage(
+              mediaName: audioName,
+              mediaUrl: audioUrl,
+              description: description,
+              imageUrl: imageUrl,
+            ),
+          ),
+        );
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 15),
         child: ClipRRect(
@@ -249,12 +321,16 @@ class MyCalmSpace extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white.withOpacity(0.5)),
                     ),
-                    child: Icon(icon, color: Colors.black87, size: 24),
+                    child: ClipOval(
+                      child: _buildThumbImage(imageUrl),
+                    ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
@@ -262,16 +338,27 @@ class MyCalmSpace extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(
-                          title,
+                          "Calm Space ${index + 1}",
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
-                        AppText(type, fontSize: 12, color: Colors.black54),
+                        AppText(
+                          description.isNotEmpty ? description : "My safe place",
+                          fontSize: 12,
+                          color: Colors.black54,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
+                  ),
+                  const Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.black54,
+                    size: 16,
                   ),
                 ],
               ),
@@ -280,5 +367,40 @@ class MyCalmSpace extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildThumbImage(String path) {
+    final imagePath = path.trim();
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            Image.asset('assets/images/emdr_sun.jpg', fit: BoxFit.cover),
+      );
+    }
+
+    if (imagePath.startsWith('assets/')) {
+      return Image.asset(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            Image.asset('assets/images/emdr_sun.jpg', fit: BoxFit.cover),
+      );
+    }
+
+    if (imagePath.isNotEmpty) {
+      final file = File(imagePath);
+      if (file.existsSync()) {
+        return Image.file(
+          file,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) =>
+              Image.asset('assets/images/emdr_sun.jpg', fit: BoxFit.cover),
+        );
+      }
+    }
+
+    return Image.asset('assets/images/emdr_sun.jpg', fit: BoxFit.cover);
   }
 }

@@ -12,7 +12,8 @@ class MediaController extends GetxController {
   final RxList<dynamic> allMedia = [].obs;
 
   // Helper map to quickly get media by their category name
-  final RxMap<String, List<dynamic>> mediaByCategory = <String, List<dynamic>>{}.obs;
+  final RxMap<String, List<dynamic>> mediaByCategory =
+      <String, List<dynamic>>{}.obs;
 
   @override
   void onInit() {
@@ -39,7 +40,9 @@ class MediaController extends GetxController {
         final Map<String, List<dynamic>> grouped = {};
         for (var media in mediaList) {
           if (media['categoryId'] != null) {
-            final catName = media['categoryId']['categoryName']?.toString().trim();
+            final catName = media['categoryId']['categoryName']
+                ?.toString()
+                .trim();
             if (catName != null) {
               if (!grouped.containsKey(catName)) {
                 grouped[catName] = [];
@@ -62,14 +65,21 @@ class MediaController extends GetxController {
 
   // Get a specific media by type from a category (e.g., getting the first video for "EMDR Therapy Sessions")
   dynamic getFirstMedia(String categoryName, String mediaType) {
-    final list = mediaByCategory[categoryName];
-    if (list != null && list.isNotEmpty) {
-      try {
-        return list.firstWhere((m) => m['mediaType'] == mediaType);
-      } catch (e) {
-        return null;
+    final normalizedCategory = categoryName.trim().toLowerCase();
+    final normalizedMediaType = mediaType.trim().toLowerCase();
+
+    for (final entry in mediaByCategory.entries) {
+      if (entry.key.trim().toLowerCase() != normalizedCategory) continue;
+
+      for (final media in entry.value) {
+        if (media is Map &&
+            media['mediaType']?.toString().trim().toLowerCase() ==
+                normalizedMediaType) {
+          return media;
+        }
       }
     }
+
     return null;
   }
 }

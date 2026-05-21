@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:just_audio/just_audio.dart';
 import 'package:jonssony/controller/auth_controller.dart';
+import 'package:jonssony/controller/journey_controller.dart';
 import 'package:jonssony/services/calm_place_service.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -31,6 +32,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
   String currentAudioUrl = "";
 
   String selectedImageUrl = "";
+  String? journeyImageUrl;
   File? _pickedImage;
   final TextEditingController _descriptionController = TextEditingController();
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -57,6 +59,29 @@ class _SessionThreePageState extends State<SessionThreePage> {
   }
 
   Future<void> _loadMedia() async {
+    String? journeyImageUrl;
+    try {
+      if (Get.isRegistered<JourneyController>()) {
+        final journeyController = Get.find<JourneyController>();
+        final activeJourneyId = SessionCompletionService.activeJourneyId();
+        if (activeJourneyId.isNotEmpty) {
+          final activeJourney = journeyController.journeys.firstWhere(
+            (j) {
+              final item = j is Map ? Map<String, dynamic>.from(j) : <String, dynamic>{};
+              final id = item['_id']?.toString() ?? item['id']?.toString() ?? item['journeyId']?.toString() ?? '';
+              return id == activeJourneyId;
+            },
+            orElse: () => null,
+          );
+          if (activeJourney != null && activeJourney is Map) {
+            journeyImageUrl = activeJourney['imageUrl']?.toString();
+          }
+        }
+      }
+    } catch (e) {
+      print("Error getting journey image in SessionThree: $e");
+    }
+
     try {
       final authController = Get.find<AuthController>();
       final token = authController.token;
@@ -78,11 +103,14 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
           if (!mounted) return;
           setState(() {
+            this.journeyImageUrl = journeyImageUrl;
             _apiImages = apiImages;
             _apiAudios = apiAudios;
+
             if (_apiImages.isNotEmpty && selectedImageUrl.isEmpty) {
               selectedImageUrl = _apiImages.first['url'] ?? '';
             }
+
             if (_apiAudios.isNotEmpty) {
               currentAudioName = _apiAudios.first['name'] ?? '';
               currentAudioUrl = _apiAudios.first['url'] ?? '';
@@ -96,6 +124,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
     if (mounted && _apiImages.isEmpty && selectedImageUrl.isEmpty) {
       setState(() {
+        this.journeyImageUrl = journeyImageUrl;
         selectedImageUrl = _fallbackImages.first;
       });
     }
@@ -499,7 +528,7 @@ class _SessionThreePageState extends State<SessionThreePage> {
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
-                                            Icons.edit,
+                                            Icons.camera_alt,
                                             size: 16,
                                             color: Colors.black,
                                           ),
@@ -724,21 +753,44 @@ class _SessionThreePageState extends State<SessionThreePage> {
 
   Map<String, dynamic> _buildCalmPlaceData() {
     final imagePath = _pickedImage?.path ?? selectedImageUrl;
+    final activeJourneyId = SessionCompletionService.activeJourneyId();
     return {
       "description": _descriptionController.text.trim(),
       "audioName": currentAudioName,
       "audioUrl": currentAudioUrl,
       "imageUrl": imagePath,
+      if (activeJourneyId.isNotEmpty) "journeyId": activeJourneyId,
+      if (journeyImageUrl != null) "journeyImageUrl": journeyImageUrl,
     };
   }
 
   void _saveCalmPlaceLocally(Map<String, dynamic> data) {
     final box = GetStorage();
     box.write('calm_place_saved', true);
+
+    // Save in local storage list of calm spaces
+    final rawList = box.read('calm_places_list');
+    List<dynamic> localList = [];
+    if (rawList is List) {
+      localList = List.from(rawList);
+    }
+    localList.add({
+      'description': data['description'] ?? '',
+      'audioName': data['audioName'] ?? '',
+      'audioUrl': data['audioUrl'] ?? '',
+      'imageUrl': data['imageUrl'] ?? '',
+      'journeyId': data['journeyId'] ?? '',
+      'journeyImageUrl': data['journeyImageUrl'] ?? '',
+    });
+    box.write('calm_places_list', localList);
+
+    // Keep individual fields for backward compatibility
     box.write('calm_place_description', data['description'] ?? '');
     box.write('calm_place_audio_name', data['audioName'] ?? '');
     box.write('calm_place_audio_url', data['audioUrl'] ?? '');
     box.write('calm_place_image_url', data['imageUrl'] ?? '');
+    box.write('calm_place_journey_id', data['journeyId'] ?? '');
+    box.write('calm_place_journey_image_url', data['journeyImageUrl'] ?? '');
   }
 
   Widget _buildAudioPlayer(

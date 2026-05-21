@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:jonssony/utils/app_text.dart';
+import 'bls_pdf_visuals.dart';
 import 'simulation_screen.dart';
 import 'simulation_settings.dart';
-import 'package:jonssony/controller/bilateral_controller.dart';
 
 class SaveGame extends StatefulWidget {
   const SaveGame({super.key});
@@ -14,10 +14,8 @@ class SaveGame extends StatefulWidget {
 }
 
 class _SaveGameState extends State<SaveGame> {
-  final BilateralController _bilateralController =
-      Get.find<BilateralController>();
-  static const String _defaultVisualObject =
-      'assets/images/Butterfly Lottie Animation.gif';
+  static const _storageKey = 'bls_html_config';
+  final GetStorage _storage = GetStorage();
   int? _playingIndex;
 
   final List<Map<String, String>> _tracks = [
@@ -63,25 +61,19 @@ class _SaveGameState extends State<SaveGame> {
                     ),
 
                     // Track list
-                    Obx(() {
-                      if (_bilateralController.isLoading.value) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return ListView.builder(
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          top: 30,
-                          bottom: 30,
-                        ),
-                        itemCount: _tracks.length,
-                        itemBuilder: (context, index) {
-                          return _buildTrackCard(index);
-                        },
-                      );
-                    }),
+                    ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(
+                        left: 20,
+                        right: 20,
+                        top: 30,
+                        bottom: 30,
+                      ),
+                      itemCount: _tracks.length,
+                      itemBuilder: (context, index) {
+                        return _buildTrackCard(index);
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -96,26 +88,16 @@ class _SaveGameState extends State<SaveGame> {
     final track = _tracks[index];
     final isPlaying = _playingIndex == index;
 
-    // Convert backend formats to SimulationSettings
-    final settings = _bilateralController.userSettings;
-    final speedStr = settings['speed'] ?? 'medium';
-    double speed = 4.0;
-    if (speedStr == 'slow') {
-      speed = 8.0;
-    } else if (speedStr == 'fast')
-      speed = 2.0;
-
-    final dirStr = settings['direction'] ?? 'left-right';
-    AnimationDirection dir = AnimationDirection.horizontal;
-    if (dirStr == 'top-bottom') {
-      dir = AnimationDirection.vertical;
-    } else if (dirStr == 'diagonal-down')
-      dir = AnimationDirection.diagonal;
-    else if (dirStr == 'diagonal-up')
-      dir = AnimationDirection.diagonalReverse;
-    final visualObject = settings['iconUrl']?.toString().isNotEmpty == true
-        ? settings['iconUrl'].toString()
-        : _defaultVisualObject;
+    final config = _savedBlsConfig;
+    final environmentImage =
+        '$blsScenePrefix${_configValue(config, 'background', 'mountains')}';
+    final visualObject =
+        '$blsObjectPrefix${_configValue(config, 'object', 'sun')}';
+    final soundKey = _configValue(config, 'sound', 'gentle-tone');
+    final speed = _speedSeconds(_configValue(config, 'speed', 'medium'));
+    final dir = _directionFromKey(
+      _configValue(config, 'direction', 'horizontal'),
+    );
 
     return GestureDetector(
       onTap: () {
@@ -127,14 +109,14 @@ class _SaveGameState extends State<SaveGame> {
           MaterialPageRoute(
             builder: (context) => SimulationScreen(
               settings: SimulationSettings(
-                environmentImage:
-                    settings['environmentId'] ?? 'assets/images/mountain.jpg',
+                environmentImage: environmentImage,
                 visualObject: visualObject,
                 speed: speed,
-                audioAsset:
-                    settings['soundId'] ?? 'assets/audio/calm_place.wav',
+                audioAsset: '',
+                soundKey: soundKey,
                 direction: dir,
-                isNetworkImage: settings.isNotEmpty,
+                showCompletionQuestions: true,
+                totalSets: 34,
               ),
             ),
           ),
@@ -149,9 +131,9 @@ class _SaveGameState extends State<SaveGame> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.4)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
               ),
               child: Row(
                 children: [
@@ -197,6 +179,47 @@ class _SaveGameState extends State<SaveGame> {
     );
   }
 
+  Map<String, dynamic> get _savedBlsConfig {
+    final raw = _storage.read(_storageKey);
+    if (raw is Map) return Map<String, dynamic>.from(raw);
+    return const {};
+  }
+
+  String _configValue(
+    Map<String, dynamic> config,
+    String key,
+    String fallback,
+  ) {
+    final value = config[key]?.toString().trim();
+    return value == null || value.isEmpty ? fallback : value;
+  }
+
+  double _speedSeconds(String key) {
+    switch (key) {
+      case 'slow':
+        return 0.85;
+      case 'fast':
+        return 0.4;
+      case 'medium':
+      default:
+        return 0.6;
+    }
+  }
+
+  AnimationDirection _directionFromKey(String key) {
+    switch (key) {
+      case 'vertical':
+        return AnimationDirection.vertical;
+      case 'diagonal-down':
+        return AnimationDirection.diagonal;
+      case 'diagonal-up':
+        return AnimationDirection.diagonalReverse;
+      case 'horizontal':
+      default:
+        return AnimationDirection.horizontal;
+    }
+  }
+
   Widget _buildAppBar(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
@@ -208,7 +231,7 @@ class _SaveGameState extends State<SaveGame> {
         children: [
           IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Get.back(),
+            onPressed: () => Navigator.of(context).pop(),
           ),
           const AppText(
             'Bilateral Stimulation',
