@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../../controller/journey_controller.dart';
 import '../../controller/notification_controller.dart';
@@ -24,8 +25,45 @@ import '../sessions/session_two.dart';
 import 'MyCalmSpace.dart';
 import 'homework.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  static const String _firstLoginIntroSeenKey = 'first_login_intro_seen';
+  final GetStorage _storage = GetStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showFirstLoginIntro();
+    });
+  }
+
+  void _showFirstLoginIntro() {
+    if (!mounted || _storage.read<bool>(_firstLoginIntroSeenKey) == true) {
+      return;
+    }
+
+    _storage.write(_firstLoginIntroSeenKey, true);
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Start your EMDR roadmap'),
+        content: const Text(
+          'To begin your EMDR journey, tap the + button and create your roadmap. Then follow each session from My Space in order.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Got it')),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -201,11 +239,9 @@ class HomeScreen extends StatelessWidget {
                                       ? totalFromApi
                                       : SessionCompletionService.totalSessions;
                                   final localCompletedSessions =
-                                      SessionCompletionService
-                                          .completedSessionNumbers
-                                          .toList();
-                                  final activeJourneyId =
-                                      SessionCompletionService.activeJourneyId();
+                                      SessionCompletionService.completedSessions(
+                                        journeyId: journeyId,
+                                      );
                                   final apiCompleted = _firstSessionCount([
                                     details['compledSession'],
                                     details['compledSessions'],
@@ -235,19 +271,10 @@ class HomeScreen extends StatelessWidget {
                                     item['completedSession'],
                                     item['completed'],
                                   ], total);
-                                  final hasRemoteProgress =
-                                      progressData != null &&
-                                      progressData.isNotEmpty;
-                                  final useLocalProgress =
-                                      (activeJourneyId.isNotEmpty &&
-                                          activeJourneyId == journeyId) ||
-                                      (!hasRemoteProgress &&
-                                          journeys.length == 1);
-                                  final localCompleted = useLocalProgress
-                                      ? localCompletedSessions.length
-                                            .clamp(0, total)
-                                            .toInt()
-                                      : 0;
+                                  final localCompleted = localCompletedSessions
+                                      .length
+                                      .clamp(0, total)
+                                      .toInt();
                                   final apiPercent = _firstPercent([
                                     progressData?['totalCompledSession'],
                                     progressData?['totalCompletedSession'],
@@ -296,9 +323,8 @@ class HomeScreen extends StatelessWidget {
                                   final nextSessionNumber = _nextSessionNumber(
                                     completed: completed,
                                     apiCompleted: apiCompleted,
-                                    localCompletedSessions: useLocalProgress
-                                        ? localCompletedSessions
-                                        : const [],
+                                    localCompletedSessions:
+                                        localCompletedSessions,
                                   );
                                   final journeyTitle =
                                       item['journeyName']?.toString() ??
@@ -657,7 +683,12 @@ class HomeScreen extends StatelessWidget {
     required String journeyId,
     required String journeyTitle,
   }) {
-    final arguments = {'journeyId': journeyId, 'title': journeyTitle};
+    SessionCompletionService.setActiveJourney(journeyId);
+    final arguments = {
+      'journeyId': journeyId,
+      'title': journeyTitle,
+      'sessionNumber': sessionNumber,
+    };
 
     switch (sessionNumber) {
       case 1:
@@ -733,7 +764,7 @@ class HomeScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.35),
+                  color: Colors.white.withValues(alpha: 0.78),
                   borderRadius: BorderRadius.circular(35),
                   border: Border.all(
                     color: Colors.white.withValues(alpha: 0.2),

@@ -6,11 +6,18 @@ class SimulationSettings {
   final double speed;
   final String audioAsset;
   final String soundKey;
+  final String visualMediaType;
+  final String? visualPoster;
+  final String? visualPlaybackUrl;
+  final String? visualTransparentUrl;
+  final String? visualLabel;
   final AnimationDirection direction;
   final bool isNetworkImage;
   final bool requireNetworkAudio;
   final bool showCompletionQuestions;
   final int totalSets;
+  final int maxDurationMinutes;
+  final String? roadmapSummary;
 
   SimulationSettings({
     required this.environmentImage,
@@ -18,10 +25,17 @@ class SimulationSettings {
     required this.speed,
     required this.audioAsset,
     this.soundKey = '',
+    this.visualMediaType = 'image',
+    this.visualPoster,
+    this.visualPlaybackUrl,
+    this.visualTransparentUrl,
+    this.visualLabel,
     required this.direction,
     this.isNetworkImage = false,
     this.requireNetworkAudio = false,
     this.showCompletionQuestions = false,
     this.totalSets = 0,
+    this.maxDurationMinutes = 0,
+    this.roadmapSummary,
   });
 }

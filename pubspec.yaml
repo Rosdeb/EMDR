@@ -38,6 +38,7 @@ dependencies:
   intl: ^0.19.0
   image_picker: ^1.2.1
   just_audio: ^0.10.5
+  flutter_tts: ^4.0.2
   flutter_screenutil: ^5.9.3
   get: ^4.7.2
   get_storage: ^2.1.1
@@ -94,11 +95,29 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  shaders:
+    - shaders/white_key.frag
+
   # To add assets to your application, add an assets section, like this:
   assets:
     - .env
     - assets/images/
     - assets/icons/
+    - assets/icons/nobg/butterfly/
+    - assets/icons/nobg/bird/
+    - assets/icons/nobg/fox/
+    - assets/icons/nobg/ball/
+    - assets/icons/nobg/mushroom/
+    - assets/icons/nobg/leaf1/
+    - assets/icons/nobg/leaf2/
+    - assets/icons/nobg/hare/
+    - assets/icons/nobg/dandelion/
+    - assets/icons/nobg/helicopter/
+    - assets/icons/nobg/petals/
+    - assets/icons/nobg/unknown/
+    - assets/icons/nobg/horse/
+    - assets/icons/nobg/dolphin/
+    - assets/icons/nobg/jeep/
     - assets/video/
     - assets/audio/
 

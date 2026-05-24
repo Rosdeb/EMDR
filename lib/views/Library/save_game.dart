@@ -89,12 +89,19 @@ class _SaveGameState extends State<SaveGame> {
     final isPlaying = _playingIndex == index;
 
     final config = _savedBlsConfig;
-    final environmentImage =
-        '$blsScenePrefix${_configValue(config, 'background', 'mountains')}';
-    final visualObject =
-        '$blsObjectPrefix${_configValue(config, 'object', 'sun')}';
+    final environmentImage = _normaliseSceneSource(
+      _configValue(config, 'background', 'mountains'),
+    );
+    final visualObject = _normaliseObjectSource(
+      _configValue(config, 'object', 'sun'),
+    );
     final soundKey = _configValue(config, 'sound', 'gentle-tone');
+    final soundAsset = _configValue(config, 'soundAsset', '');
+    final visualMediaType = _configValue(config, 'visualMediaType', 'image');
+    final visualPoster = _configValue(config, 'visualPoster', '');
     final speed = _speedSeconds(_configValue(config, 'speed', 'medium'));
+    final durationMinutes =
+        int.tryParse(_configValue(config, 'durationMinutes', '60')) ?? 60;
     final dir = _directionFromKey(
       _configValue(config, 'direction', 'horizontal'),
     );
@@ -112,11 +119,14 @@ class _SaveGameState extends State<SaveGame> {
                 environmentImage: environmentImage,
                 visualObject: visualObject,
                 speed: speed,
-                audioAsset: '',
+                audioAsset: soundAsset,
                 soundKey: soundKey,
+                visualMediaType: visualMediaType,
+                visualPoster: visualPoster.isEmpty ? null : visualPoster,
                 direction: dir,
                 showCompletionQuestions: true,
                 totalSets: 34,
+                maxDurationMinutes: durationMinutes,
               ),
             ),
           ),
@@ -197,13 +207,31 @@ class _SaveGameState extends State<SaveGame> {
   double _speedSeconds(String key) {
     switch (key) {
       case 'slow':
-        return 0.85;
+        return 2.6;
       case 'fast':
-        return 0.4;
+        return 1.5;
       case 'medium':
       default:
-        return 0.6;
+        return 2.0;
     }
+  }
+
+  String _normaliseSceneSource(String value) {
+    if (value.startsWith(blsScenePrefix) ||
+        value.startsWith('http') ||
+        value.startsWith('assets/')) {
+      return value;
+    }
+    return '$blsScenePrefix$value';
+  }
+
+  String _normaliseObjectSource(String value) {
+    if (value.startsWith(blsObjectPrefix) ||
+        value.startsWith('http') ||
+        value.startsWith('assets/')) {
+      return value;
+    }
+    return '$blsObjectPrefix$value';
   }
 
   AnimationDirection _directionFromKey(String key) {

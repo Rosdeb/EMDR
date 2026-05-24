@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -47,7 +48,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   list.insert(0, {
     'id': DateTime.now().millisecondsSinceEpoch.toString(),
-    'title': message.notification?.title ?? message.data['title'] ?? 'New Notification',
+    'title':
+        message.notification?.title ??
+        message.data['title'] ??
+        'New Notification',
     'body': message.notification?.body ?? message.data['body'] ?? '',
     'receivedAt': DateTime.now().toIso8601String(),
     'isRead': false,
@@ -59,11 +63,20 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
 
   // ✅ Firebase initialize
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   // ✅ Register background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -97,7 +110,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-
   @override
   void initState() {
     super.initState();
@@ -105,7 +117,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _checkInitialMessage() async {
-    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance
+        .getInitialMessage();
     if (initialMessage != null) {
       debugPrint('Notification clicked from terminated state and app opened!');
       // Short delay to ensure GetMaterialApp has fully initialized navigation
@@ -136,10 +149,7 @@ class _MyAppState extends State<MyApp> {
         Get.lazyPut(() => MyTestsController(), fenix: true);
       }),
       getPages: RouteHelper.routes,
-      theme: ThemeData(
-        fontFamily: 'Regular',
-        useMaterial3: true,
-      ),
+      theme: ThemeData(fontFamily: 'Regular', useMaterial3: true),
     );
   }
 }

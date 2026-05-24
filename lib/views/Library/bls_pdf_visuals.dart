@@ -4,6 +4,19 @@ import 'package:flutter_svg/flutter_svg.dart';
 const String blsScenePrefix = 'bls-scene:';
 const String blsObjectPrefix = 'bls-object:';
 
+/// Bundled watercolor scenes when API environments are unavailable.
+const List<MapEntry<String, String>> kBlsLocalScenes = [
+  MapEntry('meadow', 'Watercolor Meadow'),
+  MapEntry('mountains', 'Mountains'),
+  MapEntry('ocean', 'Ocean'),
+  MapEntry('forest', 'Forest'),
+  MapEntry('night', 'Night Sky'),
+  MapEntry('autumn', 'Autumn'),
+];
+
+List<String> get kBlsLocalSceneIds =>
+    kBlsLocalScenes.map((entry) => entry.key).toList(growable: false);
+
 bool isBlsSceneSource(String value) => value.startsWith(blsScenePrefix);
 bool isBlsObjectSource(String value) => value.startsWith(blsObjectPrefix);
 
@@ -12,9 +25,33 @@ String blsSourceId(String value) {
   return index >= 0 ? value.substring(index + 1) : value;
 }
 
+/// Normalises saved/API scene values to a renderable environment source.
+String resolveBlsEnvironmentSource(String value, {String fallback = 'meadow'}) {
+  final trimmed = value.trim();
+  if (trimmed.isEmpty) return '$blsScenePrefix$fallback';
+  if (isBlsSceneSource(trimmed)) return trimmed;
+  if (trimmed.startsWith('http') || trimmed.startsWith('assets/')) {
+    return trimmed;
+  }
+
+  final bareId = blsSourceId(trimmed);
+  if (kBlsLocalSceneIds.contains(bareId)) {
+    return '$blsScenePrefix$bareId';
+  }
+
+  return trimmed;
+}
+
 bool blsObjectHasReflection(String source) {
   if (!isBlsObjectSource(source)) return false;
-  return const {'sun', 'moon', 'star'}.contains(blsSourceId(source));
+  return const {
+    'sun',
+    'moon',
+    'star',
+    'orb',
+    'crystal',
+    'pearl',
+  }.contains(blsSourceId(source));
 }
 
 class BlsSceneCanvas extends StatelessWidget {
@@ -30,9 +67,25 @@ class BlsSceneCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final svg = _sceneSvgs[blsSourceId(source)];
-    if (svg == null) return const ColoredBox(color: Color(0xFFEDE7DE));
+    if (svg == null) {
+      return const ColoredBox(color: Color(0xFFEDE7DE));
+    }
 
-    return SvgPicture.string(svg, fit: fit);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: SvgPicture.string(
+            svg,
+            fit: fit,
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            alignment: Alignment.center,
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -150,18 +203,22 @@ const Map<String, String> _sceneSvgs = {
       r'''<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
 <defs>
 <linearGradient id="meadowSky" x1="0%" y1="0%" x2="0%" y2="100%">
-<stop offset="0%" style="stop-color:#e8f5f8"/><stop offset="60%" style="stop-color:#c8e5e8"/><stop offset="100%" style="stop-color:#b8dce0"/>
+<stop offset="0%" style="stop-color:#b8d9f0"/><stop offset="15%" style="stop-color:#90c4e8"/>
+<stop offset="55%" style="stop-color:#c8e8c8"/><stop offset="78%" style="stop-color:#9dc87a"/><stop offset="100%" style="stop-color:#72a850"/>
 </linearGradient>
 <linearGradient id="meadowGrass" x1="0%" y1="0%" x2="0%" y2="100%">
-<stop offset="0%" style="stop-color:#8ac080"/><stop offset="100%" style="stop-color:#60a060"/>
+<stop offset="0%" style="stop-color:#88c050"/><stop offset="100%" style="stop-color:#5a9030"/>
 </linearGradient>
+<radialGradient id="meadowSun" cx="50%" cy="50%" r="50%">
+<stop offset="30%" style="stop-color:#fffde0"/><stop offset="65%" style="stop-color:#ffd740"/><stop offset="72%" style="stop-color:transparent"/>
+</radialGradient>
 </defs>
 <rect width="1000" height="600" fill="url(#meadowSky)"/>
-<g fill="rgba(255,255,255,0.5)"><ellipse cx="150" cy="80" rx="90" ry="32"/><ellipse cx="800" cy="90" rx="100" ry="35"/></g>
-<path d="M0,340 Q300,300 600,330 Q900,300 1000,340 L1000,400 L0,400 Z" fill="rgba(120,170,110,0.4)"/>
-<path d="M0,380 Q250,350 500,375 Q750,350 1000,380 L1000,600 L0,600 Z" fill="url(#meadowGrass)"/>
-<g><circle cx="80" cy="420" r="6" fill="rgba(230,140,170,0.85)"/><circle cx="200" cy="440" r="5" fill="rgba(175,155,215,0.85)"/><circle cx="320" cy="425" r="6" fill="rgba(255,230,100,0.9)"/><circle cx="450" cy="445" r="5" fill="rgba(255,255,255,0.92)"/><circle cx="580" cy="420" r="6" fill="rgba(230,140,170,0.85)"/><circle cx="700" cy="435" r="5" fill="rgba(100,150,220,0.85)"/><circle cx="820" cy="425" r="6" fill="rgba(220,80,70,0.85)"/><circle cx="940" cy="440" r="5" fill="rgba(175,155,215,0.85)"/></g>
-<g><circle cx="140" cy="470" r="5" fill="rgba(255,235,110,0.9)"/><circle cx="280" cy="480" r="4" fill="rgba(230,150,175,0.85)"/><circle cx="400" cy="465" r="5" fill="rgba(170,150,210,0.85)"/><circle cx="520" cy="475" r="6" fill="rgba(255,255,255,0.92)"/><circle cx="650" cy="470" r="5" fill="rgba(255,230,100,0.9)"/><circle cx="780" cy="478" r="4" fill="rgba(100,150,220,0.85)"/><circle cx="900" cy="468" r="5" fill="rgba(215,75,65,0.85)"/></g>
+<circle cx="870" cy="90" r="55" fill="url(#meadowSun)" opacity="0.95"/>
+<g fill="rgba(255,255,255,0.82)"><ellipse cx="150" cy="80" rx="90" ry="32"/><ellipse cx="800" cy="140" rx="100" ry="35"/></g>
+<path d="M-50,360 Q200,280 450,330 Q700,260 1050,320 L1050,420 L-50,420 Z" fill="rgba(125,184,90,0.55)"/>
+<path d="M-50,400 Q250,360 500,385 Q750,360 1050,400 L1050,600 L-50,600 Z" fill="url(#meadowGrass)"/>
+<g><circle cx="80" cy="420" r="6" fill="rgba(247,201,72,0.9)"/><circle cx="200" cy="440" r="5" fill="rgba(247,108,108,0.9)"/><circle cx="320" cy="425" r="6" fill="rgba(192,106,200,0.9)"/><circle cx="720" cy="425" r="6" fill="rgba(247,156,72,0.9)"/><circle cx="820" cy="440" r="5" fill="rgba(96,200,240,0.9)"/><circle cx="900" cy="430" r="6" fill="rgba(247,108,168,0.9)"/></g>
 </svg>''',
   'autumn':
       r'''<svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid slice">
@@ -202,4 +259,12 @@ const Map<String, String> _objectSvgs = {
       r'''<svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="48" fill="rgba(255,250,220,0.1)"/><circle cx="55" cy="55" r="36" fill="rgba(255,252,230,0.18)"/><polygon points="55,12 62,40 92,40 68,58 76,86 55,68 34,86 42,58 18,40 48,40" fill="rgba(255,252,240,0.94)" stroke="rgba(255,240,180,0.4)" stroke-width="1"/><polygon points="55,22 60,42 78,42 64,54 70,72 55,62 40,72 46,54 32,42 50,42" fill="rgba(255,255,250,0.35)"/></svg>''',
   'dragonfly':
       r'''<svg viewBox="0 0 130 80"><g><ellipse cx="65" cy="32" rx="42" ry="10" fill="rgba(190,210,230,0.35)" stroke="rgba(150,170,190,0.3)" stroke-width="0.8"/><ellipse cx="65" cy="48" rx="35" ry="8" fill="rgba(180,200,220,0.28)"/></g><ellipse cx="65" cy="40" rx="48" ry="5" fill="rgba(90,130,150,0.82)"/><ellipse cx="65" cy="40" rx="38" ry="3.5" fill="rgba(100,140,160,0.5)"/><g stroke="rgba(50,80,100,0.25)" stroke-width="1" fill="none"><line x1="45" y1="36" x2="45" y2="44"/><line x1="55" y1="35" x2="55" y2="45"/><line x1="75" y1="35" x2="75" y2="45"/><line x1="85" y1="36" x2="85" y2="44"/><line x1="95" y1="37" x2="95" y2="43"/><line x1="105" y1="38" x2="105" y2="42"/></g><circle cx="18" cy="40" r="9" fill="rgba(70,100,120,0.88)"/><ellipse cx="14" cy="37" rx="4.5" ry="4" fill="rgba(40,65,85,0.95)"/><ellipse cx="22" cy="37" rx="4.5" ry="4" fill="rgba(40,65,85,0.95)"/><circle cx="12" cy="35" r="1.5" fill="rgba(130,160,190,0.45)"/><circle cx="20" cy="35" r="1.5" fill="rgba(130,160,190,0.45)"/></svg>''',
+  'orb':
+      r'''<svg viewBox="0 0 120 120"><defs><radialGradient id="orbG" cx="38%" cy="32%" r="58%"><stop offset="0%" style="stop-color:#ffffff"/><stop offset="38%" style="stop-color:#dff2f0"/><stop offset="75%" style="stop-color:#8fbfb5"/><stop offset="100%" style="stop-color:#5f938a"/></radialGradient><filter id="orbBlur"><feGaussianBlur stdDeviation="5"/></filter></defs><circle cx="60" cy="60" r="50" fill="rgba(190,230,220,0.22)" filter="url(#orbBlur)"/><circle cx="60" cy="60" r="34" fill="url(#orbG)" stroke="rgba(255,255,255,0.55)" stroke-width="1.2"/><ellipse cx="48" cy="42" rx="11" ry="7" fill="rgba(255,255,255,0.55)"/></svg>''',
+  'crystal':
+      r'''<svg viewBox="0 0 110 120"><defs><linearGradient id="crystalG" x1="20%" y1="0%" x2="80%" y2="100%"><stop offset="0%" style="stop-color:#ffffff"/><stop offset="42%" style="stop-color:#d8eef2"/><stop offset="100%" style="stop-color:#87b7c2"/></linearGradient></defs><path d="M55 8 L88 38 L74 102 L55 114 L36 102 L22 38 Z" fill="url(#crystalG)" stroke="rgba(80,120,130,0.3)" stroke-width="1.5"/><path d="M55 8 L55 114 M22 38 L55 48 L88 38 M36 102 L55 48 L74 102" stroke="rgba(255,255,255,0.45)" stroke-width="1.2" fill="none"/><path d="M34 35 L47 20 L42 47 Z" fill="rgba(255,255,255,0.35)"/></svg>''',
+  'lotus':
+      r'''<svg viewBox="0 0 130 95"><g><ellipse cx="65" cy="55" rx="18" ry="36" fill="rgba(235,185,195,0.88)" transform="rotate(0 65 55)"/><ellipse cx="42" cy="60" rx="17" ry="32" fill="rgba(220,165,180,0.82)" transform="rotate(-34 42 60)"/><ellipse cx="88" cy="60" rx="17" ry="32" fill="rgba(220,165,180,0.82)" transform="rotate(34 88 60)"/><ellipse cx="28" cy="70" rx="14" ry="28" fill="rgba(196,145,165,0.75)" transform="rotate(-58 28 70)"/><ellipse cx="102" cy="70" rx="14" ry="28" fill="rgba(196,145,165,0.75)" transform="rotate(58 102 70)"/></g><path d="M20 78 Q65 92 110 78" stroke="rgba(110,145,110,0.55)" stroke-width="5" stroke-linecap="round" fill="none"/><ellipse cx="65" cy="67" rx="12" ry="18" fill="rgba(255,225,210,0.5)"/></svg>''',
+  'pearl':
+      r'''<svg viewBox="0 0 120 120"><defs><radialGradient id="pearlG" cx="35%" cy="28%" r="60%"><stop offset="0%" style="stop-color:#ffffff"/><stop offset="38%" style="stop-color:#f7f4ef"/><stop offset="72%" style="stop-color:#ded8cf"/><stop offset="100%" style="stop-color:#b8b0a8"/></radialGradient></defs><circle cx="60" cy="60" r="42" fill="rgba(255,255,255,0.12)"/><circle cx="60" cy="60" r="30" fill="url(#pearlG)" stroke="rgba(255,255,255,0.65)" stroke-width="1.4"/><ellipse cx="49" cy="44" rx="9" ry="6" fill="rgba(255,255,255,0.62)"/></svg>''',
 };

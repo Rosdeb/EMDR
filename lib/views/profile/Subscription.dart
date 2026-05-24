@@ -346,13 +346,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     padding: const EdgeInsets.all(25),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF4F7957).withOpacity(0.1)
-                          : Colors.white.withOpacity(0.7),
+                          ? const Color(0xFF4F7957).withValues(alpha: 0.1)
+                          : Colors.white.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(25),
                       border: Border.all(
                         color: isSelected
                             ? const Color(0xFF4F7957)
-                            : Colors.white.withOpacity(0.5),
+                            : Colors.white.withValues(alpha: 0.5),
                         width: isSelected ? 2 : 1,
                       ),
                     ),
@@ -393,43 +393,63 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         const SizedBox(height: 15),
                         const Divider(color: Colors.black12),
                         const SizedBox(height: 15),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            AppText(
-                              priceDisplay,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
+                        SizedBox(
+                          width: double.infinity,
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                AppText(
+                                  priceDisplay,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                if (!isFree)
+                                  const AppText(
+                                    "/Month",
+                                    fontSize: 14,
+                                    color: Colors.black54,
+                                  ),
+                              ],
                             ),
-                            if (!isFree)
-                              const AppText(
-                                "/Month",
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
-                          ],
+                          ),
                         ),
                         AppText(tagline, fontSize: 13, color: Colors.black54),
-                        const SizedBox(height: 25),
-                        ...features.map<Widget>(
-                          (feature) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.check,
-                                  size: 18,
-                                  color: Color(0xFF4F7957),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: AppText(
-                                    feature.toString(),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child: SingleChildScrollView(
+                            physics: const BouncingScrollPhysics(),
+                            child: Column(
+                              children: features
+                                  .map<Widget>(
+                                    (feature) => Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Icon(
+                                            Icons.check,
+                                            size: 18,
+                                            color: Color(0xFF4F7957),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: AppText(
+                                              feature.toString(),
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
                             ),
                           ),
                         ),
