@@ -1,7 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/profile_controller.dart';
+import 'package:jonssony/controller/onboarding_controller.dart';
 import 'assignment.dart'; // Assume this contains FullAssessmentFlow
 
 class ConsentFormScreen extends StatefulWidget {
@@ -22,6 +22,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
   final dobCtrl = TextEditingController();
   final emailCtrl = TextEditingController();
   final signatureCtrl = TextEditingController();
+
+  final OnboardingController _onboardingController =
+      Get.find<OnboardingController>();
 
   // Selections & States
   String? selectedSex;
@@ -55,7 +58,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
   void initState() {
     super.initState();
     _animCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
 
@@ -110,13 +115,25 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                         icon: Icons.person_outline_rounded,
                         child: Column(
                           children: [
-                            _styledTextField('Full Name', nameCtrl, Icons.badge_outlined),
+                            _styledTextField(
+                              'Full Name',
+                              nameCtrl,
+                              Icons.badge_outlined,
+                            ),
                             const SizedBox(height: 14),
-                            _styledDateField('Date of Birth', dobCtrl, Icons.calendar_today_outlined),
+                            _styledDateField(
+                              'Date of Birth',
+                              dobCtrl,
+                              Icons.calendar_today_outlined,
+                            ),
                             const SizedBox(height: 14),
                             _styledDropdown(),
                             const SizedBox(height: 14),
-                            _styledTextField('Email Address', emailCtrl, Icons.email_outlined),
+                            _styledTextField(
+                              'Email Address',
+                              emailCtrl,
+                              Icons.email_outlined,
+                            ),
                           ],
                         ),
                       ),
@@ -130,7 +147,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _infoTextBlock(
-                              'Eye Movement Desensitization and Reprocessing (EMDR) is a psychotherapy treatment recognised by the World Health Organization (WHO) for treating trauma and PTSD. This digital programme combines standard EMDR sessions with Cognitive Behavioural Therapy (CBT) techniques.',
+                              'Eye Movement Desensitisation and Reprocessing (EMDR) is a psychotherapy treatment recognised by the World Health Organization (WHO) for treating trauma and PTSD. This digital programme combines standard EMDR sessions with Cognitive Behavioural Therapy (CBT) techniques.',
                             ),
                             const SizedBox(height: 10),
                             _infoTextBlock(
@@ -156,7 +173,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                               Icons.warning_amber_rounded,
                             ),
                             const SizedBox(height: 6),
-                            _dangerBanner('Note: You cannot continue with this programme if you are actively suicidal.'),
+                            _dangerBanner(
+                              'Note: You cannot continue with this programme if you are actively suicidal.',
+                            ),
                             const SizedBox(height: 4),
                             _styledCheckTile(
                               label: 'Active suicidal thoughts or plans',
@@ -179,7 +198,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                             _styledCheckTile(
                               label: 'Severe dissociative disorders',
                               value: isDissociative,
-                              onChange: (v) => setState(() => isDissociative = v!),
+                              onChange: (v) =>
+                                  setState(() => isDissociative = v!),
                               danger: true,
                             ),
                             _styledCheckTile(
@@ -200,9 +220,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                         child: Column(
                           children: [
                             _riskItem('Heightened emotions and vivid dreams'),
-                            _riskItem('Physical sensations (headaches, dizziness, fatigue)'),
+                            _riskItem(
+                              'Physical sensations (headaches, dizziness, fatigue)',
+                            ),
                             _riskItem('Emergence of associated memories'),
-                            _riskItem('Continuation of processing between sessions'), // ADDED
+                            _riskItem(
+                              'Continuation of processing between sessions',
+                            ), // ADDED
                             _riskItem('Temporary increase in distress levels'),
                           ],
                         ),
@@ -216,10 +240,26 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _dataPrivacyRow(Icons.gavel_rounded, 'Legal Basis', 'Article 9(2)(h) UK GDPR'),
-                            _dataPrivacyRow(Icons.cloud_outlined, 'Data Storage', 'AWS Elastic Beanstalk (UK/EU)'),
-                            _dataPrivacyRow(Icons.lock_outline_rounded, 'Encryption', 'AES-256 at rest, TLS 1.2+ in transit'),
-                            _dataPrivacyRow(Icons.history_rounded, 'Retention', '8 years for adults, age 25 for children'),
+                            _dataPrivacyRow(
+                              Icons.gavel_rounded,
+                              'Legal Basis',
+                              'Article 9(2)(h) UK GDPR',
+                            ),
+                            _dataPrivacyRow(
+                              Icons.cloud_outlined,
+                              'Data Storage',
+                              'AWS Elastic Beanstalk (UK/EU)',
+                            ),
+                            _dataPrivacyRow(
+                              Icons.lock_outline_rounded,
+                              'Encryption',
+                              'AES-256 at rest, TLS 1.2+ in transit',
+                            ),
+                            _dataPrivacyRow(
+                              Icons.history_rounded,
+                              'Retention',
+                              '8 years for adults, age 25 for children',
+                            ),
                             const SizedBox(height: 12),
                             _warningBanner(
                               'Your Rights: Access, Rectify, Object, or Lodge a complaint with ICO.',
@@ -247,9 +287,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _styledCheckTile(
-                              label: 'I consent to my anonymised data being used for future research purposes',
+                              label:
+                                  'I consent to my anonymised data being used for future research purposes',
                               value: researchConsent,
-                              onChange: (v) => setState(() => researchConsent = v!),
+                              onChange: (v) =>
+                                  setState(() => researchConsent = v!),
                               themed: true,
                             ),
                             const SizedBox(height: 8),
@@ -257,14 +299,31 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                               'Your therapy data may be anonymised (all identifying information removed) and used to improve EMDR treatments. This is entirely optional and won\'t affect your treatment.',
                             ),
                             const SizedBox(height: 16),
-                            const Text('How we protect your privacy in research:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: _textDark)),
+                            const Text(
+                              'How we protect your privacy in research:',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: _textDark,
+                              ),
+                            ),
                             const SizedBox(height: 8),
                             // ADDED MISSING BULLET POINTS
-                            _bulletItem('All personal identifiers are permanently removed'),
-                            _bulletItem('Data is aggregated with other participants'),
-                            _bulletItem('Researchers have no access to your identity'),
-                            _bulletItem('Research is reviewed by ethics committees'),
-                            _bulletItem('Findings are published only in aggregate form'),
+                            _bulletItem(
+                              'All personal identifiers are permanently removed',
+                            ),
+                            _bulletItem(
+                              'Data is aggregated with other participants',
+                            ),
+                            _bulletItem(
+                              'Researchers have no access to your identity',
+                            ),
+                            _bulletItem(
+                              'Research is reviewed by ethics committees',
+                            ),
+                            _bulletItem(
+                              'Findings are published only in aggregate form',
+                            ),
                           ],
                         ),
                       ),
@@ -280,9 +339,13 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                           children: [
                             _infoTextBlock('You have the right to:'),
                             const SizedBox(height: 10),
-                            _bulletItem('Withdraw from the programme whenever you would like to and cancel your subscription'),
+                            _bulletItem(
+                              'Withdraw from the programme whenever you would like to and cancel your subscription',
+                            ),
                             _bulletItem('Refuse any specific intervention'),
-                            _bulletItem('Access emergency support if needed (see crisis contacts below)'),
+                            _bulletItem(
+                              'Access emergency support if needed (see crisis contacts below)',
+                            ),
                           ],
                         ),
                       ),
@@ -304,24 +367,31 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                         child: Column(
                           children: [
                             _styledCheckTile(
-                              label: 'I understand the nature of EMDR therapy and its potential risks and benefits',
+                              label:
+                                  'I understand the nature of EMDR therapy and its potential risks and benefits',
                               value: understandsEMDR,
-                              onChange: (v) => setState(() => understandsEMDR = v!),
+                              onChange: (v) =>
+                                  setState(() => understandsEMDR = v!),
                             ),
                             _styledCheckTile(
-                              label: 'I understand how my data will be processed and stored in accordance with UK GDPR',
+                              label:
+                                  'I understand how my data will be processed and stored in accordance with UK GDPR',
                               value: understandsGDPR,
-                              onChange: (v) => setState(() => understandsGDPR = v!),
+                              onChange: (v) =>
+                                  setState(() => understandsGDPR = v!),
                             ),
                             _styledCheckTile(
-                              label: 'I am participating voluntarily and understand I can withdraw at any time',
+                              label:
+                                  'I am participating voluntarily and understand I can withdraw at any time',
                               value: isVoluntary,
                               onChange: (v) => setState(() => isVoluntary = v!),
                             ),
                             _styledCheckTile(
-                              label: 'I understand the emergency procedures and have saved the crisis support numbers provided',
+                              label:
+                                  'I understand the emergency procedures and have saved the crisis support numbers provided',
                               value: knowsEmergency,
-                              onChange: (v) => setState(() => knowsEmergency = v!),
+                              onChange: (v) =>
+                                  setState(() => knowsEmergency = v!),
                             ),
                           ],
                         ),
@@ -335,20 +405,33 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _styledTextField('Type your full name to sign electronically', signatureCtrl, Icons.edit_outlined),
+                            _styledTextField(
+                              'Type your full name to sign electronically',
+                              signatureCtrl,
+                              Icons.edit_outlined,
+                            ),
                             const SizedBox(height: 12),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 const Padding(
                                   padding: EdgeInsets.only(top: 2.0),
-                                  child: Icon(Icons.verified_outlined, size: 14, color: _textLight),
+                                  child: Icon(
+                                    Icons.verified_outlined,
+                                    size: 14,
+                                    color: _textLight,
+                                  ),
                                 ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     'By typing your name above, you confirm that you have read, understood, and agree to the terms outlined in this consent form. This electronic signature is legally binding.',
-                                    style: TextStyle(fontSize: 12, color: _textLight, fontStyle: FontStyle.italic, height: 1.4),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: _textLight,
+                                      fontStyle: FontStyle.italic,
+                                      height: 1.4,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -365,7 +448,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                       const Center(
                         child: Text(
                           'This form is compliant with UK GDPR Standards',
-                          style: TextStyle(fontSize: 12, color: _textLight, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _textLight,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -409,12 +496,21 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.psychology_rounded, color: Colors.white, size: 32),
+                  child: const Icon(
+                    Icons.psychology_rounded,
+                    color: Colors.white,
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 10),
                 const Text(
                   'INKIND – National Psychology Clinic',
-                  style: TextStyle(color: Colors.white70, fontSize: 16, letterSpacing: 1.0, fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    letterSpacing: 1.0,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ],
             ),
@@ -438,7 +534,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: _primaryLight.withOpacity(0.25), blurRadius: 20, offset: const Offset(0, 6)),
+          BoxShadow(
+            color: _primaryLight.withOpacity(0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: Row(
@@ -451,12 +551,19 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
               children: [
                 const Text(
                   'EMDR Programme',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Informed Consent & Data Processing Agreement',
-                  style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -487,7 +594,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
             color: _cardBg,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Column(
@@ -497,7 +608,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                 padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
                 decoration: BoxDecoration(
                   color: accentColor.withOpacity(0.07),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -511,7 +624,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                       child: Center(
                         child: Text(
                           number,
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -545,7 +662,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
 
   // ─── Text Field ───────────────────────────────────────────────────────────
 
-  Widget _styledTextField(String label, TextEditingController ctrl, IconData icon) {
+  Widget _styledTextField(
+    String label,
+    TextEditingController ctrl,
+    IconData icon,
+  ) {
     return TextFormField(
       controller: ctrl,
       style: const TextStyle(fontSize: 14, color: _textDark),
@@ -556,7 +677,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         prefixIcon: Icon(icon, size: 18, color: _primary),
         filled: true,
         fillColor: _bg,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -579,7 +703,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
 
   // ─── Date Field ───────────────────────────────────────────────────────────
 
-  Widget _styledDateField(String label, TextEditingController ctrl, IconData icon) {
+  Widget _styledDateField(
+    String label,
+    TextEditingController ctrl,
+    IconData icon,
+  ) {
     return TextFormField(
       controller: ctrl,
       readOnly: true,
@@ -604,7 +732,8 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         );
         if (pickedDate != null) {
           setState(() {
-            ctrl.text = "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+            ctrl.text =
+                "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
           });
         }
       },
@@ -618,7 +747,10 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
         suffixIcon: const Icon(Icons.calendar_month, color: _primary),
         filled: true,
         fillColor: _bg,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -643,18 +775,30 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
 
   Widget _styledDropdown() {
     return DropdownButtonFormField<String>(
-      value: selectedSex,
-      hint: const Text('Select Sex', style: TextStyle(fontSize: 13, color: _textMid)),
+      initialValue: selectedSex,
+      hint: const Text(
+        'Select Sex',
+        style: TextStyle(fontSize: 13, color: _textMid),
+      ),
       items: ['Male', 'Female', 'Other', 'Prefer not to say']
-          .map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14))))
+          .map(
+            (e) => DropdownMenuItem(
+              value: e,
+              child: Text(e, style: const TextStyle(fontSize: 14)),
+            ),
+          )
           .toList(),
       onChanged: (v) => setState(() => selectedSex = v),
-      validator: (v) => v == null || v.isEmpty ? 'Please select your sex' : null,
+      validator: (v) =>
+          v == null || v.isEmpty ? 'Please select your sex' : null,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.wc_outlined, size: 18, color: _primary),
         filled: true,
         fillColor: _bg,
-        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 14,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.shade200),
@@ -712,7 +856,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                     ),
                   ),
                   child: value
-                      ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        )
                       : null,
                 ),
                 const SizedBox(width: 12),
@@ -721,7 +869,9 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                     label,
                     style: TextStyle(
                       fontSize: 13,
-                      color: danger && value ? const Color(0xFFE53935) : _textDark,
+                      color: danger && value
+                          ? const Color(0xFFE53935)
+                          : _textDark,
                       fontWeight: value ? FontWeight.w600 : FontWeight.normal,
                       height: 1.4,
                     ),
@@ -752,10 +902,25 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('•', style: TextStyle(color: _primaryLight, fontSize: 16, height: 1.2, fontWeight: FontWeight.bold)),
+          const Text(
+            '•',
+            style: TextStyle(
+              color: _primaryLight,
+              fontSize: 16,
+              height: 1.2,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13, color: _textMid, height: 1.5)),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                color: _textMid,
+                height: 1.5,
+              ),
+            ),
           ),
         ],
       ),
@@ -781,7 +946,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
           Expanded(
             child: Text(
               text,
-              style: TextStyle(fontSize: 12.5, color: border.withRed(60), height: 1.5, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: border.withRed(60),
+                height: 1.5,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -806,7 +976,12 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 12.5, color: Color(0xFFE53935), fontWeight: FontWeight.w600, height: 1.4),
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: Color(0xFFE53935),
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
             ),
           ),
         ],
@@ -826,11 +1001,21 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
             margin: const EdgeInsets.only(top: 6),
             width: 6,
             height: 6,
-            decoration: const BoxDecoration(color: _primaryLight, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: _primaryLight,
+              shape: BoxShape.circle,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(text, style: const TextStyle(fontSize: 13, color: _textMid, height: 1.5)),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 13,
+                color: _textMid,
+                height: 1.5,
+              ),
+            ),
           ),
         ],
       ),
@@ -856,8 +1041,22 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 11, color: _textLight, fontWeight: FontWeight.w600)),
-              Text(value, style: const TextStyle(fontSize: 13, color: _textDark, fontWeight: FontWeight.w500)),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: _textLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: _textDark,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ],
@@ -878,27 +1077,55 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
           Icons.emergency_rounded,
         ),
         const SizedBox(height: 4),
-        _crisisRow(Icons.local_hospital_outlined, 'GP / NHS 111', 'Urgent Support / Non-life-threatening'), // UPDATED
-        _crisisRow(Icons.phone_in_talk_outlined, 'Samaritans', '116 123 (Free, 24/7)'),
-        _crisisRow(Icons.sms_outlined, 'Crisis Text Line', "Text 'SHOUT' to 85258"),
-        _crisisRow(Icons.support_agent_outlined, 'Mind Infoline', '0300 123 3393 (9am–6pm)'),
-        _crisisRow(Icons.headset_mic_outlined, 'SANEline', '0300 304 7000 (4pm–10pm)'),
+        _crisisRow(
+          Icons.local_hospital_outlined,
+          'GP / NHS 111',
+          'Urgent Support / Non-life-threatening',
+        ), // UPDATED
+        _crisisRow(
+          Icons.phone_in_talk_outlined,
+          'Samaritans',
+          '116 123 (Free, 24/7)',
+        ),
+        _crisisRow(
+          Icons.sms_outlined,
+          'Crisis Text Line',
+          "Text 'SHOUT' to 85258",
+        ),
+        _crisisRow(
+          Icons.support_agent_outlined,
+          'Mind Infoline',
+          '0300 123 3393 (9am–6pm)',
+        ),
+        _crisisRow(
+          Icons.headset_mic_outlined,
+          'SANEline',
+          '0300 304 7000 (4pm–10pm)',
+        ),
         _crisisRow(Icons.warning_rounded, 'Emergency', 'Call 999 or go to A&E'),
 
         const SizedBox(height: 12),
         // ADDED MISSING HELPLINE LINK
         const Text(
           'Full list of mental health helplines available at:\nmind.org.uk/information-support/guides-to-support-and-services/',
-          style: TextStyle(fontSize: 11, color: _textMid, fontStyle: FontStyle.italic),
+          style: TextStyle(
+            fontSize: 11,
+            color: _textMid,
+            fontStyle: FontStyle.italic,
+          ),
         ),
         const SizedBox(height: 20),
 
         // ADDED MISSING BETWEEN-SESSION SUPPORT
         _infoTextBlock('Between-session support:'),
         const SizedBox(height: 8),
-        _bulletItem('Save these numbers in your phone before beginning treatment'),
+        _bulletItem(
+          'Save these numbers in your phone before beginning treatment',
+        ),
         _bulletItem('Share them with a trusted friend or family member'),
-        _bulletItem('Don\'t wait until crisis point - reach out early if you\'re struggling'),
+        _bulletItem(
+          'Don\'t wait until crisis point - reach out early if you\'re struggling',
+        ),
       ],
     );
   }
@@ -922,7 +1149,14 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
           const SizedBox(width: 10),
           Expanded(
             flex: 3,
-            child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _textDark)),
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _textDark,
+              ),
+            ),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -930,7 +1164,11 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
             child: Text(
               contact,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, color: Color(0xFFE53935), fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFE53935),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -945,7 +1183,7 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
     return Column(
       children: [
         if (isLocked)
-        // ADDED MISSING MEDICAL REVIEW TEXT
+          // ADDED MISSING MEDICAL REVIEW TEXT
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             margin: const EdgeInsets.only(bottom: 16),
@@ -965,12 +1203,20 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
                     children: [
                       Text(
                         '⚠️ Medical Review Required',
-                        style: TextStyle(fontSize: 13, color: Color(0xFFE53935), fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFFE53935),
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(height: 4),
                       Text(
                         'You have indicated one or more conditions that require medical review before proceeding with EMDR therapy.\n\nIf you are experiencing suicidal thoughts, please contact your GP immediately or call 999.\n\nClinical team contact: 0800 XXX XXXX or email clinical@inkind.uk',
-                        style: TextStyle(fontSize: 12, color: Color(0xFFB71C1C), height: 1.4),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFFB71C1C),
+                          height: 1.4,
+                        ),
                       ),
                     ],
                   ),
@@ -978,28 +1224,55 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
               ],
             ),
           ),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isLocked ? Colors.grey.shade300 : _primary,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: isLocked ? 0 : 4,
-              shadowColor: _primary.withOpacity(0.4),
-            ),
-            onPressed: isLocked ? null : _submit,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(isLocked ? Icons.lock_rounded : Icons.check_circle_rounded, size: 20),
-                const SizedBox(width: 10),
-                Text(
-                  isLocked ? 'SUBMISSION LOCKED' : 'SUBMIT CONSENT',
-                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 14),
+        Obx(
+          () => SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    (isLocked || _onboardingController.isLoading.value)
+                    ? Colors.grey.shade300
+                    : _primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
+                elevation: isLocked ? 0 : 4,
+                shadowColor: _primary.withOpacity(0.4),
+              ),
+              onPressed: (isLocked || _onboardingController.isLoading.value)
+                  ? null
+                  : _submit,
+              child: _onboardingController.isLoading.value
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          isLocked
+                              ? Icons.lock_rounded
+                              : Icons.check_circle_rounded,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          isLocked ? 'SUBMISSION LOCKED' : 'SUBMIT CONSENT',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -1007,38 +1280,85 @@ class _ConsentFormScreenState extends State<ConsentFormScreen>
     );
   }
 
-  // UPDATED VALIDATION LOGIC
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
+  // Full API-connected submission (Step 1 → Profile, Step 2 → Safety Check, Step 3 → Consent)
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
 
-      // 1. Validate Consent Checkboxes
-      if (!understandsEMDR || !understandsGDPR || !isVoluntary || !knowsEmergency) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please confirm all required consent declarations.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
+    // Validate Consent Checkboxes
+    if (!understandsEMDR ||
+        !understandsGDPR ||
+        !isVoluntary ||
+        !knowsEmergency) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please confirm all required consent declarations.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Validate Signature match
+    if (nameCtrl.text.trim().toLowerCase() !=
+        signatureCtrl.text.trim().toLowerCase()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Electronic signature must match your full name exactly.',
           ),
-        );
-        return;
-      }
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-      // 2. Validate Signature match
-      if (nameCtrl.text.trim().toLowerCase() != signatureCtrl.text.trim().toLowerCase()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Electronic signature must match your full name exactly.'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
+    // Call all 3 onboarding API steps via OnboardingController
+    final success = await _onboardingController.completeOnboardingSteps(
+      dob: dobCtrl.text.trim(),
+      sex: selectedSex ?? '',
+      safetyCheck: {
+        'activeSuicidalThoughts': isSuicidal,
+        'historyOfSeizures': isSeizures,
+        'pregnancy': isPregnancy,
+        'severeDissociativeDisorders': isDissociative,
+        'activePsychosis': isPsychosis,
+      },
+      consent: {
+        'understoodEMDRNatureAndRisks': understandsEMDR,
+        'agreedToGDPR': understandsGDPR,
+        'participatingVoluntarily': isVoluntary,
+        'savedCrisisSupportNumbers': knowsEmergency,
+        'optionalResearchParticipation': researchConsent,
+        'electronicSignature': signatureCtrl.text.trim(),
+      },
+    );
 
-      // Proceed to Next Screen
+    if (!mounted) return;
+
+    if (success) {
+      // All 3 steps succeeded → go to assessment
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const FullAssessmentFlow()),
+      );
+    } else {
+      final msg = _onboardingController.errorMessage.value;
+      final isBlocked = _onboardingController.isBlocked.value;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isBlocked
+                ? 'You cannot continue due to one or more safety conditions. Please seek immediate professional support.'
+                : (msg.isNotEmpty
+                      ? msg
+                      : 'Something went wrong. Please try again.'),
+          ),
+          backgroundColor: isBlocked ? Colors.red.shade700 : Colors.red,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 5),
+        ),
       );
     }
   }

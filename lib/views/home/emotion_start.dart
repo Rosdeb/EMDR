@@ -1,11 +1,9 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/Library/ACalmPage.dart';
-import 'package:jonssony/views/Library/VCalmPage1.dart';
 import 'package:jonssony/views/home/EmotionBodyMap.dart';
 import 'package:jonssony/views/home/emdr2.dart';
-
+import 'package:jonssony/views/home/hunder&lighting.dart';
 
 class EmotionStartScreen extends StatefulWidget {
   const EmotionStartScreen({super.key});
@@ -14,7 +12,8 @@ class EmotionStartScreen extends StatefulWidget {
   State<EmotionStartScreen> createState() => _EmotionStartScreenState();
 }
 
-class _EmotionStartScreenState extends State<EmotionStartScreen> with SingleTickerProviderStateMixin {
+class _EmotionStartScreenState extends State<EmotionStartScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeIn;
 
@@ -41,14 +40,12 @@ class _EmotionStartScreenState extends State<EmotionStartScreen> with SingleTick
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_library.jpg',
               fit: BoxFit.cover,
             ),
           ),
-
 
           SafeArea(
             child: Column(
@@ -66,34 +63,38 @@ class _EmotionStartScreenState extends State<EmotionStartScreen> with SingleTick
                             category: "AUDIO",
                             icon: Icons.music_note,
                             title: "Spiral Technique",
-                            desc: "A grounding technique to help when emotions feel overwhelming.",
+                            desc:
+                                "A grounding technique to help when emotions feel overwhelming.",
                             onTap: () {
-Get.to(() => ACalmPage());
+                              Get.to(() => ACalmPage());
                             },
                           ),
                           _buildModernCard(
                             category: "VIDEO",
                             icon: Icons.play_circle_fill,
-                            title: "Hunder and Lightning",
-                            desc: "A grounding technique to help when emotions feel overwhelming.",
+                            title: "Thunder and Lightning",
+                            desc:
+                                "A grounding technique to help when emotions feel overwhelming.",
                             onTap: () {
-                              Get.to(() => VCalmPage1());
+                              Get.to(() => const ThunderLightningPage());
                             },
                           ),
                           _buildModernCard(
                             category: "EMDR",
                             icon: Icons.layers,
                             title: "EMDR 2.0",
-                            desc: "A grounding technique to help when emotions feel overwhelming.",
+                            desc:
+                                "A grounding technique to help when emotions feel overwhelming.",
                             onTap: () {
-                              Get.to(() => emdr());
+                              Get.to(() => const EmdrScreen());
                             },
                           ),
                           _buildModernCard(
                             category: "DRAWING",
                             icon: Icons.draw_sharp,
                             title: "Emotion Drawing exercise",
-                            desc: "A grounding technique to help when emotions feel overwhelming.",
+                            desc:
+                                "A grounding technique to help when emotions feel overwhelming.",
                             onTap: () {
                               Get.to(() => EmotionBodyMap());
                             },
@@ -146,11 +147,13 @@ Get.to(() => ACalmPage());
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.95), // হালকা ট্রান্সপারেন্সি যাতে ব্যাকগ্রাউন্ডের ফিল পাওয়া যায়
+        color: Colors.white.withValues(
+          alpha: 0.95,
+        ), // হালকা ট্রান্সপারেন্সি যাতে ব্যাকগ্রাউন্ডের ফিল পাওয়া যায়
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -172,7 +175,10 @@ Get.to(() => ACalmPage());
                     children: [
                       // ব্যাজ (ইমেজের মতো ডিজাইন)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFE8F1EC),
                           borderRadius: BorderRadius.circular(8),
@@ -180,7 +186,11 @@ Get.to(() => ACalmPage());
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(icon, size: 14, color: const Color(0xFF4A7C5F)),
+                            Icon(
+                              icon,
+                              size: 14,
+                              color: const Color(0xFF4A7C5F),
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               category,
@@ -210,7 +220,7 @@ Get.to(() => ACalmPage());
                         desc,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           height: 1.4,
                         ),
                       ),

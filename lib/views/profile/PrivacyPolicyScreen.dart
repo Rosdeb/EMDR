@@ -15,7 +15,9 @@ class PrivacyPolicyScreen extends StatefulWidget {
 }
 
 class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
-  final StaticContentController _controller = Get.put(StaticContentController());
+  final StaticContentController _controller = Get.put(
+    StaticContentController(),
+  );
 
   @override
   void initState() {
@@ -58,19 +60,24 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                       Obx(() {
                         if (_controller.isPrivacyLoading.value) {
                           return const Center(
-                              child: CircularProgressIndicator(
-                                  color: Color(0xFF4F7957)));
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF4F7957),
+                            ),
+                          );
                         }
 
                         if (_controller.privacyError.isNotEmpty) {
                           return Center(
                             child: Column(
                               children: [
-                                AppText(_controller.privacyError.value,
-                                    color: Colors.red),
+                                AppText(
+                                  _controller.privacyError.value,
+                                  color: Colors.red,
+                                ),
                                 const SizedBox(height: 10),
                                 TextButton(
-                                  onPressed: () => _controller.fetchPrivacyPolicy(),
+                                  onPressed: () =>
+                                      _controller.fetchPrivacyPolicy(),
                                   child: const Text("Retry"),
                                 ),
                               ],
@@ -80,9 +87,13 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
 
                         final privacy = _controller.privacyData;
                         final String overview = privacy['overview'] ?? '';
-                        final List sections = privacy['sections'] is List ? privacy['sections'] : [];
+                        final List sections = privacy['sections'] is List
+                            ? privacy['sections']
+                            : [];
                         final String version = privacy['version'] ?? '';
-                        final String lastUpdated = _formatDate(privacy['updatedAt']);
+                        final String lastUpdated = _formatDate(
+                          privacy['updatedAt'],
+                        );
 
                         return ClipRRect(
                           borderRadius: BorderRadius.circular(25),
@@ -128,9 +139,12 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                       final title = section['title'] ?? '';
                                       final content = section['content'] ?? '';
                                       return Padding(
-                                        padding: const EdgeInsets.only(bottom: 15),
+                                        padding: const EdgeInsets.only(
+                                          bottom: 15,
+                                        ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             if (title.isNotEmpty)
                                               AppText(
@@ -146,11 +160,11 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
                                                 fontSize: 14,
                                                 color: const Color(0xFF2E3E32),
                                               ),
-                                            ]
+                                            ],
                                           ],
                                         ),
                                       );
-                                    }).toList(),
+                                    }),
                                   if (lastUpdated.isNotEmpty) ...[
                                     const SizedBox(height: 20),
                                     Align(
@@ -178,4 +192,4 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       ),
     );
   }
-}
+}

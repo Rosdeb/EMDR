@@ -5,8 +5,7 @@ import 'package:get/get.dart';
 import 'package:jonssony/utils/AppIcons/app_icons.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
-import 'package:jonssony/views/chatbot/journry_page.dart';
-import 'package:jonssony/views/chatbot/SessionFourPage.dart';
+import 'package:jonssony/views/sessions/journry_page.dart';
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -34,18 +33,20 @@ class CustomNavBar extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  height: 75,
+                  height: 65,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.82),
                     borderRadius: BorderRadius.circular(40),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       _navItem(
                         AppIcons.home,
-                        "Home",
+                        "My Space",
                         0,
                         currentIndex == 0,
                         const Color(0xFF537E5D),
@@ -80,11 +81,11 @@ class CustomNavBar extends StatelessWidget {
           const SizedBox(width: 8),
           GestureDetector(
             onTap: () {
-              Get.to(() =>  CreateJourneyPage());
+              Get.to(() => CreateJourneyPage());
             },
             child: Container(
-              height: 70,
-              width: 70,
+              height: 65,
+              width: 65,
               decoration: const BoxDecoration(
                 color: Color(0xFF537E5D),
                 shape: BoxShape.circle,
@@ -93,12 +94,12 @@ class CustomNavBar extends StatelessWidget {
                     color: Colors.black26,
                     blurRadius: 10,
                     offset: Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
-              child: const Icon(Icons.add, color: Colors.white, size: 35),
+              child: const Icon(Icons.add, color: Colors.white, size: 30),
             ),
-          )
+          ),
         ],
       ),
     );

@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/profile/AboutUsScreen.dart';
 import 'package:jonssony/views/profile/ChangePasswordScreen.dart';
@@ -19,12 +18,21 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, dynamic>> settingsMenu = [
-      {"title": "Change Password", "route": () => const SettingChangePasswordScreen()},
+      {
+        "title": "Change Password",
+        "route": () => const SettingChangePasswordScreen(),
+      },
       {"title": "About Us", "route": () => const AboutUsScreen()},
       {"title": "Help", "route": () => const HelpScreen()},
-      {"title": "Support Requests", "route": () => const SupportRequestScreen()},
+      {
+        "title": "Support Requests",
+        "route": () => const SupportRequestScreen(),
+      },
       {"title": "Privacy Policy", "route": () => const PrivacyPolicyScreen()},
-      {"title": "Terms of service", "route": () => const TermsOfServiceScreen()},
+      {
+        "title": "Terms of service",
+        "route": () => const TermsOfServiceScreen(),
+      },
     ];
 
     return Scaffold(
@@ -34,7 +42,7 @@ class SettingsScreen extends StatelessWidget {
           Column(
             children: [
               Custom_AppBar(context, "Settings"),
-SizedBox(height: 20),
+              SizedBox(height: 20),
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -49,7 +57,9 @@ SizedBox(height: 20),
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.3),
                               borderRadius: BorderRadius.circular(25),
-                              border: Border.all(color: Colors.white.withOpacity(0.3)),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                              ),
                             ),
                             child: Column(
                               children: settingsMenu.map((item) {
@@ -63,7 +73,10 @@ SizedBox(height: 20),
                                         fontSize: 16,
                                         color: Color(0xFF2E3E32),
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         Get.to(item["route"]);
                                       },
@@ -118,6 +131,4 @@ SizedBox(height: 20),
       ),
     );
   }
-
-
 }

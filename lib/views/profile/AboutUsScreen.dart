@@ -22,7 +22,7 @@ class AboutUsScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-           BackgroundDesign(),
+          BackgroundDesign(),
           Column(
             children: [
               Custom_AppBar(context, title),
@@ -30,7 +30,11 @@ class AboutUsScreen extends StatelessWidget {
               Expanded(
                 child: Obx(() {
                   if (controller.isAboutUsLoading.value) {
-                    return const Center(child: CircularProgressIndicator(color: Color(0xFF4F7957)));
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF4F7957),
+                      ),
+                    );
                   }
 
                   if (controller.aboutUsError.isNotEmpty) {
@@ -38,7 +42,10 @@ class AboutUsScreen extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          AppText(controller.aboutUsError.value, color: Colors.red),
+                          AppText(
+                            controller.aboutUsError.value,
+                            color: Colors.red,
+                          ),
                           const SizedBox(height: 10),
                           ElevatedButton(
                             onPressed: () => controller.fetchAboutUs(),
@@ -54,7 +61,9 @@ class AboutUsScreen extends StatelessWidget {
                   final List sections = data['sections'] ?? [];
 
                   // Sort sections by order if available
-                  sections.sort((a, b) => (a['order'] ?? 0).compareTo(b['order'] ?? 0));
+                  sections.sort(
+                    (a, b) => (a['order'] ?? 0).compareTo(b['order'] ?? 0),
+                  );
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
@@ -67,7 +76,9 @@ class AboutUsScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(25),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,18 +93,25 @@ class AboutUsScreen extends StatelessWidget {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 20),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (sTitle.isNotEmpty)
-                                        AppText(sTitle, fontSize: 18, fontWeight: FontWeight.bold),
+                                        AppText(
+                                          sTitle,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       if (sContent.isNotEmpty)
                                         AppText(sContent, fontSize: 14),
                                     ],
                                   ),
                                 );
-                              }).toList(),
+                              }),
                               if (overview.isEmpty && sections.isEmpty)
-                                const Center(child: AppText("No content available.")),
+                                const Center(
+                                  child: AppText("No content available."),
+                                ),
                             ],
                           ),
                         ),

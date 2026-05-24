@@ -12,6 +12,8 @@ import '../views/auth/signup_screen.dart';
 import '../views/Library/library_page.dart';
 import '../views/progress/progress_page.dart';
 import '../views/profile/profile_page.dart';
+import '../views/home/Notification.dart';
+
 
 class RouteHelper {
   static const String splash = '/';
@@ -27,6 +29,8 @@ class RouteHelper {
   static const String profile = '/profile';
   static const String changePassword = '/change_password';
   static const String main = '/main';
+  static const String notifications = '/notifications';
+
 
   static List<GetPage> routes = [
     GetPage(name: splash, page: () => const SplashScreen()),
@@ -42,5 +46,7 @@ class RouteHelper {
     GetPage(name: progress, page: () => const ProgressPage()),
     GetPage(name: profile, page: () => const ProfilePage()),
     GetPage(name: main, page: () => const MainScreen()),
+    GetPage(name: notifications, page: () => const NotificationScreen()),
   ];
+
 }

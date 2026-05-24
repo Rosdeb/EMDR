@@ -15,7 +15,9 @@ class TermsOfServiceScreen extends StatefulWidget {
 }
 
 class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
-  final StaticContentController _controller = Get.put(StaticContentController());
+  final StaticContentController _controller = Get.put(
+    StaticContentController(),
+  );
 
   @override
   void initState() {
@@ -58,16 +60,20 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                       Obx(() {
                         if (_controller.isTermsLoading.value) {
                           return const Center(
-                              child: CircularProgressIndicator(
-                                  color: Color(0xFF4F7957)));
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF4F7957),
+                            ),
+                          );
                         }
 
                         if (_controller.termsError.isNotEmpty) {
                           return Center(
                             child: Column(
                               children: [
-                                AppText(_controller.termsError.value,
-                                    color: Colors.red),
+                                AppText(
+                                  _controller.termsError.value,
+                                  color: Colors.red,
+                                ),
                                 const SizedBox(height: 10),
                                 TextButton(
                                   onPressed: () =>
@@ -80,10 +86,15 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                         }
 
                         final terms = _controller.termsData;
-                        final List sections = terms['sections'] is List ? terms['sections'] : [];
+                        final List sections = terms['sections'] is List
+                            ? terms['sections']
+                            : [];
                         final String version = terms['version'] ?? '';
-                        final String lastUpdated = _formatDate(terms['lastUpdated']);
-                        final bool isAccepted = _controller.isTermsAccepted.value;
+                        final String lastUpdated = _formatDate(
+                          terms['lastUpdated'],
+                        );
+                        final bool isAccepted =
+                            _controller.isTermsAccepted.value;
                         final String termsId = terms['_id'] ?? '';
 
                         return Column(
@@ -91,7 +102,10 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(25),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                                filter: ImageFilter.blur(
+                                  sigmaX: 15,
+                                  sigmaY: 15,
+                                ),
                                 child: Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
@@ -102,7 +116,8 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                                     ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (version.isNotEmpty) ...[
                                         AppText(
@@ -122,31 +137,39 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                                       else
                                         ...sections.map((section) {
                                           final title = section['title'] ?? '';
-                                          final content = section['content'] ?? '';
+                                          final content =
+                                              section['content'] ?? '';
                                           return Padding(
-                                            padding: const EdgeInsets.only(bottom: 15),
+                                            padding: const EdgeInsets.only(
+                                              bottom: 15,
+                                            ),
                                             child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
                                                 if (title.isNotEmpty)
                                                   AppText(
                                                     title,
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.bold,
-                                                    color: const Color(0xFF2E3E32),
+                                                    color: const Color(
+                                                      0xFF2E3E32,
+                                                    ),
                                                   ),
                                                 if (content.isNotEmpty) ...[
                                                   const SizedBox(height: 5),
                                                   AppText(
                                                     _stripHtml(content),
                                                     fontSize: 14,
-                                                    color: const Color(0xFF2E3E32),
+                                                    color: const Color(
+                                                      0xFF2E3E32,
+                                                    ),
                                                   ),
-                                                ]
+                                                ],
                                               ],
                                             ),
                                           );
-                                        }).toList(),
+                                        }),
                                       if (lastUpdated.isNotEmpty) ...[
                                         const SizedBox(height: 20),
                                         Align(
@@ -163,7 +186,6 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
                                 ),
                               ),
                             ),
-
                           ],
                         );
                       }),
@@ -177,4 +199,4 @@ class _TermsOfServiceScreenState extends State<TermsOfServiceScreen> {
       ),
     );
   }
-}
+}
