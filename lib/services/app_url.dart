@@ -1,5 +1,4 @@
 
 class AppUrl {
-
-  static const String baseUrl = 'https://string-cabin-pointing-ordering.trycloudflare.com/api';
+  static const String baseUrl = 'https://emdr-backend-r433.onrender.com/api';
 }

@@ -155,6 +155,7 @@ class AuthController extends GetxController {
       }
     } catch (e) {
       errorMessage.value = 'Network error. Please try again.';
+      print("error: $e");
       _showError(errorMessage.value);
     } finally {
       isLoading.value = false;

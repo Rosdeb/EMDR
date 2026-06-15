@@ -2651,3 +2651,46 @@ _BlsSessionDuration _blsSessionDurationFromMinutes(dynamic value) {
   final minutes = int.tryParse(value?.toString() ?? '');
   return minutes == 90 ? _BlsSessionDuration.ninety : _BlsSessionDuration.sixty;
 }
+
+class BilateralAudioSync {
+  BilateralAudioSync({this.profile, this.audioAsset = ''});
+
+  final BlsToneProfile? profile;
+  final String audioAsset;
+
+  final AudioPlayer _left = AudioPlayer();
+  final AudioPlayer _right = AudioPlayer();
+
+  Future<void> init() async {
+    await _left.setReleaseMode(ReleaseMode.stop);
+    await _right.setReleaseMode(ReleaseMode.stop);
+    await _left.setBalance(-1.0);  // full left channel
+    await _right.setBalance(1.0);  // full right channel
+
+    if (audioAsset.trim().isNotEmpty) {
+      var path = audioAsset.trim();
+      if (path.startsWith('assets/')) path = path.substring(7);
+      await _left.setSource(AssetSource(path));
+      await _right.setSource(AssetSource(path));
+    }
+  }
+
+  Future<void> tick({required bool isRight}) async {
+    final player = isRight ? _right : _left;
+
+    if (audioAsset.trim().isNotEmpty) {
+      await player.seek(Duration.zero);
+      await player.resume();
+      return;
+    }
+
+    if (profile == null) return;
+    final bytes = buildBlsToneWav(profile: profile!, isRight: isRight);
+    await player.play(BytesSource(bytes, mimeType: 'audio/wav'));
+  }
+
+  Future<void> dispose() async {
+    await _left.dispose();
+    await _right.dispose();
+  }
+}

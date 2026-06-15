@@ -17,6 +17,7 @@ import 'package:jonssony/widgets/asset_animated_visual.dart';
 import 'package:jonssony/widgets/canvas_sprite_visual.dart';
 import 'package:jonssony/widgets/looping_muted_video.dart';
 import 'package:jonssony/widgets/transparent_session_visual.dart';
+import '../sessions/session_bilateral_simulation.dart';
 import 'bls_pdf_visuals.dart';
 import 'clam_space_ex.dart';
 import 'simulation_settings.dart';
@@ -46,6 +47,10 @@ class _SimulationScreenState extends State<SimulationScreen>
   Widget? _stableVideoVisual;
   Widget? _sessionMovingVisual;
 
+  bool _leftAudioFired = false;   // <-- add this
+  bool _rightAudioFired = false;  // <-- add this
+  static const double _audioLeadMs = 150;
+
   Timer? _setTimer;
   Timer? _sessionTimer;
   late Duration _setDuration;
@@ -68,12 +73,12 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool? _firstCompletionAnswer;
   bool _showSudsRating = false;
   int _sudsRating = 5;
-
   static const Map<String, BlsToneProfile> _htmlToneProfiles = kBlsToneProfiles;
 
   @override
   void initState() {
     super.initState();
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
@@ -84,10 +89,15 @@ class _SimulationScreenState extends State<SimulationScreen>
         ? 90
         : 60;
     _showIntroGuidance = widget.settings.showCompletionQuestions;
+
+    // 1. _controller সবার আগে তৈরি করো
     _controller = AnimationController(
       duration: Duration(milliseconds: (widget.settings.speed * 1000).toInt()),
       vsync: this,
     );
+
+    // 2. এখন _controller তৈরি হয়ে গেছে, তাই listener add করা নিরাপদ
+    _controller.addListener(_handleAudioSync);
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -109,6 +119,9 @@ class _SimulationScreenState extends State<SimulationScreen>
       begin: -1.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    // ✅ পুরোনো _animation.addListener (0.97 threshold) ব্লক বাদ দেওয়া হয়েছে —
+    // এখন শুধু _handleAudioSync (controller.value ভিত্তিক, lead-time সহ) sound trigger করবে।
 
     _turnController = AnimationController(
       duration: const Duration(milliseconds: 420),
@@ -185,6 +198,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     }
   }
 
+
   Future<void> _configurePulsePlayers() async {
     await _leftPulsePlayer.setPlayerMode(PlayerMode.lowLatency);
     await _rightPulsePlayer.setPlayerMode(PlayerMode.lowLatency);
@@ -192,7 +206,16 @@ class _SimulationScreenState extends State<SimulationScreen>
     await _rightPulsePlayer.setVolume(1);
     await _leftPulsePlayer.setBalance(-1);
     await _rightPulsePlayer.setBalance(1);
+
+    final profile = _resolvedToneProfile;
+    if (profile != null) {
+      final leftBytes = _toneBytes(profile: profile, isRight: false);
+      final rightBytes = _toneBytes(profile: profile, isRight: true);
+      await _leftPulsePlayer.setSourceBytes(leftBytes, mimeType: 'audio/wav');
+      await _rightPulsePlayer.setSourceBytes(rightBytes, mimeType: 'audio/wav');
+    }
   }
+
 
   void _precacheEndpointSounds() {
     final profile = _resolvedToneProfile;
@@ -317,6 +340,8 @@ class _SimulationScreenState extends State<SimulationScreen>
     _turnController.stop();
     _turnController.reset();
     _controller.reset();
+    _leftAudioFired = false;   // <-- add
+    _rightAudioFired = false;
     _effectController
       ..reset()
       ..repeat();
@@ -424,10 +449,6 @@ class _SimulationScreenState extends State<SimulationScreen>
   void _handleEndpointReached({required bool isRight}) {
     if (!mounted || !_motionStarted || _setComplete || _isPaused) return;
 
-    if (_usesEndpointAudio) {
-      unawaited(_playEndpointAudio(isRight: isRight));
-    }
-
     if (widget.settings.totalSets <= 0) return;
 
     if (isRight) {
@@ -439,6 +460,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     _visitedRightThisSet = false;
     _registerCompletedSet();
   }
+
 
   void _registerCompletedSet() {
     final totalSets = widget.settings.totalSets;
@@ -530,19 +552,15 @@ class _SimulationScreenState extends State<SimulationScreen>
   Future<void> _playEndpointAudio({required bool isRight}) async {
     final profile = _resolvedToneProfile;
     if (profile != null) {
-      final bytes = _toneBytes(profile: profile, isRight: isRight);
       final player = isRight ? _rightPulsePlayer : _leftPulsePlayer;
-
       try {
-        await player.stop();
-        await player.setVolume(1);
-        await player.play(BytesSource(bytes, mimeType: 'audio/wav'));
+        await player.seek(Duration.zero);
+        await player.resume();
       } catch (e) {
         debugPrint('Tone Error: $e');
       }
       return;
     }
-
     await _playFilePulse(isRight: isRight);
   }
 
@@ -652,6 +670,8 @@ class _SimulationScreenState extends State<SimulationScreen>
     _turnController.stop();
     _turnController.reset();
     _controller.reset();
+    _leftAudioFired = false;   // <-- add
+    _rightAudioFired = false;  // <-- add
     _effectController
       ..reset()
       ..repeat();
@@ -684,10 +704,34 @@ class _SimulationScreenState extends State<SimulationScreen>
       _showSudsRating = true;
     });
     unawaited(
-      _voice.speak(
-        'Ok. Without any tapping or eye movement, notice what you see and feel. Rate your negative emotion.',
-      ),
+      _voice.speak('Ok. Without any tapping or eye movement, notice what you see and feel. Rate your negative emotion.',),
     );
+  }
+
+  void _handleAudioSync() {
+    if (!_motionStarted || _setComplete || _isPaused || !_usesEndpointAudio) return;
+
+    final totalMs = _controller.duration?.inMilliseconds ?? 0;
+    if (totalMs <= 0) return;
+
+    final leadFraction = (_audioLeadMs / totalMs).clamp(0.0, 0.4);
+    final progress = _controller.value; // 0 -> 1 linear
+
+    if (_controller.status == AnimationStatus.forward) {
+      // forward মানে এবার right এর দিকে যাচ্ছে
+      _leftAudioFired = false;
+      if (progress >= 1 - leadFraction && !_rightAudioFired) {
+        _rightAudioFired = true;
+        unawaited(_playEndpointAudio(isRight: true));
+      }
+    } else if (_controller.status == AnimationStatus.reverse) {
+      // reverse মানে এবার left এর দিকে যাচ্ছে
+      _rightAudioFired = false;
+      if (progress <= leadFraction && !_leftAudioFired) {
+        _leftAudioFired = true;
+        unawaited(_playEndpointAudio(isRight: false));
+      }
+    }
   }
 
   Future<void> _handleSudsContinue() async {
