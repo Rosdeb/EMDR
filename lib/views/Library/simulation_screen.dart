@@ -30,7 +30,8 @@ class SimulationScreen extends StatefulWidget {
   State<SimulationScreen> createState() => _SimulationScreenState();
 }
 
-class _SimulationScreenState extends State<SimulationScreen> with TickerProviderStateMixin {
+class _SimulationScreenState extends State<SimulationScreen>
+    with TickerProviderStateMixin {
   static const Color _inkText = Color(0xFF151515);
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -47,9 +48,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   Widget? _stableVideoVisual;
   Widget? _sessionMovingVisual;
 
-  bool _leftAudioFired = false;   // <-- add this
-  bool _rightAudioFired = false;  // <-- add this
-  static const double _audioLeadMs = 60;
+  bool _leftAudioFired = false;
+  bool _rightAudioFired = false;
 
   Duration get _halfCycleDuration {
     final milliseconds = (widget.settings.speed * 1000).round();
@@ -66,8 +66,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   Duration _processingElapsed = Duration.zero;
   int _moveCount = 0;
   bool _visitedRightThisSet = false;
-  bool _isPaused = false; // Track pause state
-  bool _isReversing = false; // Track animation direction
+  bool _isPaused = false;
+  bool _isReversing = false;
   late AnimationController _turnController;
   Animation<double>? _activeTurn;
   double _displayFacingAngle = 0;
@@ -92,19 +92,37 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     ]);
     _setDuration = _resolveSetDuration();
     _remainingSetTime = _setDuration;
-    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90
-        ? 90
-        : 60;
+    _selectedDurationMinutes =
+    widget.settings.maxDurationMinutes == 90 ? 90 : 60;
     _showIntroGuidance = widget.settings.showCompletionQuestions;
 
-    // 1. _controller সবার আগে তৈরি করো
     _controller = AnimationController(
       duration: _halfCycleDuration,
       vsync: this,
     );
 
-    // 2. এখন _controller তৈরি হয়ে গেছে, তাই listener add করা নিরাপদ
-    _controller.addListener(_handleAudioSync);
+    // Audio sync: _animation.value (curved -1..1) দেখে trigger করো
+    _controller.addListener(() {
+      if (!_motionStarted || _setComplete || _isPaused || !_usesEndpointAudio) {
+        return;
+      }
+      final v = _animation.value; // easeInOut curved value, -1.0 to 1.0
+      final threshold = _audioTriggerThreshold;
+
+      if (_controller.status == AnimationStatus.forward) {
+        _leftAudioFired = false;
+        if (v >= threshold && !_rightAudioFired) {
+          _rightAudioFired = true;
+          unawaited(_playEndpointAudio(isRight: true));
+        }
+      } else if (_controller.status == AnimationStatus.reverse) {
+        _rightAudioFired = false;
+        if (v <= -threshold && !_leftAudioFired) {
+          _leftAudioFired = true;
+          unawaited(_playEndpointAudio(isRight: false));
+        }
+      }
+    });
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -125,7 +143,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     _animation = Tween<double>(
       begin: -1.0,
       end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine));
 
     _turnController = AnimationController(
       duration: const Duration(milliseconds: 420),
@@ -138,7 +156,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     );
     _wingAnimation = CurvedAnimation(
       parent: _wingController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeInOutSine,
     );
     _effectController = AnimationController(
       duration: const Duration(hours: 1),
@@ -202,6 +220,16 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     }
   }
 
+  double get _audioTriggerThreshold {
+    final durationMs = _halfCycleDuration.inMilliseconds;
+    if (durationMs <= 5500) {
+      return 0.957; // Fast speed (5s) - edge-এর ৬৪০ মিলিসেকেন্ড আগে ট্রিগার হবে
+    } else if (durationMs <= 8000) {
+      return 0.985; // Medium speed (7s) - edge-এর ৬৪০ মিলিসেকেন্ড আগে ট্রিগার হবে
+    } else {
+      return 0.995; // Slow speed (10s) - edge-এর ৬৪০ মিলিসেকেন্ড আগে ট্রিগার হবে
+    }
+  }
 
   Future<void> _configurePulsePlayers() async {
     await _leftPulsePlayer.setPlayerMode(PlayerMode.lowLatency);
@@ -221,7 +249,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       await _rightPulsePlayer.setSourceBytes(rightBytes, mimeType: 'audio/wav');
     }
   }
-
 
   void _precacheEndpointSounds() {
     final profile = _resolvedToneProfile;
@@ -321,8 +348,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     }
     if (_usesContinuousSessionAudio) {
       unawaited(_setupAudio());
-    } else if (_usesEndpointAudio) {
-      unawaited(_playEndpointAudio(isRight: false));
     }
     _startSetTimer();
   }
@@ -346,7 +371,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     _turnController.stop();
     _turnController.reset();
     _controller.reset();
-    _leftAudioFired = false;   // <-- add
+    _leftAudioFired = false;
     _rightAudioFired = false;
     _effectController
       ..reset()
@@ -378,11 +403,9 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   Duration _resolveSetDuration() {
     if (widget.settings.totalSets > 0) {
       final totalSets = widget.settings.totalSets;
-      // Each set = full left→right→left cycle (two half-beats).
       final milliseconds = _fullCycleDuration.inMilliseconds * totalSets;
       return Duration(milliseconds: milliseconds < 1000 ? 1000 : milliseconds);
     }
-
     return const Duration(seconds: 45);
   }
 
@@ -453,7 +476,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
 
   void _handleEndpointReached({required bool isRight}) {
     if (!mounted || !_motionStarted || _setComplete || _isPaused) return;
-
     if (widget.settings.totalSets <= 0) return;
 
     if (isRight) {
@@ -465,7 +487,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     _visitedRightThisSet = false;
     _registerCompletedSet();
   }
-
 
   void _registerCompletedSet() {
     final totalSets = widget.settings.totalSets;
@@ -479,7 +500,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       _moveCount++;
       if (widget.settings.totalSets > 0) {
         final stepMs = _fullCycleDuration.inMilliseconds;
-        final remainingMs = _setDuration.inMilliseconds - (stepMs * _moveCount);
+        final remainingMs =
+            _setDuration.inMilliseconds - (stepMs * _moveCount);
         _remainingSetTime = Duration(
           milliseconds: remainingMs < 0 ? 0 : remainingMs,
         );
@@ -599,7 +621,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     final key = '${_resolvedSoundKey}-${isRight ? 'right' : 'left'}';
     return _toneCache.putIfAbsent(
       key,
-      () => buildBlsToneWav(profile: profile, isRight: isRight),
+          () => buildBlsToneWav(profile: profile, isRight: isRight),
     );
   }
 
@@ -609,9 +631,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       await _leftPulsePlayer.stop();
       await _rightPulsePlayer.stop();
       await _voice.stop();
-    } catch (_) {
-      // Best-effort cleanup when leaving the session screen.
-    }
+    } catch (_) {}
   }
 
   bool _isNetworkUrl(String value) {
@@ -675,8 +695,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     _turnController.stop();
     _turnController.reset();
     _controller.reset();
-    _leftAudioFired = false;   // <-- add
-    _rightAudioFired = false;  // <-- add
+    _leftAudioFired = false;
+    _rightAudioFired = false;
     _effectController
       ..reset()
       ..repeat();
@@ -709,34 +729,10 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       _showSudsRating = true;
     });
     unawaited(
-      _voice.speak('Ok. Without any tapping or eye movement, notice what you see and feel. Rate your negative emotion.',),
+      _voice.speak(
+        'Ok. Without any tapping or eye movement, notice what you see and feel. Rate your negative emotion.',
+      ),
     );
-  }
-
-  void _handleAudioSync() {
-    if (!_motionStarted || _setComplete || _isPaused || !_usesEndpointAudio) return;
-
-    final totalMs = _controller.duration?.inMilliseconds ?? 0;
-    if (totalMs <= 0) return;
-
-    final leadFraction = (_audioLeadMs / totalMs).clamp(0.0, 0.4);
-    final progress = _controller.value; // 0 -> 1 linear
-
-    if (_controller.status == AnimationStatus.forward) {
-      // forward মানে এবার right এর দিকে যাচ্ছে
-      _leftAudioFired = false;
-      if (progress >= 1 - leadFraction && !_rightAudioFired) {
-        _rightAudioFired = true;
-        unawaited(_playEndpointAudio(isRight: true));
-      }
-    } else if (_controller.status == AnimationStatus.reverse) {
-      // reverse মানে এবার left এর দিকে যাচ্ছে
-      _rightAudioFired = false;
-      if (progress <= leadFraction && !_leftAudioFired) {
-        _leftAudioFired = true;
-        unawaited(_playEndpointAudio(isRight: false));
-      }
-    }
   }
 
   Future<void> _handleSudsContinue() async {
@@ -784,6 +780,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
         _rightPulsePlayer.stop();
         unawaited(_voice.stop());
       } else {
+        _leftAudioFired = false;
+        _rightAudioFired = false;
         if (_isReversing) {
           _controller.reverse();
         } else {
@@ -925,7 +923,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
     if (advancedObject != null) {
       return bilateralObjectHasReflection(advancedObject);
     }
-
     return blsObjectHasReflection(widget.settings.visualObject.trim());
   }
 
@@ -952,7 +949,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   }
 
   Widget _buildBackground() {
-    final source = resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source =
+    resolveBlsEnvironmentSource(widget.settings.environmentImage);
 
     Widget foreground;
     if (isBlsSceneSource(source)) {
@@ -972,8 +970,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) =>
-            _buildFallbackBackground(),
+        errorBuilder: (context, error, stackTrace) => _buildFallbackBackground(),
       );
     }
 
@@ -1145,7 +1142,8 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
             width: size,
             height: size,
             fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) => _buildVideoIcon(size),
+            errorBuilder: (context, error, stackTrace) =>
+                _buildVideoIcon(size),
           );
         }
         continue;
@@ -1359,26 +1357,26 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
         scale: scale,
         child: isVideo || isAssetAnimated
             ? SizedBox(
-                width: _objectSize,
-                height: _objectSize,
-                child: Center(child: visualBody),
-              )
+          width: _objectSize,
+          height: _objectSize,
+          child: Center(child: visualBody),
+        )
             : Container(
-                width: _objectSize,
-                height: _objectSize,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: glowOpacity),
-                      blurRadius: 28,
-                      spreadRadius: 8,
-                    ),
-                  ],
-                ),
-                child: visualBody,
+          width: _objectSize,
+          height: _objectSize,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.white.withValues(alpha: glowOpacity),
+                blurRadius: 28,
+                spreadRadius: 8,
               ),
+            ],
+          ),
+          child: visualBody,
+        ),
       ),
     );
 
@@ -1423,79 +1421,76 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       },
       child: Scaffold(
         body: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Background
-          Positioned.fill(child: _buildBackground()),
+          clipBehavior: Clip.none,
+          children: [
+            Positioned.fill(child: _buildBackground()),
 
-          if (_hasObjectReflection)
+            if (_hasObjectReflection)
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  final screenSize = MediaQuery.sizeOf(context);
+                  final pos = _objectPosition(_animation.value, screenSize);
+                  return Positioned(
+                    left: pos.dx,
+                    top: screenSize.height * 0.72,
+                    width: _objectSize,
+                    height: _objectSize,
+                    child: _buildObjectReflection(),
+                  );
+                },
+              ),
+
             AnimatedBuilder(
-              animation: _animation,
+              animation: _shouldFlapWings
+                  ? Listenable.merge([
+                _animation,
+                _wingAnimation,
+                _turnController,
+              ])
+                  : Listenable.merge([_animation, _turnController]),
+              child: _sessionMovingVisual,
               builder: (context, child) {
                 final screenSize = MediaQuery.sizeOf(context);
                 final pos = _objectPosition(_animation.value, screenSize);
                 return Positioned(
                   left: pos.dx,
-                  top: screenSize.height * 0.72,
+                  top: pos.dy,
                   width: _objectSize,
                   height: _objectSize,
-                  child: _buildObjectReflection(),
+                  child: IgnorePointer(
+                    child: OverflowBox(
+                      minWidth: 0,
+                      minHeight: 0,
+                      maxWidth: _objectSize * 1.08,
+                      maxHeight: _objectSize * 1.08,
+                      child: SizedBox(
+                        width: _objectSize,
+                        height: _objectSize,
+                        child: _buildAnimatedVisualObject(stableChild: child),
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
 
-          // Moving Object
-          AnimatedBuilder(
-            animation: _shouldFlapWings
-                ? Listenable.merge([
-                    _animation,
-                    _wingAnimation,
-                    _turnController,
-                  ])
-                : Listenable.merge([_animation, _turnController]),
-            child: _sessionMovingVisual,
-            builder: (context, child) {
-              final screenSize = MediaQuery.sizeOf(context);
-              final pos = _objectPosition(_animation.value, screenSize);
-              return Positioned(
-                left: pos.dx,
-                top: pos.dy,
-                width: _objectSize,
-                height: _objectSize,
-                child: IgnorePointer(
-                  child: OverflowBox(
-                    minWidth: 0,
-                    minHeight: 0,
-                    maxWidth: _objectSize * 1.08,
-                    maxHeight: _objectSize * 1.08,
-                    child: SizedBox(
-                      width: _objectSize,
-                      height: _objectSize,
-                      child: _buildAnimatedVisualObject(stableChild: child),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-
-          if (widget.settings.showCompletionQuestions) _buildPaperTexture(),
-          widget.settings.showCompletionQuestions
-              ? _buildPdfSessionChrome()
-              : _buildTopBar(),
-          if (_showCompletionQuestions) _buildCompletionOverlay(),
-          if (_showIntroGuidance) _buildIntroOverlay(),
-          if (_showClosingGuidance) _buildClosingGuidanceOverlay(),
-        ],
+            if (widget.settings.showCompletionQuestions) _buildPaperTexture(),
+            widget.settings.showCompletionQuestions
+                ? _buildPdfSessionChrome()
+                : _buildTopBar(),
+            if (_showCompletionQuestions) _buildCompletionOverlay(),
+            if (_showIntroGuidance) _buildIntroOverlay(),
+            if (_showClosingGuidance) _buildClosingGuidanceOverlay(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildPdfSessionChrome() {
-    final totalSets = widget.settings.totalSets <= 0
-        ? 34
-        : widget.settings.totalSets;
+    final totalSets =
+    widget.settings.totalSets <= 0 ? 34 : widget.settings.totalSets;
     final currentSet = _moveCount.clamp(0, totalSets);
     final textColor = _sceneUsesLightText ? Colors.white : _inkText;
     final shadow = [
@@ -1512,38 +1507,13 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
       child: Stack(
         children: [
           Positioned(
-            top: 28,
-            left: 38,
+            bottom: 15,
+            right: 170,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildPdfBackButton(textColor),
                 const SizedBox(height: 16),
-                Text(
-                  'THE UK INKIND PSYCHOLOGY CLINIC',
-                  style: TextStyle(
-                    color: textColor.withValues(
-                      alpha: _sceneUsesLightText ? 0.85 : 1,
-                    ),
-                    fontSize: 9,
-                    letterSpacing: 2,
-                    shadows: shadow,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  _sceneTitle,
-                  style: TextStyle(
-                    color: textColor.withValues(
-                      alpha: _sceneUsesLightText ? 0.96 : 1,
-                    ),
-                    fontSize: 20,
-                    fontFamily: 'Serif',
-                    fontStyle: FontStyle.italic,
-                    fontWeight: FontWeight.w300,
-                    shadows: shadow,
-                  ),
-                ),
               ],
             ),
           ),
@@ -1672,13 +1642,15 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   }
 
   bool get _sceneUsesLightText {
-    final source = resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source =
+    resolveBlsEnvironmentSource(widget.settings.environmentImage);
     return isBlsSceneSource(source) &&
         const {'night', 'forest'}.contains(blsSourceId(source));
   }
 
   String get _sceneTitle {
-    final source = resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source =
+    resolveBlsEnvironmentSource(widget.settings.environmentImage);
     if (!isBlsSceneSource(source)) {
       return 'Bilateral Stimulation';
     }
@@ -1808,7 +1780,7 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
                   else
                     _buildQuestionCard(
                       text:
-                          'Is it changing and still connected to your original image?',
+                      'Is it changing and still connected to your original image?',
                       selectedAnswer: _firstCompletionAnswer,
                       onYes: () => _handleFirstCompletionAnswer(true),
                       onNo: () => _handleFirstCompletionAnswer(false),
@@ -2060,16 +2032,14 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
   }
 
   Widget _buildQuestionButton(
-    String text,
-    VoidCallback onTap, {
-    required bool selected,
-  }) {
+      String text,
+      VoidCallback onTap, {
+        required bool selected,
+      }) {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        foregroundColor: selected
-            ? const Color(0xFF5A6A50)
-            : _inkText,
+        foregroundColor: selected ? const Color(0xFF5A6A50) : _inkText,
         backgroundColor: selected
             ? const Color(0xFF7A9A6A).withValues(alpha: 0.18)
             : Colors.white,
@@ -2101,7 +2071,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
               ),
               child: Row(
                 children: [
-                  // Back button + Title
                   IconButton(
                     icon: const Icon(
                       Icons.arrow_back_ios_new,
@@ -2118,7 +2087,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.only(right: 10),
@@ -2133,8 +2101,6 @@ class _SimulationScreenState extends State<SimulationScreen> with TickerProvider
                       ),
                     ),
                   ),
-
-                  // Pause / Resume button
                   ElevatedButton(
                     onPressed: _togglePause,
                     style: ElevatedButton.styleFrom(
