@@ -30,8 +30,7 @@ class SimulationScreen extends StatefulWidget {
   State<SimulationScreen> createState() => _SimulationScreenState();
 }
 
-class _SimulationScreenState extends State<SimulationScreen>
-    with TickerProviderStateMixin {
+class _SimulationScreenState extends State<SimulationScreen> with TickerProviderStateMixin {
   static const Color _inkText = Color(0xFF151515);
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -41,6 +40,7 @@ class _SimulationScreenState extends State<SimulationScreen>
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _leftPulsePlayer = AudioPlayer();
   final AudioPlayer _rightPulsePlayer = AudioPlayer();
+  late final Future<void> _pulsePlayersReady;
   final VoiceService _voice = VoiceService();
   final Map<String, Uint8List> _toneCache = {};
   final ValueNotifier<bool> _videoPlayingNotifier = ValueNotifier(false);
@@ -49,7 +49,14 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool _leftAudioFired = false;   // <-- add this
   bool _rightAudioFired = false;  // <-- add this
-  static const double _audioLeadMs = 150;
+  static const double _audioLeadMs = 60;
+
+  Duration get _halfCycleDuration {
+    final milliseconds = (widget.settings.speed * 1000).round();
+    return Duration(milliseconds: milliseconds.clamp(1, 20000));
+  }
+
+  Duration get _fullCycleDuration => _halfCycleDuration * 2;
 
   Timer? _setTimer;
   Timer? _sessionTimer;
@@ -92,7 +99,7 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     // 1. _controller সবার আগে তৈরি করো
     _controller = AnimationController(
-      duration: Duration(milliseconds: (widget.settings.speed * 1000).toInt()),
+      duration: _halfCycleDuration,
       vsync: this,
     );
 
@@ -119,9 +126,6 @@ class _SimulationScreenState extends State<SimulationScreen>
       begin: -1.0,
       end: 1.0,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-
-    // ✅ পুরোনো _animation.addListener (0.97 threshold) ব্লক বাদ দেওয়া হয়েছে —
-    // এখন শুধু _handleAudioSync (controller.value ভিত্তিক, lead-time সহ) sound trigger করবে।
 
     _turnController = AnimationController(
       duration: const Duration(milliseconds: 420),
@@ -179,7 +183,7 @@ class _SimulationScreenState extends State<SimulationScreen>
         child: _stableVideoVisual ?? _buildVisualObject(size: _objectSize),
       ),
     );
-    unawaited(_configurePulsePlayers());
+    _pulsePlayersReady = _configurePulsePlayers();
     _precacheEndpointSounds();
     _startSessionTimer();
 
@@ -206,6 +210,8 @@ class _SimulationScreenState extends State<SimulationScreen>
     await _rightPulsePlayer.setVolume(1);
     await _leftPulsePlayer.setBalance(-1);
     await _rightPulsePlayer.setBalance(1);
+    await _leftPulsePlayer.setReleaseMode(ReleaseMode.stop);
+    await _rightPulsePlayer.setReleaseMode(ReleaseMode.stop);
 
     final profile = _resolvedToneProfile;
     if (profile != null) {
@@ -373,8 +379,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     if (widget.settings.totalSets > 0) {
       final totalSets = widget.settings.totalSets;
       // Each set = full left→right→left cycle (two half-beats).
-      final milliseconds =
-          (widget.settings.speed * 1000 * 2 * totalSets).round();
+      final milliseconds = _fullCycleDuration.inMilliseconds * totalSets;
       return Duration(milliseconds: milliseconds < 1000 ? 1000 : milliseconds);
     }
 
@@ -473,8 +478,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     setState(() {
       _moveCount++;
       if (widget.settings.totalSets > 0) {
-        final stepMs =
-            (widget.settings.speed * 1000 * 2).round().clamp(1, 20000);
+        final stepMs = _fullCycleDuration.inMilliseconds;
         final remainingMs = _setDuration.inMilliseconds - (stepMs * _moveCount);
         _remainingSetTime = Duration(
           milliseconds: remainingMs < 0 ? 0 : remainingMs,
@@ -554,10 +558,11 @@ class _SimulationScreenState extends State<SimulationScreen>
     if (profile != null) {
       final player = isRight ? _rightPulsePlayer : _leftPulsePlayer;
       try {
-        await player.seek(Duration.zero);
+        await _pulsePlayersReady;
+        await player.stop();
         await player.resume();
       } catch (e) {
-        debugPrint('Tone Error: $e');
+        debugPrint('${isRight ? 'Right' : 'Left'} tone error: $e');
       }
       return;
     }

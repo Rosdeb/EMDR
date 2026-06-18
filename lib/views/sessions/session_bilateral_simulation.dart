@@ -61,7 +61,6 @@ class _SessionBilateralSimulationState
   bool _sceneGridExpanded = false;
   bool _visualGridExpanded = false;
   bool _soundGridExpanded = false;
-
   static const _gridPreviewRows = 2;
 
   static const _emptySceneOption = _BlsMediaOption(

@@ -1,12 +1,12 @@
 /// Bilateral stimulation speed presets (seconds per half-cycle: left→right or right→left).
 ///
-/// Tuned faster than earlier builds — clinical BLS apps typically use ~0.6–1.2s per beat.
+/// Deliberately paced for slower bilateral movement.
 class BlsSpeedPresets {
   BlsSpeedPresets._();
 
-  static const double slow = 8.0;    // full cycle = 16s
-  static const double medium = 5.0;  // full cycle = 10s
-  static const double fast = 3.0;    // full cycle = 6s
+  static const double slow = 10.0; // full cycle = 20s
+  static const double medium = 7.0; // full cycle = 14s
+  static const double fast = 5.0; // full cycle = 10s
 
   static double secondsForKey(String? key) {
     switch (key) {
