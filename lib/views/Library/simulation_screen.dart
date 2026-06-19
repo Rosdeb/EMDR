@@ -176,6 +176,7 @@ class _SimulationScreenState extends State<SimulationScreen>
             frameAssets: visual.spriteFrameAssets,
             size: _objectSize,
             playing: true,
+
             fps: visual.fps,
           );
         } else {
