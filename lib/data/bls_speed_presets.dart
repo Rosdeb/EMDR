@@ -4,9 +4,9 @@
 class BlsSpeedPresets {
   BlsSpeedPresets._();
 
-  static const double slow = 10.0; // full cycle = 20s
-  static const double medium = 7.0; // full cycle = 14s
-  static const double fast = 5.0; // full cycle = 10s
+  static const double slow = 0.69; // full cycle =  value  - 8 - 7
+  static const double medium = 0.5; // full cycle =
+  static const double fast = 0.4; // full cycle =
 
   static double secondsForKey(String? key) {
     switch (key) {

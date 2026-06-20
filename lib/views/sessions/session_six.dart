@@ -95,7 +95,7 @@ class _SessionSixState extends State<SessionSix> {
                 ),
                 const SizedBox(height: 10),
                 const Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
                   child: Text(
                   textAlign: TextAlign.center,
                   ' Please watch this guidance before choosing your bilateral stimulation settings.',
@@ -133,7 +133,35 @@ class _SessionSixState extends State<SessionSix> {
                                       child: AspectRatio(
                                         aspectRatio:
                                             _controller.value.aspectRatio,
-                                        child: VideoPlayer(_controller),
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            VideoPlayer(_controller),
+                                            IgnorePointer(
+                                              child: AnimatedOpacity(
+                                                opacity: _controller.value.isPlaying
+                                                    ? 0.0
+                                                    : 1.0,
+                                                duration: const Duration(
+                                                    milliseconds: 250),
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.black
+                                                        .withValues(alpha: 0.55),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.all(16),
+                                                  child: const Icon(
+                                                    Icons.play_arrow_rounded,
+                                                    color: Colors.white,
+                                                    size: 48,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   )

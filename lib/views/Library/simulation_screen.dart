@@ -2283,6 +2283,7 @@ class _SimulationScreenState extends State<SimulationScreen>
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
+
     _setDuration = _resolveSetDuration();
     _remainingSetTime = _setDuration;
     _selectedDurationMinutes =
@@ -2295,26 +2296,56 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
 
     // Audio sync: _animation.value (curved -1..1) দেখে trigger করো
+    // _controller.addListener(() {
+    //   if (!_motionStarted || _setComplete || _isPaused || !_usesEndpointAudio) {
+    //     return;
+    //   }
+    //   final v = _animation.value; // easeInOut curved value, -1.0 to 1.0
+    //
+    //   if (_controller.status == AnimationStatus.forward) {
+    //     _leftAudioFired = false;
+    //     if (v >= 0.98 && !_rightAudioFired) {
+    //       _rightAudioFired = true;
+    //       unawaited(_playEndpointAudio(isRight: true));
+    //     }
+    //   } else if (_controller.status == AnimationStatus.reverse) {
+    //     _rightAudioFired = false;
+    //     if (v <= -0.98 && !_leftAudioFired) {
+    //       _leftAudioFired = true;
+    //       unawaited(_playEndpointAudio(isRight: false));
+    //     }
+    //   }
+    // });
+
+
     _controller.addListener(() {
-      if (!_motionStarted || _setComplete || _isPaused || !_usesEndpointAudio) {
-        return;
-      }
-      final v = _animation.value; // easeInOut curved value, -1.0 to 1.0
+      if (!_motionStarted || _setComplete || _isPaused) return;
+
+      final hasSound = _resolvedSoundKey != 'none' &&
+          (_resolvedToneProfile != null || _resolvedAudioAsset.isNotEmpty);
+      if (!hasSound) return;
+
+      final v = _animation.value;
+      final upper = _audioTriggerThreshold;
+      final lower = _audioTriggerLowerBound;
 
       if (_controller.status == AnimationStatus.forward) {
         _leftAudioFired = false;
-        if (v >= 0.98 && !_rightAudioFired) {
+        // window এর মধ্যে যেকোনো frame এ একবার fire
+        if (v >= lower && v <= upper && !_rightAudioFired) {
           _rightAudioFired = true;
           unawaited(_playEndpointAudio(isRight: true));
         }
+        // upper পার হলে flag reset করো না — statusListener করবে
       } else if (_controller.status == AnimationStatus.reverse) {
         _rightAudioFired = false;
-        if (v <= -0.98 && !_leftAudioFired) {
+        if (v <= -lower && v >= -upper && !_leftAudioFired) {
           _leftAudioFired = true;
           unawaited(_playEndpointAudio(isRight: false));
         }
       }
     });
+
 
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
@@ -2410,6 +2441,26 @@ class _SimulationScreenState extends State<SimulationScreen>
     } else {
       _startMotion();
     }
+  }
+
+
+  double get _audioTriggerThreshold {
+    const leadTimeMs = 80; // edge এর 80ms আগে
+    final durationMs = _halfCycleDuration.inMilliseconds;
+    final remainingMs = (durationMs - leadTimeMs).clamp(0, durationMs);
+    final rawT = remainingMs / durationMs;
+    final curvedT = (-math.cos(math.pi * rawT) / 2) + 0.5;
+    return (curvedT * 2 - 1).clamp(0.5, 0.98);
+  }
+
+// window এর lower bound — এর আগে fire হলে too early
+  double get _audioTriggerLowerBound {
+    const windowMs = 100; // threshold থেকে 100ms আগে পর্যন্ত window
+    final durationMs = _halfCycleDuration.inMilliseconds;
+    final remainingMs = (durationMs - 80 - windowMs).clamp(0, durationMs);
+    final rawT = remainingMs / durationMs;
+    final curvedT = (-math.cos(math.pi * rawT) / 2) + 0.5;
+    return (curvedT * 2 - 1).clamp(0.3, 0.97);
   }
 
   Future<void> _configurePulsePlayers() async {

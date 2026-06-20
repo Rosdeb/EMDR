@@ -27,6 +27,15 @@
             android:windowSoftInputMode="adjustResize">
 
             <meta-data
+                android:name="android.max_aspect"
+                android:value="2.1" />
+
+            <!-- ডিসপ্লে রিফ্রেশ রেট কন্ট্রোল -->
+            <meta-data
+                android:name="android.display.refresh_rate"
+                android:value="60" />
+
+            <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme"
                 />

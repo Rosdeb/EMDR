@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 
@@ -6,60 +8,89 @@ enum DevicePerformanceTier { high, medium, low }
 class DevicePerformance {
   static DevicePerformanceTier? _cachedTier;
 
+  /// ডিভাইসের পারফরম্যান্স টিয়ার ডিটেক্ট করে
   static DevicePerformanceTier get tier {
     if (_cachedTier != null) return _cachedTier!;
 
-    final refreshRate = _getRefreshRate();
-    final isHighEnd = _isHighEndDevice();
+    final processorCount = Platform.numberOfProcessors;
+    final totalMemoryMB = _getTotalMemoryMB();
+    final is64Bit = _is64BitDevice();
 
-    if (refreshRate >= 90 && isHighEnd) {
+    // হার্ডওয়্যার ক্যাপাবিলিটি অনুযায়ী স্কোরিং
+    int score = 0;
+
+    // প্রসেসর কোর
+    if (processorCount >= 8) {
+      score += 3;
+    } else if (processorCount >= 6) {
+      score += 2;
+    } else if (processorCount >= 4) {
+      score += 1;
+    }
+
+    // RAM
+    if (totalMemoryMB >= 8192) {
+      score += 3;
+    } else if (totalMemoryMB >= 6144) {
+      score += 2;
+    } else if (totalMemoryMB >= 4096) {
+      score += 1;
+    }
+
+    // 64-bit ডিভাইস
+    if (is64Bit) {
+      score += 1;
+    }
+
+    // স্কোর অনুযায়ী টিয়ার নির্ধারণ
+    if (score >= 5) {
       _cachedTier = DevicePerformanceTier.high;
-    } else if (refreshRate >= 60 || isHighEnd) {
+    } else if (score >= 3) {
       _cachedTier = DevicePerformanceTier.medium;
     } else {
       _cachedTier = DevicePerformanceTier.low;
     }
 
+    debugPrint('🎮 Device Performance Analysis:');
+    debugPrint('  - Processors: $processorCount');
+    debugPrint('  - RAM: ${totalMemoryMB}MB');
+    debugPrint('  - 64-bit: $is64Bit');
+    debugPrint('  - Score: $score');
+    debugPrint('  - Tier: ${_cachedTier!}');
+
     return _cachedTier!;
   }
 
-  static double _getRefreshRate() {
+  static int _getTotalMemoryMB() {
     try {
-      final views = WidgetsBinding.instance.platformDispatcher.views;
-      if (views.isNotEmpty) {
-        final view = views.first;
-        // Flutter 3.10+ থেকে displayRefreshRate পাওয়া যায়
-        return 60.0;
+      if (Platform.isAndroid) {
+        final file = File('/proc/meminfo');
+        if (file.existsSync()) {
+          final content = file.readAsStringSync();
+          final match = RegExp(r'MemTotal:\s+(\d+)').firstMatch(content);
+          if (match != null) {
+            return int.parse(match.group(1)!) ~/ 1024;
+          }
+        }
       }
     } catch (_) {}
-    return 60.0;
+    return 4096; // ডিফল্ট 4GB
   }
 
-  static bool _isHighEndDevice() {
-    // OnePlus, Samsung S series, iPhone 12+, Pixel 6+
-    final model = Platform.operatingSystemVersion.toLowerCase();
-    final highEndKeywords = [
-      'oneplus', 'sm-s9', 'sm-s90', 'sm-s91', 'sm-s92',
-      'iphone 1', 'iphone 2', 'pixel 6', 'pixel 7', 'pixel 8',
-      'pixel 9', 'xiaomi 13', 'xiaomi 14', 'samsung s2',
-    ];
-    return highEndKeywords.any((k) => model.contains(k));
-  }
-
-
-  static bool get shouldUseBlurEffects => tier != DevicePerformanceTier.low;
-  static bool get shouldShowReflection => tier != DevicePerformanceTier.low;
-  static bool get shouldUseBackdropFilter => tier == DevicePerformanceTier.high;
-
-  /// animation quality
-  static double get animationQuality {
-    switch (tier) {
-      case DevicePerformanceTier.high:
-        return 1.0;
-      case DevicePerformanceTier.medium:
-        return 0.8;
-      case DevicePerformanceTier.low:
-        return 0.6;
+  static bool _is64BitDevice() {
+    try {
+      return sizeOf<IntPtr>() == 8;
+    } catch (_) {
+      return true;
     }
   }
+
+  /// ব্লার/রিফ্লেকশন ইফেক্ট ব্যবহার করবে কিনা
+  static bool get shouldUseBlurEffects => tier != DevicePerformanceTier.low;
+
+  /// ব্যাকড্রপ ফিল্টার ব্যবহার করবে কিনা
+  static bool get shouldUseBackdropFilter => tier != DevicePerformanceTier.low;
+
+  /// অবজেক্ট রিফ্লেকশন দেখাবে কিনা
+  static bool get shouldShowReflection => tier != DevicePerformanceTier.low;
 }
