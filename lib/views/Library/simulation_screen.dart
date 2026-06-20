@@ -2205,6 +2205,7 @@ import 'package:jonssony/widgets/asset_animated_visual.dart';
 import 'package:jonssony/widgets/canvas_sprite_visual.dart';
 import 'package:jonssony/widgets/looping_muted_video.dart';
 import 'package:jonssony/widgets/transparent_session_visual.dart';
+import '../../services/Device_Perfomace/device_performance.dart';
 import '../sessions/session_bilateral_simulation.dart';
 import 'bls_pdf_visuals.dart';
 import 'clam_space_ex.dart';
@@ -2258,7 +2259,7 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool _isReversing = false;
   late AnimationController _turnController;
   Animation<double>? _activeTurn;
-  double _displayFacingAngle = 0;
+  final ValueNotifier<double> _displayFacingAngle = ValueNotifier(0.0);
   bool _motionStarted = false;
   bool _setComplete = false;
   bool _showIntroGuidance = false;
@@ -2273,6 +2274,10 @@ class _SimulationScreenState extends State<SimulationScreen>
   @override
   void initState() {
     super.initState();
+
+    debugPrint('🎮 Device Performance Tier: ${DevicePerformance.tier}');
+    debugPrint('🎮 Blur Effects: ${DevicePerformance.shouldUseBlurEffects}');
+    debugPrint('🎮 Backdrop Filter: ${DevicePerformance.shouldUseBackdropFilter}');
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
@@ -2541,7 +2546,7 @@ class _SimulationScreenState extends State<SimulationScreen>
       _visitedRightThisSet = false;
       _remainingSetTime = _setDuration;
       _isReversing = false;
-      _displayFacingAngle = 0;
+      _displayFacingAngle.value = 0;
     });
 
     _turnController.stop();
@@ -2742,9 +2747,19 @@ class _SimulationScreenState extends State<SimulationScreen>
       _hasAudioSource = true;
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
 
+      // ✅ থ্রোটলিং: প্রতি ফ্রেমে setBalance কল না করে,
+      // শুধু ভ্যালু ০.০৫ (৫%) এর বেশি পরিবর্তন হলে কল করা
+      double lastBalance = 2.0; // 2.0 দিয়ে শুরু, যাতে প্রথমবার কল হয়
       _controller.addListener(() {
-        if (mounted && !_isPaused) _audioPlayer.setBalance(_animation.value);
+        if (mounted && !_isPaused) {
+          final currentBalance = _animation.value;
+          if ((currentBalance - lastBalance).abs() > 0.05) {
+            lastBalance = currentBalance;
+            unawaited(_audioPlayer.setBalance(currentBalance));
+          }
+        }
       });
+
       await _audioPlayer.resume();
     } catch (e) {
       debugPrint("Audio Error: $e");
@@ -2865,7 +2880,7 @@ class _SimulationScreenState extends State<SimulationScreen>
       _remainingSetTime = _setDuration;
       _moveCount = 0;
       _isReversing = false;
-      _displayFacingAngle = 0;
+      _displayFacingAngle.value = 0;
     });
 
     _turnController.stop();
@@ -2981,12 +2996,12 @@ class _SimulationScreenState extends State<SimulationScreen>
   void _onTurnTick() {
     final turn = _activeTurn;
     if (turn == null || !mounted) return;
-    setState(() => _displayFacingAngle = turn.value);
+    _displayFacingAngle.value = turn.value;
   }
 
   void _beginFacingTurn({required bool faceLeft}) {
     final end = faceLeft ? math.pi : 0.0;
-    final begin = _displayFacingAngle;
+    final begin = _displayFacingAngle.value;
     if ((begin - end).abs() < 0.01) return;
 
     _activeTurn = Tween<double>(begin: begin, end: end).animate(
@@ -3002,12 +3017,12 @@ class _SimulationScreenState extends State<SimulationScreen>
     final matrix = Matrix4.identity()..setEntry(3, 2, 0.0018);
     switch (widget.settings.direction) {
       case AnimationDirection.vertical:
-        matrix.rotateX(_displayFacingAngle);
+        matrix.rotateX(_displayFacingAngle.value);
         break;
       case AnimationDirection.horizontal:
       case AnimationDirection.diagonal:
       case AnimationDirection.diagonalReverse:
-        matrix.rotateY(_displayFacingAngle);
+        matrix.rotateY(_displayFacingAngle.value);
         break;
     }
     return matrix;
@@ -3021,7 +3036,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
-  bool get _facesLeft => _displayFacingAngle > (math.pi / 2);
+  bool get _facesLeft => _displayFacingAngle.value > (math.pi / 2);
 
   Offset _objectPosition(double value, Size screenSize) {
     final t = (value + 1) / 2;
@@ -3110,6 +3125,7 @@ class _SimulationScreenState extends State<SimulationScreen>
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
+    _displayFacingAngle.dispose();
     _controller.dispose();
     _turnController.dispose();
     _wingController.dispose();
@@ -3499,7 +3515,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     _controller.stop();
     _turnController.stop();
     _isReversing = false;
-    _displayFacingAngle = 0;
+    _displayFacingAngle.value = 0;
     unawaited(_stopSessionAudio());
     Navigator.pop(context, result);
   }
@@ -3560,21 +3576,31 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildObjectReflection() {
+    final visual = _usesVideoVisual
+        ? _buildVideoFallback(_objectSize)
+        : _buildVisualObject(size: _objectSize);
+
+    Widget content = Transform.scale(
+      scaleY: -0.35,
+      child: visual,
+    );
+
+    // লো-এন্ড ডিভাইসে blur ইফেক্ট বাদ দেওয়া
+    if (DevicePerformance.shouldUseBlurEffects) {
+      content = ImageFiltered(
+        imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: content,
+      );
+    }
+
     return IgnorePointer(
       child: Opacity(
         opacity: 0.25,
-        child: ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-          child: Transform.scale(
-            scaleY: -0.35,
-            child: _usesVideoVisual
-                ? _buildVideoFallback(_objectSize)
-                : _buildVisualObject(size: _objectSize),
-          ),
-        ),
+        child: content,
       ),
     );
   }
+
 
   Widget _buildPaperTexture() {
     return Positioned.fill(
@@ -3601,7 +3627,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           children: [
             Positioned.fill(child: _buildBackground()),
 
-            if (_hasObjectReflection)
+            if (_hasObjectReflection && DevicePerformance.shouldShowReflection)
               AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -3617,36 +3643,40 @@ class _SimulationScreenState extends State<SimulationScreen>
                 },
               ),
 
-            AnimatedBuilder(
-              animation: _shouldFlapWings
-                  ? Listenable.merge([
-                _animation,
-                _wingAnimation,
-                _turnController,
-              ])
-                  : Listenable.merge([_animation, _turnController]),
-              child: _sessionMovingVisual,
-              builder: (context, child) {
-                final screenSize = MediaQuery.sizeOf(context);
-                final pos = _objectPosition(_animation.value, screenSize);
-                return Positioned(
-                  left: pos.dx,
-                  top: pos.dy,
-                  width: _objectSize,
-                  height: _objectSize,
-                  child: IgnorePointer(
-                    child: OverflowBox(
-                      minWidth: 0,
-                      minHeight: 0,
-                      maxWidth: _objectSize * 1.08,
-                      maxHeight: _objectSize * 1.08,
-                      child: SizedBox(
-                        width: _objectSize,
-                        height: _objectSize,
-                        child: _buildAnimatedVisualObject(stableChild: child),
+            ValueListenableBuilder<double>(
+              valueListenable: _displayFacingAngle,
+              builder: (context, facingAngle, _) {
+                return AnimatedBuilder(
+                  animation: _shouldFlapWings
+                      ? Listenable.merge([_animation, _wingAnimation])
+                      : _animation,
+                  child: _sessionMovingVisual,
+                  builder: (context, child) {
+                    final screenSize = MediaQuery.sizeOf(context);
+                    final pos = _objectPosition(_animation.value, screenSize);
+                    return Positioned(
+                      left: pos.dx,
+                      top: pos.dy,
+                      width: _objectSize,
+                      height: _objectSize,
+                      child: IgnorePointer(
+                        child: OverflowBox(
+                          minWidth: 0,
+                          minHeight: 0,
+                          maxWidth: _objectSize * 1.08,
+                          maxHeight: _objectSize * 1.08,
+                          child: SizedBox(
+                            width: _objectSize,
+                            height: _objectSize,
+                            child: _wrapFacingTurnWithAngle(
+                              facingAngle,
+                              _buildAnimatedVisualObject(stableChild: child),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             ),
@@ -3661,6 +3691,23 @@ class _SimulationScreenState extends State<SimulationScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _wrapFacingTurnWithAngle(double angle, Widget child) {
+    final matrix = Matrix4.identity()..setEntry(3, 2, 0.0018);
+    switch (widget.settings.direction) {
+      case AnimationDirection.vertical:
+        matrix.rotateX(angle);
+        break;
+      default:
+        matrix.rotateY(angle);
+        break;
+    }
+    return Transform(
+      alignment: Alignment.center,
+      transform: matrix,
+      child: child,
     );
   }
 
@@ -3743,44 +3790,54 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildPdfBackButton(Color textColor) {
+    final buttonContent = TextButton.icon(
+      onPressed: () => _leaveSimulation(false),
+      icon: Icon(
+        Icons.arrow_back_ios_new_rounded,
+        size: 15,
+        color: textColor.withValues(
+          alpha: _sceneUsesLightText ? 0.95 : 1,
+        ),
+      ),
+      label: Text(
+        'Back',
+        style: TextStyle(
+          color: textColor.withValues(
+            alpha: _sceneUsesLightText ? 0.95 : 1,
+          ),
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor: _sceneUsesLightText
+            ? Colors.white.withValues(alpha: 0.22)
+            : Colors.black.withValues(alpha: 0.06),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(
+            color: _sceneUsesLightText
+                ? Colors.white.withValues(alpha: 0.35)
+                : Colors.black.withValues(alpha: 0.1),
+          ),
+        ),
+      ),
+    );
+
+    // লো-এন্ড ডিভাইসে BackdropFilter বাদ দিয়ে পারফরম্যান্স বাড়ানো
+    if (!DevicePerformance.shouldUseBackdropFilter) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: buttonContent,
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: TextButton.icon(
-          onPressed: () => _leaveSimulation(false),
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 15,
-            color: textColor.withValues(
-              alpha: _sceneUsesLightText ? 0.95 : 1,
-            ),
-          ),
-          label: Text(
-            'Back',
-            style: TextStyle(
-              color: textColor.withValues(
-                alpha: _sceneUsesLightText ? 0.95 : 1,
-              ),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: _sceneUsesLightText
-                ? Colors.white.withValues(alpha: 0.22)
-                : Colors.black.withValues(alpha: 0.06),
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-              side: BorderSide(
-                color: _sceneUsesLightText
-                    ? Colors.white.withValues(alpha: 0.35)
-                    : Colors.black.withValues(alpha: 0.1),
-              ),
-            ),
-          ),
-        ),
+        child: buttonContent,
       ),
     );
   }
@@ -3789,30 +3846,40 @@ class _SimulationScreenState extends State<SimulationScreen>
     final label = _isPaused ? 'Resume' : 'Pause';
     final icon = _isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded;
 
+    final buttonContent = TextButton.icon(
+      onPressed: _togglePause,
+      icon: Icon(icon, size: 18, color: const Color(0xFF151515)),
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF151515),
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      style: TextButton.styleFrom(
+        backgroundColor: Colors.white.withValues(alpha: 0.72),
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(25),
+          side: BorderSide(color: Colors.black.withValues(alpha: 0.16)),
+        ),
+      ),
+    );
+
+    // লো-এন্ড ডিভাইসে BackdropFilter বাদ দেওয়া
+    if (!DevicePerformance.shouldUseBackdropFilter) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(25),
+        child: buttonContent,
+      );
+    }
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(25),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: TextButton.icon(
-          onPressed: _togglePause,
-          icon: Icon(icon, size: 18, color: const Color(0xFF151515)),
-          label: Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF151515),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            backgroundColor: Colors.white.withValues(alpha: 0.72),
-            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(color: Colors.black.withValues(alpha: 0.16)),
-            ),
-          ),
-        ),
+        child: buttonContent,
       ),
     );
   }
@@ -4231,86 +4298,99 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildTopBar() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(50),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(50),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: Colors.black87,
-                      size: 18,
-                    ),
-                    onPressed: () => _leaveSimulation(),
-                  ),
-                  const Text(
-                    'Bilateral set',
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Padding(
-                    padding: const EdgeInsets.only(right: 10),
-                    child: Text(
-                      _setComplete
-                          ? 'Set complete'
-                          : '${_remainingSetTime.inSeconds}s',
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _togglePause,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF537E5D),
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 22,
-                        vertical: 10,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      _setComplete
-                          ? 'Done'
-                          : _isPaused
-                          ? 'Resume'
-                          : 'Pause',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
+    final barContent = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              color: Colors.black87,
+              size: 18,
+            ),
+            onPressed: () => _leaveSimulation(),
+          ),
+          const Text(
+            'Bilateral set',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: Text(
+              _setComplete
+                  ? 'Set complete'
+                  : '${_remainingSetTime.inSeconds}s',
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
+          ElevatedButton(
+            onPressed: _togglePause,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF537E5D),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+                vertical: 10,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+            ),
+            child: Text(
+              _setComplete
+                  ? 'Done'
+                  : _isPaused
+                  ? 'Resume'
+                  : 'Pause',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    Widget wrappedBar;
+    if (DevicePerformance.shouldUseBackdropFilter) {
+      wrappedBar = ClipRRect(
+        borderRadius: BorderRadius.circular(50),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: barContent,
         ),
+      );
+    } else {
+      wrappedBar = ClipRRect(
+        borderRadius: BorderRadius.circular(50),
+        child: barContent,
+      );
+    }
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: wrappedBar,
       ),
     );
   }
+
 }
 
 class _PaperTexturePainter extends CustomPainter {
