@@ -3087,26 +3087,37 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool get _facesLeft => _displayFacingAngle.value > (math.pi / 2);
 
-  Offset _objectPosition(double value, Size screenSize) {
+  Offset _objectPosition(double value, Size screenSize, EdgeInsets padding) {
     final t = (value + 1) / 2;
+
+    // Add endpoint correction for better visual alignment
     final horizontalCorrection = _horizontalEndpointCorrection;
+    final usableWidth = screenSize.width - padding.left - padding.right;
+    final usableHeight = screenSize.height - padding.top - padding.bottom;
+
+    // Apply correction to minX and maxX
     final minX = -horizontalCorrection;
     final maxX = math.max(
       minX,
-      screenSize.width - _objectSize - horizontalCorrection,
+      usableWidth - _objectSize - horizontalCorrection,
     );
-    final maxY = math.max(0.0, screenSize.height - _objectSize);
+    final maxY = math.max(0.0, usableHeight - _objectSize);
+
+    // Calculate x position with correction
     final x = minX + (t * (maxX - minX));
 
     switch (_currentDirection) {
       case AnimationDirection.horizontal:
-        return Offset(x, maxY / 2);
+        return Offset(padding.left + x, padding.top + maxY / 2);
       case AnimationDirection.vertical:
-        return Offset((screenSize.width - _objectSize) / 2, t * maxY);
+        return Offset(
+          padding.left + (usableWidth - _objectSize) / 2,
+          padding.top + t * maxY,
+        );
       case AnimationDirection.diagonal:
-        return Offset(x, t * maxY);
+        return Offset(padding.left + x, padding.top + t * maxY);
       case AnimationDirection.diagonalReverse:
-        return Offset(x, (1 - t) * maxY);
+        return Offset(padding.left + x, padding.top + (1 - t) * maxY);
     }
   }
 
@@ -3618,58 +3629,56 @@ class _SimulationScreenState extends State<SimulationScreen>
         }
       },
       child: Scaffold(
-        body: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned.fill(child: _buildBackground()),
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenSize = Size(
+              constraints.maxWidth,
+              constraints.maxHeight,
+            );
 
-            if (_hasObjectReflection && DevicePerformance.shouldShowReflection)
-              AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  final screenSize = MediaQuery.sizeOf(context);
-                  final positionValue = _motionStarted
-                      ? _animation.value
-                      : -1.0;
-                  final pos = _objectPosition(positionValue, screenSize);
-                  return Positioned.fill(
-                    child: IgnorePointer(
-                      child: Transform.translate(
-                        offset: Offset(pos.dx, screenSize.height * 0.72),
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: SizedBox(
-                            width: _objectSize,
-                            height: _objectSize,
-                            child: _buildObjectReflection(),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(child: _buildBackground()),
 
-            ValueListenableBuilder<double>(
-              valueListenable: _displayFacingAngle,
-              builder: (context, facingAngle, _) {
-                return AnimatedBuilder(
-                  animation: _shouldFlapWings
-                      ? Listenable.merge([_animation, _wingAnimation])
-                      : _animation,
-                  child: _sessionMovingVisual,
-                  builder: (context, child) {
-                    final screenSize = MediaQuery.sizeOf(context);
-                    final positionValue = _motionStarted
-                        ? _animation.value
-                        : -1.0;
-                    final pos = _objectPosition(positionValue, screenSize);
-                    return Positioned.fill(
-                      child: IgnorePointer(
-                        child: Transform.translate(
-                          offset: pos,
-                          child: Align(
-                            alignment: Alignment.topLeft,
+                if (_hasObjectReflection &&
+                    DevicePerformance.shouldShowReflection)
+                  AnimatedBuilder(
+                    animation: _animation,
+                    builder: (context, child) {
+                      final positionValue = _motionStarted
+                          ? _animation.value
+                          : -1.0;
+                      final pos = _objectPosition(positionValue, screenSize, MediaQuery.of(context).padding,);
+                      return Positioned(
+                        left: pos.dx,
+                        top: screenSize.height * 0.72,
+                        width: _objectSize,
+                        height: _objectSize,
+                        child: IgnorePointer(child: _buildObjectReflection()),
+                      );
+                    },
+                  ),
+
+                ValueListenableBuilder<double>(
+                  valueListenable: _displayFacingAngle,
+                  builder: (context, facingAngle, _) {
+                    return AnimatedBuilder(
+                      animation: _shouldFlapWings
+                          ? Listenable.merge([_animation, _wingAnimation])
+                          : _animation,
+                      child: _sessionMovingVisual,
+                      builder: (context, child) {
+                        final positionValue = _motionStarted
+                            ? _animation.value
+                            : -1.0;
+                        final pos = _objectPosition(positionValue, screenSize, MediaQuery.of(context).padding,);
+                        return Positioned(
+                          left: pos.dx,
+                          top: pos.dy,
+                          width: _objectSize,
+                          height: _objectSize,
+                          child: IgnorePointer(
                             child: OverflowBox(
                               minWidth: 0,
                               minHeight: 0,
@@ -3687,22 +3696,23 @@ class _SimulationScreenState extends State<SimulationScreen>
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
+                ),
 
-            if (widget.settings.showCompletionQuestions) _buildPaperTexture(),
-            widget.settings.showCompletionQuestions
-                ? _buildPdfSessionChrome()
-                : _buildTopBar(),
-            if (_showCompletionQuestions) _buildCompletionOverlay(),
-            if (_showIntroGuidance) _buildIntroOverlay(),
-            if (_showClosingGuidance) _buildClosingGuidanceOverlay(),
-          ],
+                if (widget.settings.showCompletionQuestions)
+                  _buildPaperTexture(),
+                widget.settings.showCompletionQuestions
+                    ? _buildPdfSessionChrome()
+                    : _buildTopBar(),
+                if (_showCompletionQuestions) _buildCompletionOverlay(),
+                if (_showIntroGuidance) _buildIntroOverlay(),
+                if (_showClosingGuidance) _buildClosingGuidanceOverlay(),
+              ],
+            );
+          },
         ),
       ),
     );
