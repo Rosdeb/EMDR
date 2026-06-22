@@ -685,9 +685,8 @@ class _SimulationScreenState extends State<SimulationScreen>
       _hasAudioSource = true;
       await _audioPlayer.setReleaseMode(ReleaseMode.loop);
 
-      // ✅ থ্রোটলিং: প্রতি ফ্রেমে setBalance কল না করে,
-      // শুধু ভ্যালু ০.০৫ (৫%) এর বেশি পরিবর্তন হলে কল করা
-      double lastBalance = 2.0; // 2.0 দিয়ে শুরু, যাতে প্রথমবার কল হয়
+
+      double lastBalance = 2.0;
       _controller.addListener(() {
         if (mounted && !_isPaused) {
           final currentBalance = _animation.value;
@@ -710,8 +709,18 @@ class _SimulationScreenState extends State<SimulationScreen>
       final player = isRight ? _rightPulsePlayer : _leftPulsePlayer;
       try {
         await _pulsePlayersReady;
-        await player.seek(Duration.zero);
-        unawaited(player.resume());
+        await player.stop();
+        double rate;
+        if (widget.settings.speed <= 0.3) {
+          rate = 1.5; // Fast mode: faster audio speed
+        } else if (widget.settings.speed <= 0.5) {
+          rate = 0.85; // Medium mode: a bit slower
+        } else {
+          rate = 0.65; // Slow mode: very slow audio for longer pause
+        }
+
+        await player.setPlaybackRate(rate);
+        await player.resume();
       } catch (e) {
         debugPrint('${isRight ? 'Right' : 'Left'} tone error: $e');
       }
@@ -732,29 +741,26 @@ class _SimulationScreenState extends State<SimulationScreen>
       await player.setVolume(1);
       await player.setBalance(isRight ? 1 : -1);
       
-      int offsetMs = isRight ? 500 : 0;
-      Source audioSource;
-      if (_isNetworkUrl(source)) {
-        if (_cachedNetworkAudioPath != null) {
-          audioSource = DeviceFileSource(_cachedNetworkAudioPath!);
-        } else {
-          audioSource = UrlSource(source);
-        }
+      double rate;
+      if (widget.settings.speed <= 0.3) {
+        rate = 1.5; // Fast mode
+      } else if (widget.settings.speed <= 0.5) {
+        rate = 0.85; // Medium mode
       } else {
-        var assetPath = source;
-        if (assetPath.startsWith('assets/')) {
-          assetPath = assetPath.substring(7);
-        }
-        audioSource = AssetSource(assetPath);
+        rate = 0.65; // Slow mode
       }
-
-      await player.play(audioSource, position: Duration(milliseconds: offsetMs));
+      await player.setPlaybackRate(rate);
       
-      // Future.delayed(const Duration(milliseconds: 450), () async {
-      //   if (mounted && player.state == PlayerState.playing) {
-      //     await player.stop();
-      //   }
-      // });
+      int offsetMs = isRight ? 500 : 0;
+      await player.seek(Duration(milliseconds: offsetMs));
+      await player.resume();
+      
+      int waitMs = (450 / rate).round();
+      Future.delayed(Duration(milliseconds: waitMs), () async {
+        if (mounted && player.state == PlayerState.playing) {
+          await player.stop();
+        }
+      });
     } catch (e) {
       debugPrint('Endpoint audio error: $e');
     }

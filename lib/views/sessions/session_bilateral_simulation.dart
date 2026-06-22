@@ -5178,7 +5178,7 @@ class _SoundArtworkFallback extends StatelessWidget {
   }
 }
 
-enum _BlsSpeed { slow, medium, fast, faster }
+enum _BlsSpeed { slow, medium, fast,}
 
 extension _BlsSpeedDetails on _BlsSpeed {
   String get key {
@@ -5189,8 +5189,6 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return 'medium';
       case _BlsSpeed.fast:
         return 'fast';
-      case _BlsSpeed.faster:
-        return 'faster';
     }
   }
 
@@ -5204,8 +5202,6 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return 'Medium';
       case _BlsSpeed.fast:
         return 'Fast';
-      case _BlsSpeed.faster:
-        return 'Faster';
     }
   }
 
@@ -5217,8 +5213,6 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return Icons.keyboard_arrow_right_rounded;
       case _BlsSpeed.fast:
         return Icons.double_arrow_rounded;
-      case _BlsSpeed.faster:
-        return Icons.fast_forward_rounded;
     }
   }
 
@@ -5230,8 +5224,6 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return (BlsSpeedPresets.medium * 1000).round();
       case _BlsSpeed.fast:
         return (BlsSpeedPresets.fast * 1000).round();
-      case _BlsSpeed.faster:
-        return (BlsSpeedPresets.faster * 1000).round();
     }
   }
 
