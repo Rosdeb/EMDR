@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:jonssony/data/bls_speed_presets.dart';
 import 'package:jonssony/utils/app_text.dart';
 import 'bls_pdf_visuals.dart';
 import 'simulation_screen.dart';
@@ -205,15 +206,7 @@ class _SaveGameState extends State<SaveGame> {
   }
 
   double _speedSeconds(String key) {
-    switch (key) {
-      case 'slow':
-        return 2.6;
-      case 'fast':
-        return 1.5;
-      case 'medium':
-      default:
-        return 2.0;
-    }
+    return BlsSpeedPresets.secondsForKey(key);
   }
 
   String _normaliseSceneSource(String value) {

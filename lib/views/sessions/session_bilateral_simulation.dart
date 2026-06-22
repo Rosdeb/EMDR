@@ -2695,7 +2695,6 @@
 //   }
 // }
 
-
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -2827,8 +2826,10 @@ class _SessionBilateralSimulationState
   }
 
   List<_BlsMediaOption> get _sceneOptions {
-    final apiScenes =
-    _apiOptions(_bilateralController?.environments, _BlsMediaType.scene);
+    final apiScenes = _apiOptions(
+      _bilateralController?.environments,
+      _BlsMediaType.scene,
+    );
     if (apiScenes.isNotEmpty) return apiScenes;
     return _localSceneOptions;
   }
@@ -2837,15 +2838,15 @@ class _SessionBilateralSimulationState
     return kBlsLocalScenes
         .map(
           (scene) => _BlsMediaOption(
-        id: scene.key,
-        name: scene.value,
-        url: '$blsScenePrefix${scene.key}',
-        playbackUrl: '$blsScenePrefix${scene.key}',
-        type: _BlsMediaType.scene,
-        mediaType: 'scene',
-        icon: Icons.landscape_rounded,
-      ),
-    )
+            id: scene.key,
+            name: scene.value,
+            url: '$blsScenePrefix${scene.key}',
+            playbackUrl: '$blsScenePrefix${scene.key}',
+            type: _BlsMediaType.scene,
+            mediaType: 'scene',
+            icon: Icons.landscape_rounded,
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -2859,21 +2860,23 @@ class _SessionBilateralSimulationState
     return kBlsSelectableLocalVisuals
         .map(
           (visual) => _BlsMediaOption(
-        id: visual.id,
-        name: visual.label,
-        url: visual.id,
-        playbackUrl: visual.id,
-        type: _BlsMediaType.visual,
-        mediaType: visual.mediaType,
-        icon: Icons.auto_awesome_rounded,
-      ),
-    )
+            id: visual.id,
+            name: visual.label,
+            url: visual.id,
+            playbackUrl: visual.id,
+            type: _BlsMediaType.visual,
+            mediaType: visual.mediaType,
+            icon: Icons.auto_awesome_rounded,
+          ),
+        )
         .toList();
   }
 
   List<_BlsMediaOption> get _soundOptions {
-    final apiSounds =
-    _apiOptions(_bilateralController?.sounds, _BlsMediaType.sound);
+    final apiSounds = _apiOptions(
+      _bilateralController?.sounds,
+      _BlsMediaType.sound,
+    );
     if (apiSounds.isNotEmpty) return apiSounds;
     return _builtInSoundOptions;
   }
@@ -2882,30 +2885,30 @@ class _SessionBilateralSimulationState
     return BlsBuiltInSounds.entries
         .map(
           (entry) => _BlsMediaOption(
-        id: entry.key,
-        name: entry.value,
-        url: entry.key,
-        playbackUrl: entry.key,
-        type: _BlsMediaType.sound,
-        mediaType: 'tone',
-        icon: Icons.graphic_eq_rounded,
-      ),
-    )
+            id: entry.key,
+            name: entry.value,
+            url: entry.key,
+            playbackUrl: entry.key,
+            type: _BlsMediaType.sound,
+            mediaType: 'tone',
+            icon: Icons.graphic_eq_rounded,
+          ),
+        )
         .toList(growable: false);
   }
 
   bool get _hasRequiredApiSelections =>
       _sceneOptions.isNotEmpty &&
-          _visualOptions.isNotEmpty &&
-          _soundOptions.isNotEmpty &&
-          _sceneOptions.contains(_selectedScene) &&
-          _visualOptions.contains(_selectedVisual) &&
-          _soundOptions.contains(_selectedSound);
+      _visualOptions.isNotEmpty &&
+      _soundOptions.isNotEmpty &&
+      _sceneOptions.contains(_selectedScene) &&
+      _visualOptions.contains(_selectedVisual) &&
+      _soundOptions.contains(_selectedSound);
 
   List<_BlsMediaOption> _apiOptions(
-      List<dynamic>? rawOptions,
-      _BlsMediaType type,
-      ) {
+    List<dynamic>? rawOptions,
+    _BlsMediaType type,
+  ) {
     final seen = <String>{};
     final options = <_BlsMediaOption>[];
     final rawItems = rawOptions ?? const <dynamic>[];
@@ -3001,7 +3004,7 @@ class _SessionBilateralSimulationState
 
     var mediaType =
         _firstString(map, const ['mediaType', 'media_type', 'type']) ??
-            _mediaTypeFromSource(media ?? '');
+        _mediaTypeFromSource(media ?? '');
     final poster = _posterFromBackend(map);
     final sourceId = _normaliseSourceId(id ?? label ?? media ?? name);
     var url = media?.trim() ?? '';
@@ -3017,9 +3020,9 @@ class _SessionBilateralSimulationState
         }
         break;
       case _BlsMediaType.visual:
-      // API visuals skipped — see [_localVisualOptions] for bundled assets.
+        // API visuals skipped — see [_localVisualOptions] for bundled assets.
         return null;
-    /*
+      /*
         final hasRemoteMedia = url.isNotEmpty && _isRenderableMediaSource(url);
         if (hasRemoteMedia) {
           final isVideo = mediaType == 'video' || _isVideoSource(url);
@@ -3063,8 +3066,8 @@ class _SessionBilateralSimulationState
               'fileUrl',
               'file_url',
             ]) ??
-                media?.trim() ??
-                '';
+            media?.trim() ??
+            '';
         final soundKeySource = audioAsset.isNotEmpty
             ? audioAsset
             : (media?.trim().isNotEmpty == true ? media!.trim() : name);
@@ -3132,9 +3135,9 @@ class _SessionBilateralSimulationState
   }
 
   String _visualLabelFromBackend(
-      Map<String, dynamic> map, {
-        required String fallback,
-      }) {
+    Map<String, dynamic> map, {
+    required String fallback,
+  }) {
     final pieces = <String>[fallback];
     for (final key in const [
       'originalName',
@@ -3228,7 +3231,8 @@ class _SessionBilateralSimulationState
       .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
       .replaceAll(RegExp(r'^-+|-+$'), '');
 
-  String _normaliseSoundKey(String value) => BlsBuiltInSounds.normalizeKey(value);
+  String _normaliseSoundKey(String value) =>
+      BlsBuiltInSounds.normalizeKey(value);
 
   IconData _iconForMediaType(_BlsMediaType type) {
     switch (type) {
@@ -3269,21 +3273,21 @@ class _SessionBilateralSimulationState
     if (sceneOptions.isNotEmpty) {
       _selectedScene =
           _optionBySourceId(sceneOptions, raw['background']?.toString()) ??
-              sceneOptions.first;
+          sceneOptions.first;
     }
 
     final visualOptions = _visualOptions;
     if (visualOptions.isNotEmpty) {
       _selectedVisual =
           _optionBySourceId(visualOptions, raw['object']?.toString()) ??
-              visualOptions.first;
+          visualOptions.first;
     }
 
     final soundOptions = _soundOptions;
     if (soundOptions.isNotEmpty) {
       _selectedSound = soundOptions.firstWhere(
-            (option) =>
-        option.url == raw['sound']?.toString() ||
+        (option) =>
+            option.url == raw['sound']?.toString() ||
             option.id == raw['sound']?.toString(),
         orElse: () => soundOptions.first,
       );
@@ -3338,9 +3342,9 @@ class _SessionBilateralSimulationState
   }
 
   _BlsMediaOption? _optionBySourceId(
-      List<_BlsMediaOption> options,
-      String? sourceId,
-      ) {
+    List<_BlsMediaOption> options,
+    String? sourceId,
+  ) {
     if (sourceId == null || sourceId.isEmpty) return null;
     for (final option in options) {
       if (option.url == sourceId ||
@@ -3630,20 +3634,20 @@ class _SessionBilateralSimulationState
                   const SizedBox(height: 12),
                   isWide
                       ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildVisualSection()),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildSoundSection()),
-                    ],
-                  )
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildVisualSection()),
+                            const SizedBox(width: 12),
+                            Expanded(child: _buildSoundSection()),
+                          ],
+                        )
                       : Column(
-                    children: [
-                      _buildVisualSection(),
-                      const SizedBox(height: 12),
-                      _buildSoundSection(),
-                    ],
-                  ),
+                          children: [
+                            _buildVisualSection(),
+                            const SizedBox(height: 12),
+                            _buildSoundSection(),
+                          ],
+                        ),
                   const SizedBox(height: 12),
                   _buildSettingsSection(isWide),
                   const SizedBox(height: 22),
@@ -3688,42 +3692,42 @@ class _SessionBilateralSimulationState
               settings == null
                   ? null
                   : _settingsValue(settings, const [
-                'environmentId',
-                'environment',
-                'environmentUrl',
-                'background',
-              ]),
+                      'environmentId',
+                      'environment',
+                      'environmentUrl',
+                      'background',
+                    ]),
             ) ??
-                (sceneOptions.contains(_selectedScene)
-                    ? _selectedScene
-                    : sceneOptions.first);
+            (sceneOptions.contains(_selectedScene)
+                ? _selectedScene
+                : sceneOptions.first);
         _selectedVisual =
             _optionBySourceId(
               visualOptions,
               settings == null
                   ? null
                   : _settingsValue(settings, const [
-                'iconUrl',
-                'object',
-                'objectId',
-                'visualObject',
-              ]),
+                      'iconUrl',
+                      'object',
+                      'objectId',
+                      'visualObject',
+                    ]),
             ) ??
-                (visualOptions.contains(_selectedVisual)
-                    ? _selectedVisual
-                    : visualOptions.first);
+            (visualOptions.contains(_selectedVisual)
+                ? _selectedVisual
+                : visualOptions.first);
         final soundValue = settings == null
             ? null
             : _settingsValue(settings, const [
-          'soundId',
-          'sound',
-          'soundUrl',
-          'audioUrl',
-        ]);
+                'soundId',
+                'sound',
+                'soundUrl',
+                'audioUrl',
+              ]);
         if (soundValue != null) {
           _selectedSound = soundOptions.firstWhere(
-                (option) =>
-            option.id == soundValue ||
+            (option) =>
+                option.id == soundValue ||
                 option.url == soundValue ||
                 option.audioAsset == soundValue,
             orElse: () => soundOptions.contains(_selectedSound)
@@ -3855,11 +3859,7 @@ class _SessionBilateralSimulationState
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionTitle(title),
-          const SizedBox(height: 8),
-          child,
-        ],
+        children: [_buildSectionTitle(title), const SizedBox(height: 8), child],
       ),
     );
   }
@@ -4165,7 +4165,7 @@ class _SessionBilateralSimulationState
           ),
         ),
         errorWidget: (context, url, error) =>
-        const ColoredBox(color: Color(0xFFEDE7DE)),
+            const ColoredBox(color: Color(0xFFEDE7DE)),
       );
     }
 
@@ -4176,9 +4176,9 @@ class _SessionBilateralSimulationState
 
   bool _isRenderableMediaSource(String value) =>
       isBlsSceneSource(value) ||
-          isBlsObjectSource(value) ||
-          _isNetworkUrl(value) ||
-          _isAssetPath(value);
+      isBlsObjectSource(value) ||
+      _isNetworkUrl(value) ||
+      _isAssetPath(value);
 
   bool _isNetworkUrl(String value) {
     final uri = Uri.tryParse(value.trim());
@@ -4234,40 +4234,41 @@ class _SessionBilateralSimulationState
       title: 'Visual',
       child: options.isEmpty
           ? const Text(
-        'No local visuals found in assets/icons/.',
-        style: TextStyle(color: Color(0xFF8A8278), fontSize: 12),
-      )
+              'No local visuals found in assets/icons/.',
+              style: TextStyle(color: Color(0xFF8A8278), fontSize: 12),
+            )
           : LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final columns = _visualGridColumns(width);
-          _ensureSelectedGridVisible(
-            options: options,
-            selected: _selectedVisual,
-            columns: columns,
-            isExpanded: () => _visualGridExpanded,
-            setExpanded: (value) => _visualGridExpanded = value,
-          );
+              builder: (context, constraints) {
+                final width = constraints.maxWidth;
+                final columns = _visualGridColumns(width);
+                _ensureSelectedGridVisible(
+                  options: options,
+                  selected: _selectedVisual,
+                  columns: columns,
+                  isExpanded: () => _visualGridExpanded,
+                  setExpanded: (value) => _visualGridExpanded = value,
+                );
 
-          return _buildCollapsibleGrid(
-            columns: columns,
-            totalCount: options.length,
-            expanded: _visualGridExpanded,
-            onToggleExpanded: () =>
-                setState(() => _visualGridExpanded = !_visualGridExpanded),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 6,
-              mainAxisSpacing: 6,
-              childAspectRatio: 1.08,
+                return _buildCollapsibleGrid(
+                  columns: columns,
+                  totalCount: options.length,
+                  expanded: _visualGridExpanded,
+                  onToggleExpanded: () => setState(
+                    () => _visualGridExpanded = !_visualGridExpanded,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 6,
+                    mainAxisSpacing: 6,
+                    childAspectRatio: 1.08,
+                  ),
+                  itemBuilder: (context, index) {
+                    final option = options[index];
+                    return _buildObjectOption(option);
+                  },
+                );
+              },
             ),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              return _buildObjectOption(option);
-            },
-          );
-        },
-      ),
     );
   }
 
@@ -4342,7 +4343,8 @@ class _SessionBilateralSimulationState
     if (visual != null) {
       return LayoutBuilder(
         builder: (context, constraints) {
-          final dimension = size ??
+          final dimension =
+              size ??
               (constraints.maxWidth.isFinite && constraints.maxHeight.isFinite
                   ? constraints.biggest.shortestSide
                   : 80.0);
@@ -4397,40 +4399,40 @@ class _SessionBilateralSimulationState
       title: 'Sound',
       child: options.isEmpty
           ? _buildApiMediaState(
-        loadingText: 'Loading API sounds...',
-        emptyText: 'No API sounds found.',
-      )
+              loadingText: 'Loading API sounds...',
+              emptyText: 'No API sounds found.',
+            )
           : LayoutBuilder(
-        builder: (context, constraints) {
-          final panelWidth = constraints.maxWidth;
-          final columns = _soundGridColumns(panelWidth);
-          _ensureSelectedGridVisible(
-            options: options,
-            selected: _selectedSound,
-            columns: columns,
-            isExpanded: () => _soundGridExpanded,
-            setExpanded: (value) => _soundGridExpanded = value,
-          );
+              builder: (context, constraints) {
+                final panelWidth = constraints.maxWidth;
+                final columns = _soundGridColumns(panelWidth);
+                _ensureSelectedGridVisible(
+                  options: options,
+                  selected: _selectedSound,
+                  columns: columns,
+                  isExpanded: () => _soundGridExpanded,
+                  setExpanded: (value) => _soundGridExpanded = value,
+                );
 
-          return _buildCollapsibleGrid(
-            columns: columns,
-            totalCount: options.length,
-            expanded: _soundGridExpanded,
-            onToggleExpanded: () =>
-                setState(() => _soundGridExpanded = !_soundGridExpanded),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              mainAxisExtent: 72,
+                return _buildCollapsibleGrid(
+                  columns: columns,
+                  totalCount: options.length,
+                  expanded: _soundGridExpanded,
+                  onToggleExpanded: () =>
+                      setState(() => _soundGridExpanded = !_soundGridExpanded),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    mainAxisExtent: 72,
+                  ),
+                  itemBuilder: (context, index) {
+                    final option = options[index];
+                    return _buildSoundOption(option);
+                  },
+                );
+              },
             ),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              return _buildSoundOption(option);
-            },
-          );
-        },
-      ),
     );
   }
 
@@ -4458,12 +4460,12 @@ class _SessionBilateralSimulationState
             ),
             boxShadow: selected
                 ? [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.08),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ]
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
                 : null,
           ),
           child: Row(
@@ -4486,8 +4488,9 @@ class _SessionBilateralSimulationState
                             : const Color(0xFF44403C),
                         fontSize: 12,
                         height: 1.2,
-                        fontWeight:
-                        selected ? FontWeight.w700 : FontWeight.w500,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
                         fontFamily: 'Serif',
                       ),
                     ),
@@ -4543,24 +4546,24 @@ class _SessionBilateralSimulationState
     return _buildBareSection(
       child: isWide
           ? Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: _buildSpeedGroup()),
-          const SizedBox(width: 12),
-          Expanded(child: _buildDirectionGroup(isWide)),
-          const SizedBox(width: 12),
-          Expanded(child: _buildDurationGroup()),
-        ],
-      )
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: _buildSpeedGroup()),
+                const SizedBox(width: 12),
+                Expanded(child: _buildDirectionGroup(isWide)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildDurationGroup()),
+              ],
+            )
           : Column(
-        children: [
-          _buildSpeedGroup(),
-          const SizedBox(height: 12),
-          _buildDirectionGroup(isWide),
-          const SizedBox(height: 12),
-          _buildDurationGroup(),
-        ],
-      ),
+              children: [
+                _buildSpeedGroup(),
+                const SizedBox(height: 12),
+                _buildDirectionGroup(isWide),
+                const SizedBox(height: 12),
+                _buildDurationGroup(),
+              ],
+            ),
     );
   }
 
@@ -5034,11 +5037,11 @@ class _DirectionIconPainter extends CustomPainter {
   }
 
   void _drawTwoHeadedLine(
-      Canvas canvas,
-      Paint paint,
-      Offset start,
-      Offset end,
-      ) {
+    Canvas canvas,
+    Paint paint,
+    Offset start,
+    Offset end,
+  ) {
     canvas.drawLine(start, end, paint);
     _drawArrowHead(canvas, paint, start, end);
     _drawArrowHead(canvas, paint, end, start);
@@ -5138,7 +5141,7 @@ class _SoundArtworkFallback extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors =
-    _palette[option.identityKey.hashCode.abs() % _palette.length];
+        _palette[option.identityKey.hashCode.abs() % _palette.length];
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -5175,7 +5178,7 @@ class _SoundArtworkFallback extends StatelessWidget {
   }
 }
 
-enum _BlsSpeed { slow, medium, fast }
+enum _BlsSpeed { slow, medium, fast, faster }
 
 extension _BlsSpeedDetails on _BlsSpeed {
   String get key {
@@ -5186,6 +5189,8 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return 'medium';
       case _BlsSpeed.fast:
         return 'fast';
+      case _BlsSpeed.faster:
+        return 'faster';
     }
   }
 
@@ -5199,6 +5204,8 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return 'Medium';
       case _BlsSpeed.fast:
         return 'Fast';
+      case _BlsSpeed.faster:
+        return 'Faster';
     }
   }
 
@@ -5210,6 +5217,8 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return Icons.keyboard_arrow_right_rounded;
       case _BlsSpeed.fast:
         return Icons.double_arrow_rounded;
+      case _BlsSpeed.faster:
+        return Icons.fast_forward_rounded;
     }
   }
 
@@ -5221,6 +5230,8 @@ extension _BlsSpeedDetails on _BlsSpeed {
         return (BlsSpeedPresets.medium * 1000).round();
       case _BlsSpeed.fast:
         return (BlsSpeedPresets.fast * 1000).round();
+      case _BlsSpeed.faster:
+        return (BlsSpeedPresets.faster * 1000).round();
     }
   }
 
@@ -5361,8 +5372,8 @@ class BilateralAudioSync {
   Future<void> init() async {
     await _left.setReleaseMode(ReleaseMode.stop);
     await _right.setReleaseMode(ReleaseMode.stop);
-    await _left.setBalance(-1.0);  // full left channel
-    await _right.setBalance(1.0);  // full right channel
+    await _left.setBalance(-1.0); // full left channel
+    await _right.setBalance(1.0); // full right channel
 
     if (audioAsset.trim().isNotEmpty) {
       var path = audioAsset.trim();

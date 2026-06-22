@@ -2184,8 +2184,6 @@
 //   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 // }
 
-
-
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -2206,7 +2204,6 @@ import 'package:jonssony/widgets/canvas_sprite_visual.dart';
 import 'package:jonssony/widgets/looping_muted_video.dart';
 import 'package:jonssony/widgets/transparent_session_visual.dart';
 import '../../services/Device_Perfomace/device_performance.dart';
-import '../sessions/session_bilateral_simulation.dart';
 import 'bls_pdf_visuals.dart';
 import 'clam_space_ex.dart';
 import 'simulation_settings.dart';
@@ -2294,7 +2291,9 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     debugPrint('🎮 Device Performance Tier: ${DevicePerformance.tier}');
     debugPrint('🎮 Blur Effects: ${DevicePerformance.shouldUseBlurEffects}');
-    debugPrint('🎮 Backdrop Filter: ${DevicePerformance.shouldUseBackdropFilter}');
+    debugPrint(
+      '🎮 Backdrop Filter: ${DevicePerformance.shouldUseBackdropFilter}',
+    );
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
@@ -2303,8 +2302,9 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     _setDuration = _resolveSetDuration();
     _remainingSetTime = _setDuration;
-    _selectedDurationMinutes =
-    widget.settings.maxDurationMinutes == 90 ? 90 : 60;
+    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90
+        ? 90
+        : 60;
     _showIntroGuidance = widget.settings.showCompletionQuestions;
 
     _controller = AnimationController(
@@ -2334,56 +2334,36 @@ class _SimulationScreenState extends State<SimulationScreen>
     //   }
     // });
 
-
-    _controller.addListener(() {
-      if (!_motionStarted || _setComplete || _isPaused) return;
-
-      final hasSound = _resolvedSoundKey != 'none' &&
-          (_resolvedToneProfile != null || _resolvedAudioAsset.isNotEmpty);
-      if (!hasSound) return;
-
-      final v = _animation.value;
-      final upper = _audioTriggerThreshold;
-      final lower = _audioTriggerLowerBound;
-
-      if (_controller.status == AnimationStatus.forward) {
-        _leftAudioFired = false;
-        // window এর মধ্যে যেকোনো frame এ একবার fire
-        if (v >= lower && v <= upper && !_rightAudioFired) {
-          _rightAudioFired = true;
-          unawaited(_playEndpointAudio(isRight: true));
-        }
-        // upper পার হলে flag reset করো না — statusListener করবে
-      } else if (_controller.status == AnimationStatus.reverse) {
-        _rightAudioFired = false;
-        if (v <= -lower && v >= -upper && !_leftAudioFired) {
-          _leftAudioFired = true;
-          unawaited(_playEndpointAudio(isRight: false));
-        }
-      }
-    });
-
-
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
+        if (!_rightAudioFired) {
+          _rightAudioFired = true;
+          _leftAudioFired = false;
+          unawaited(_playEndpointAudio(isRight: true));
+        }
         _handleEndpointReached(isRight: true);
         if (_setComplete) return;
         _isReversing = true;
         _beginFacingTurn(faceLeft: true);
-        _controller.reverse();
+        _continueFromEndpoint(reverse: true);
       } else if (status == AnimationStatus.dismissed) {
+        if (!_leftAudioFired) {
+          _leftAudioFired = true;
+          _rightAudioFired = false;
+          unawaited(_playEndpointAudio(isRight: false));
+        }
         _handleEndpointReached(isRight: false);
         if (_setComplete) return;
         _isReversing = false;
         _beginFacingTurn(faceLeft: false);
-        _controller.forward();
+        _continueFromEndpoint(reverse: false);
       }
     });
 
     _animation = Tween<double>(
       begin: -1.0,
       end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
 
     _turnController = AnimationController(
       duration: const Duration(milliseconds: 420),
@@ -2450,26 +2430,6 @@ class _SimulationScreenState extends State<SimulationScreen>
     } else {
       _startMotion();
     }
-  }
-
-
-  double get _audioTriggerThreshold {
-    const leadTimeMs = 80; // edge এর 80ms আগে
-    final durationMs = _halfCycleDuration.inMilliseconds;
-    final remainingMs = (durationMs - leadTimeMs).clamp(0, durationMs);
-    final rawT = remainingMs / durationMs;
-    final curvedT = (-math.cos(math.pi * rawT) / 2) + 0.5;
-    return (curvedT * 2 - 1).clamp(0.5, 0.98);
-  }
-
-// window এর lower bound — এর আগে fire হলে too early
-  double get _audioTriggerLowerBound {
-    const windowMs = 100; // threshold থেকে 100ms আগে পর্যন্ত window
-    final durationMs = _halfCycleDuration.inMilliseconds;
-    final remainingMs = (durationMs - 80 - windowMs).clamp(0, durationMs);
-    final rawT = remainingMs / durationMs;
-    final curvedT = (-math.cos(math.pi * rawT) / 2) + 0.5;
-    return (curvedT * 2 - 1).clamp(0.3, 0.97);
   }
 
   Future<void> _configurePulsePlayers() async {
@@ -2576,22 +2536,70 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool get _needsEffectAnimation =>
       bilateralObjectFromSource(_resolvedVisualObject) != null;
 
+  // void _startMotion() {
+  //   if (!mounted || _setComplete || _isPaused) return;
+  //   if (!_motionStarted) {
+  //     _currentDirection = widget.settings.direction;
+  //     _controller.value = 0.0;
+  //     WidgetsBinding.instance.addPostFrameCallback((_) {
+  //       if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
+  //       _controller.forward();
+  //     });
+  //   } else {
+  //     _controller.forward();
+  //   }
+  //   _motionStarted = true;
+  //   if (_needsEffectAnimation && !_effectController.isAnimating) {
+  //     _effectController.repeat();
+  //   }
+  //   _videoPlayingNotifier.value = true;
+  //   if (_shouldFlapWings) {
+  //     _wingController.repeat(reverse: true);
+  //   }
+  //   if (_usesContinuousSessionAudio) {
+  //     unawaited(_setupAudio());
+  //   }
+  //   _startSetTimer();
+  // }
+
   void _startMotion() {
     if (!mounted || _setComplete || _isPaused) return;
-    _motionStarted = true;
-    _controller.forward();
+    if (!_motionStarted) {
+      _currentDirection = widget.settings.direction;
+      _controller.value = 0.0;
+      _motionStarted = true; // ← move here, after controller positioned
+      _controller.forward(); // ← direct call, no postFrameCallback
+    } else {
+      _controller.forward();
+    }
     if (_needsEffectAnimation && !_effectController.isAnimating) {
       _effectController.repeat();
     }
     _videoPlayingNotifier.value = true;
-    if (_shouldFlapWings) {
-      _wingController.repeat(reverse: true);
-    }
-    if (_usesContinuousSessionAudio) {
-      unawaited(_setupAudio());
-    }
+    if (_shouldFlapWings) _wingController.repeat(reverse: true);
+    if (_usesContinuousSessionAudio) unawaited(_setupAudio());
     _startSetTimer();
   }
+
+  void _continueFromEndpoint({required bool reverse}) {
+    if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
+    if (reverse) {
+      _controller.reverse();
+    } else {
+      _controller.forward();
+    }
+  }
+
+  // void _continueFromEndpoint({required bool reverse}) {
+  //   WidgetsBinding.instance.addPostFrameCallback((_) {
+  //     if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
+  //     if (reverse) {
+  //       _controller.reverse();
+  //     } else {
+  //       _controller.forward();
+  //     }
+  //   });
+  // }
 
   Future<void> _handleIntroStart() async {
     await _guidanceAudioPlayer.stop();
@@ -2743,8 +2751,7 @@ class _SimulationScreenState extends State<SimulationScreen>
       _moveCount++;
       if (widget.settings.totalSets > 0) {
         final stepMs = _fullCycleDuration.inMilliseconds;
-        final remainingMs =
-            _setDuration.inMilliseconds - (stepMs * _moveCount);
+        final remainingMs = _setDuration.inMilliseconds - (stepMs * _moveCount);
         _remainingSetTime = Duration(
           milliseconds: remainingMs < 0 ? 0 : remainingMs,
         );
@@ -2874,7 +2881,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     final key = '${_resolvedSoundKey}-${isRight ? 'right' : 'left'}';
     return _toneCache.putIfAbsent(
       key,
-          () => buildBlsToneWav(profile: profile, isRight: isRight),
+      () => buildBlsToneWav(profile: profile, isRight: isRight),
     );
   }
 
@@ -3057,7 +3064,7 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Matrix4 _facingTransformMatrix() {
     final matrix = Matrix4.identity()..setEntry(3, 2, 0.0018);
-    switch (widget.settings.direction) {
+    switch (_currentDirection) {
       case AnimationDirection.vertical:
         matrix.rotateX(_displayFacingAngle.value);
         break;
@@ -3082,73 +3089,30 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Offset _objectPosition(double value, Size screenSize) {
     final t = (value + 1) / 2;
-    final maxX = math.max(0.0, screenSize.width - _objectSize);
+    final horizontalCorrection = _horizontalEndpointCorrection;
+    final minX = -horizontalCorrection;
+    final maxX = math.max(
+      minX,
+      screenSize.width - _objectSize - horizontalCorrection,
+    );
     final maxY = math.max(0.0, screenSize.height - _objectSize);
+    final x = minX + (t * (maxX - minX));
 
-    switch (widget.settings.direction) {
+    switch (_currentDirection) {
       case AnimationDirection.horizontal:
-        return Offset(
-          t * maxX,
-          maxY / 2 + _horizontalVerticalOffset(maxY),
-        );
+        return Offset(x, maxY / 2);
       case AnimationDirection.vertical:
-        return Offset(maxX / 2, t * maxY);
+        return Offset((screenSize.width - _objectSize) / 2, t * maxY);
       case AnimationDirection.diagonal:
-        return Offset(t * maxX, t * maxY);
+        return Offset(x, t * maxY);
       case AnimationDirection.diagonalReverse:
-        return Offset(t * maxX, (1 - t) * maxY);
+        return Offset(x, (1 - t) * maxY);
     }
   }
 
-  double _horizontalVerticalOffset(double maxY) {
-    if (_isSpriteVisual) return 0;
-    return _horizontalObjectAlignmentY * maxY / 2;
-  }
-
-  double get _horizontalObjectAlignmentY {
-    if (_isSpriteVisual) return 0;
-    return _objectBaseAlignmentY.clamp(-0.32, 0.32);
-  }
-
-  double get _objectBaseAlignmentY {
-    final visualObject = _resolvedVisualObject;
-    final advancedObject = bilateralObjectFromSource(visualObject);
-    if (advancedObject != null) {
-      switch (advancedObject.category) {
-        case 'Cosmic':
-        case 'Light & Energy':
-          return -0.58;
-        case 'Sacred Geometry':
-          return -0.5;
-        default:
-          return -0.42;
-      }
-    }
-
-    if (!isBlsObjectSource(visualObject)) return -0.4;
-
-    switch (blsSourceId(visualObject)) {
-      case 'moon':
-        return -0.7;
-      case 'sun':
-      case 'star':
-      case 'orb':
-      case 'crystal':
-      case 'pearl':
-        return -0.64;
-      case 'bird':
-        return -0.56;
-      case 'feather':
-        return -0.48;
-      case 'butterfly':
-      case 'dragonfly':
-        return -0.4;
-      case 'leaf':
-      case 'lotus':
-        return -0.36;
-      default:
-        return -0.4;
-    }
+  double get _horizontalEndpointCorrection {
+    if (_isSpriteVisual) return _objectSize * 0.18;
+    return _objectSize * 0.45;
   }
 
   bool get _hasObjectReflection {
@@ -3184,8 +3148,9 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildBackground() {
-    final source =
-    resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source = resolveBlsEnvironmentSource(
+      widget.settings.environmentImage,
+    );
 
     Widget foreground;
     if (isBlsSceneSource(source)) {
@@ -3205,16 +3170,14 @@ class _SimulationScreenState extends State<SimulationScreen>
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => _buildFallbackBackground(),
+        errorBuilder: (context, error, stackTrace) =>
+            _buildFallbackBackground(),
       );
     }
 
     return Stack(
       fit: StackFit.expand,
-      children: [
-        _buildFallbackBackground(),
-        foreground,
-      ],
+      children: [_buildFallbackBackground(), foreground],
     );
   }
 
@@ -3377,8 +3340,7 @@ class _SimulationScreenState extends State<SimulationScreen>
             width: size,
             height: size,
             fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) =>
-                _buildVideoIcon(size),
+            errorBuilder: (context, error, stackTrace) => _buildVideoIcon(size),
           );
         }
         continue;
@@ -3592,26 +3554,26 @@ class _SimulationScreenState extends State<SimulationScreen>
         scale: scale,
         child: isVideo || isAssetAnimated
             ? SizedBox(
-          width: _objectSize,
-          height: _objectSize,
-          child: Center(child: visualBody),
-        )
+                width: _objectSize,
+                height: _objectSize,
+                child: Center(child: visualBody),
+              )
             : Container(
-          width: _objectSize,
-          height: _objectSize,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.white.withValues(alpha: glowOpacity),
-                blurRadius: 28,
-                spreadRadius: 8,
+                width: _objectSize,
+                height: _objectSize,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: glowOpacity),
+                      blurRadius: 28,
+                      spreadRadius: 8,
+                    ),
+                  ],
+                ),
+                child: visualBody,
               ),
-            ],
-          ),
-          child: visualBody,
-        ),
       ),
     );
 
@@ -3623,10 +3585,7 @@ class _SimulationScreenState extends State<SimulationScreen>
         ? _buildVideoFallback(_objectSize)
         : _buildVisualObject(size: _objectSize);
 
-    Widget content = Transform.scale(
-      scaleY: -0.35,
-      child: visual,
-    );
+    Widget content = Transform.scale(scaleY: -0.35, child: visual);
 
     // লো-এন্ড ডিভাইসে blur ইফেক্ট বাদ দেওয়া
     if (DevicePerformance.shouldUseBlurEffects) {
@@ -3636,14 +3595,8 @@ class _SimulationScreenState extends State<SimulationScreen>
       );
     }
 
-    return IgnorePointer(
-      child: Opacity(
-        opacity: 0.25,
-        child: content,
-      ),
-    );
+    return IgnorePointer(child: Opacity(opacity: 0.25, child: content));
   }
-
 
   Widget _buildPaperTexture() {
     return Positioned.fill(
@@ -3675,13 +3628,24 @@ class _SimulationScreenState extends State<SimulationScreen>
                 animation: _animation,
                 builder: (context, child) {
                   final screenSize = MediaQuery.sizeOf(context);
-                  final pos = _objectPosition(_animation.value, screenSize);
-                  return Positioned(
-                    left: pos.dx,
-                    top: screenSize.height * 0.72,
-                    width: _objectSize,
-                    height: _objectSize,
-                    child: _buildObjectReflection(),
+                  final positionValue = _motionStarted
+                      ? _animation.value
+                      : -1.0;
+                  final pos = _objectPosition(positionValue, screenSize);
+                  return Positioned.fill(
+                    child: IgnorePointer(
+                      child: Transform.translate(
+                        offset: Offset(pos.dx, screenSize.height * 0.72),
+                        child: Align(
+                          alignment: Alignment.topLeft,
+                          child: SizedBox(
+                            width: _objectSize,
+                            height: _objectSize,
+                            child: _buildObjectReflection(),
+                          ),
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
@@ -3696,24 +3660,31 @@ class _SimulationScreenState extends State<SimulationScreen>
                   child: _sessionMovingVisual,
                   builder: (context, child) {
                     final screenSize = MediaQuery.sizeOf(context);
-                    final pos = _objectPosition(_animation.value, screenSize);
-                    return Positioned(
-                      left: pos.dx,
-                      top: pos.dy,
-                      width: _objectSize,
-                      height: _objectSize,
+                    final positionValue = _motionStarted
+                        ? _animation.value
+                        : -1.0;
+                    final pos = _objectPosition(positionValue, screenSize);
+                    return Positioned.fill(
                       child: IgnorePointer(
-                        child: OverflowBox(
-                          minWidth: 0,
-                          minHeight: 0,
-                          maxWidth: _objectSize * 1.08,
-                          maxHeight: _objectSize * 1.08,
-                          child: SizedBox(
-                            width: _objectSize,
-                            height: _objectSize,
-                            child: _wrapFacingTurnWithAngle(
-                              facingAngle,
-                              _buildAnimatedVisualObject(stableChild: child),
+                        child: Transform.translate(
+                          offset: pos,
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: OverflowBox(
+                              minWidth: 0,
+                              minHeight: 0,
+                              maxWidth: _objectSize * 1.08,
+                              maxHeight: _objectSize * 1.08,
+                              child: SizedBox(
+                                width: _objectSize,
+                                height: _objectSize,
+                                child: _wrapFacingTurnWithAngle(
+                                  facingAngle,
+                                  _buildAnimatedVisualObject(
+                                    stableChild: child,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -3755,8 +3726,9 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildPdfSessionChrome() {
-    final totalSets =
-    widget.settings.totalSets <= 0 ? 34 : widget.settings.totalSets;
+    final totalSets = widget.settings.totalSets <= 0
+        ? 34
+        : widget.settings.totalSets;
     final currentSet = _moveCount.clamp(0, totalSets);
     final textColor = _sceneUsesLightText ? Colors.white : _inkText;
     final shadow = [
@@ -3838,16 +3810,12 @@ class _SimulationScreenState extends State<SimulationScreen>
       icon: Icon(
         Icons.arrow_back_ios_new_rounded,
         size: 15,
-        color: textColor.withValues(
-          alpha: _sceneUsesLightText ? 0.95 : 1,
-        ),
+        color: textColor.withValues(alpha: _sceneUsesLightText ? 0.95 : 1),
       ),
       label: Text(
         'Back',
         style: TextStyle(
-          color: textColor.withValues(
-            alpha: _sceneUsesLightText ? 0.95 : 1,
-          ),
+          color: textColor.withValues(alpha: _sceneUsesLightText ? 0.95 : 1),
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -3928,15 +3896,17 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   bool get _sceneUsesLightText {
-    final source =
-    resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source = resolveBlsEnvironmentSource(
+      widget.settings.environmentImage,
+    );
     return isBlsSceneSource(source) &&
         const {'night', 'forest'}.contains(blsSourceId(source));
   }
 
   String get _sceneTitle {
-    final source =
-    resolveBlsEnvironmentSource(widget.settings.environmentImage);
+    final source = resolveBlsEnvironmentSource(
+      widget.settings.environmentImage,
+    );
     if (!isBlsSceneSource(source)) {
       return 'Bilateral Stimulation';
     }
@@ -3965,7 +3935,7 @@ class _SimulationScreenState extends State<SimulationScreen>
   }) async {
     await _guidanceAudioPlayer.stop();
     await _voice.stop();
-    
+
     if (!mounted) return;
     setState(() {
       _guidanceAudioPlaying = true;
@@ -4043,7 +4013,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                       ),
                     ),
                     SizedBox(height: isShort ? 12 : 24),
-                    
+
                     // Play Summary Area
                     Container(
                       width: double.infinity,
@@ -4051,7 +4021,10 @@ class _SimulationScreenState extends State<SimulationScreen>
                       decoration: BoxDecoration(
                         color: const Color(0xFFF7F9F5),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFEBEFE8), width: 1.0),
+                        border: Border.all(
+                          color: const Color(0xFFEBEFE8),
+                          width: 1.0,
+                        ),
                       ),
                       child: Center(
                         child: ElevatedButton(
@@ -4068,12 +4041,13 @@ class _SimulationScreenState extends State<SimulationScreen>
                               });
                               await _playGuidance(
                                 audioPath: 'assets/audio/summary.mp3',
-                                fallbackText: "This EMDR processing session utilizes bilateral stimulation. Focus on your target memory and follow the visual movement while keeping your session duration in mind.",
+                                fallbackText:
+                                    "This EMDR processing session utilizes bilateral stimulation. Focus on your target memory and follow the visual movement while keeping your session duration in mind.",
                                 onDone: () {
                                   setState(() {
                                     _summaryAudioPlaying = false;
                                   });
-                                }
+                                },
                               );
                             }
                           },
@@ -4089,7 +4063,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                             ),
                           ),
                           child: Text(
-                            _summaryAudioPlaying ? 'Stop Summary' : 'Play Summary',
+                            _summaryAudioPlaying
+                                ? 'Stop Summary'
+                                : 'Play Summary',
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
@@ -4100,7 +4076,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                       ),
                     ),
                     SizedBox(height: isShort ? 14 : 28),
-                    
+
                     // Select Session Duration title
                     Text(
                       'SELECT SESSION DURATION',
@@ -4112,7 +4088,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                       ),
                     ),
                     SizedBox(height: isShort ? 8 : 14),
-                    
+
                     // Duration Buttons Row
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -4123,7 +4099,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                       ],
                     ),
                     SizedBox(height: isShort ? 16 : 32),
-                    
+
                     // Start Button
                     SizedBox(
                       width: double.infinity,
@@ -4140,7 +4116,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF537E5D),
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 18),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isShort ? 12 : 18,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -4175,14 +4153,17 @@ class _SimulationScreenState extends State<SimulationScreen>
       },
       style: OutlinedButton.styleFrom(
         foregroundColor: isSelected ? const Color(0xFF537E5D) : _inkText,
-        backgroundColor: isSelected 
-            ? const Color(0xFF537E5D).withValues(alpha: 0.08) 
+        backgroundColor: isSelected
+            ? const Color(0xFF537E5D).withValues(alpha: 0.08)
             : Colors.white,
         side: BorderSide(
           color: isSelected ? const Color(0xFF537E5D) : const Color(0xFFD8D2C8),
           width: isSelected ? 1.8 : 1.2,
         ),
-        padding: EdgeInsets.symmetric(horizontal: 28, vertical: isShort ? 10 : 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: 28,
+          vertical: isShort ? 10 : 16,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Text(
@@ -4198,10 +4179,10 @@ class _SimulationScreenState extends State<SimulationScreen>
   Widget _buildCompletionOverlay() {
     final screenSize = MediaQuery.sizeOf(context);
     final isShort = screenSize.height < 450;
-    
+
     Widget cardChild;
     double maxCardWidth = 460;
-    
+
     if (_showStuckScreen) {
       maxCardWidth = 520;
       cardChild = _buildStuckScreenContent(isShort);
@@ -4229,8 +4210,8 @@ class _SimulationScreenState extends State<SimulationScreen>
               child: Container(
                 width: double.infinity,
                 constraints: BoxConstraints(maxWidth: maxCardWidth),
-                padding: isShort 
-                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) 
+                padding: isShort
+                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16)
                     : const EdgeInsets.all(32),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -4303,7 +4284,10 @@ class _SimulationScreenState extends State<SimulationScreen>
                 ),
                 child: Text(
                   'Changing',
-                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: isShort ? 13 : 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -4317,7 +4301,8 @@ class _SimulationScreenState extends State<SimulationScreen>
                   });
                   _playGuidance(
                     audioPath: 'assets/audio/rate_guidance.mp3',
-                    fallbackText: 'Without any tapping or eye movement, just take a moment to notice what you see and feel. How disturbing is it right now?',
+                    fallbackText:
+                        'Without any tapping or eye movement, just take a moment to notice what you see and feel. How disturbing is it right now?',
                   );
                 },
                 style: OutlinedButton.styleFrom(
@@ -4330,7 +4315,10 @@ class _SimulationScreenState extends State<SimulationScreen>
                 ),
                 child: Text(
                   'Not Changing',
-                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: isShort ? 13 : 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -4344,7 +4332,8 @@ class _SimulationScreenState extends State<SimulationScreen>
                   });
                   _playGuidance(
                     audioPath: 'assets/audio/stuck_guidance.mp3',
-                    fallbackText: "If you're not getting past a certain thought or feeling, try changing the direction of the bilateral stimulation. Choose a new direction, then continue after the audio finishes.",
+                    fallbackText:
+                        "If you're not getting past a certain thought or feeling, try changing the direction of the bilateral stimulation. Choose a new direction, then continue after the audio finishes.",
                   );
                 },
                 style: OutlinedButton.styleFrom(
@@ -4357,7 +4346,10 @@ class _SimulationScreenState extends State<SimulationScreen>
                 ),
                 child: Text(
                   'Stuck',
-                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: isShort ? 13 : 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
@@ -4391,33 +4383,57 @@ class _SimulationScreenState extends State<SimulationScreen>
           ),
         ),
         SizedBox(height: isShort ? 12 : 24),
-        
+
         // Direction buttons grid
         Column(
           children: [
             Row(
               children: [
-                _buildDirectionOption('Horizontal', AnimationDirection.horizontal, widget.settings.direction == AnimationDirection.horizontal, isShort),
+                _buildDirectionOption(
+                  'Horizontal',
+                  AnimationDirection.horizontal,
+                  widget.settings.direction == AnimationDirection.horizontal,
+                  isShort,
+                ),
                 const SizedBox(width: 12),
-                _buildDirectionOption('Vertical', AnimationDirection.vertical, widget.settings.direction == AnimationDirection.vertical, isShort),
+                _buildDirectionOption(
+                  'Vertical',
+                  AnimationDirection.vertical,
+                  widget.settings.direction == AnimationDirection.vertical,
+                  isShort,
+                ),
               ],
             ),
             SizedBox(height: isShort ? 8 : 12),
             Row(
               children: [
-                _buildDirectionOption('Diagonal Up', AnimationDirection.diagonal, widget.settings.direction == AnimationDirection.diagonal, isShort),
+                _buildDirectionOption(
+                  'Diagonal Up',
+                  AnimationDirection.diagonal,
+                  widget.settings.direction == AnimationDirection.diagonal,
+                  isShort,
+                ),
                 const SizedBox(width: 12),
-                _buildDirectionOption('Diagonal Down', AnimationDirection.diagonalReverse, widget.settings.direction == AnimationDirection.diagonalReverse, isShort),
+                _buildDirectionOption(
+                  'Diagonal Down',
+                  AnimationDirection.diagonalReverse,
+                  widget.settings.direction ==
+                      AnimationDirection.diagonalReverse,
+                  isShort,
+                ),
               ],
             ),
           ],
         ),
         SizedBox(height: isShort ? 12 : 24),
-        
+
         // Guidance Box
         Container(
           width: double.infinity,
-          padding: EdgeInsets.symmetric(horizontal: isShort ? 12 : 16, vertical: isShort ? 8 : 12),
+          padding: EdgeInsets.symmetric(
+            horizontal: isShort ? 12 : 16,
+            vertical: isShort ? 8 : 12,
+          ),
           decoration: BoxDecoration(
             color: const Color(0xFFF6F6F4),
             borderRadius: BorderRadius.circular(10),
@@ -4434,7 +4450,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           ),
         ),
         SizedBox(height: isShort ? 12 : 24),
-        
+
         // Continue Session Button
         SizedBox(
           width: double.infinity,
@@ -4454,12 +4470,17 @@ class _SimulationScreenState extends State<SimulationScreen>
               disabledBackgroundColor: const Color(0xFFD8D2C8),
               disabledForegroundColor: Colors.white,
               padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
               elevation: 0,
             ),
             child: Text(
               'Continue Session',
-              style: TextStyle(fontSize: isShort ? 14 : 16, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: isShort ? 14 : 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -4467,27 +4488,32 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
-  Widget _buildDirectionOption(String title, AnimationDirection direction, bool isOriginal, bool isShort) {
+  Widget _buildDirectionOption(
+    String title,
+    AnimationDirection direction,
+    bool isOriginal,
+    bool isShort,
+  ) {
     final isSelected = _currentDirection == direction;
     final enabled = _guidanceAudioCompleted;
-    
+
     return Expanded(
       child: GestureDetector(
-        onTap: enabled ? () {
-          setState(() {
-            _currentDirection = direction;
-          });
-        } : null,
+        onTap: enabled
+            ? () {
+                setState(() {
+                  _currentDirection = direction;
+                });
+              }
+            : null,
         child: Container(
           height: isShort ? 46 : 64,
           decoration: BoxDecoration(
-            color: isSelected 
-                ? const Color(0xFFF0F2EE) 
-                : Colors.white,
+            color: isSelected ? const Color(0xFFF0F2EE) : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: isSelected 
-                  ? const Color(0xFF7A9A6A) 
+              color: isSelected
+                  ? const Color(0xFF7A9A6A)
                   : const Color(0xFFD8D2C8),
               width: isSelected ? 2.0 : 1.2,
             ),
@@ -4498,8 +4524,8 @@ class _SimulationScreenState extends State<SimulationScreen>
               Text(
                 title,
                 style: TextStyle(
-                  color: isSelected 
-                      ? const Color(0xFF5A6A50) 
+                  color: isSelected
+                      ? const Color(0xFF5A6A50)
                       : (enabled ? _inkText : _inkText.withValues(alpha: 0.4)),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   fontSize: isShort ? 13 : 15,
@@ -4509,7 +4535,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                 Text(
                   'CURRENT',
                   style: TextStyle(
-                    color: isSelected 
+                    color: isSelected
                         ? const Color(0xFF7A9A6A).withValues(alpha: 0.8)
                         : const Color(0xFF8A9A8A),
                     fontSize: isShort ? 7 : 9,
@@ -4548,7 +4574,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           ),
         ),
         SizedBox(height: isShort ? 10 : 20),
-        
+
         // Info Box
         Container(
           width: double.infinity,
@@ -4581,11 +4607,14 @@ class _SimulationScreenState extends State<SimulationScreen>
           ),
         ),
         SizedBox(height: isShort ? 12 : 24),
-        
+
         // Rating circles Row/Grid
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(9, (index) => _buildRatingCircle(index, isShort)),
+          children: List.generate(
+            9,
+            (index) => _buildRatingCircle(index, isShort),
+          ),
         ),
         SizedBox(height: isShort ? 10 : 16),
         Row(
@@ -4597,13 +4626,27 @@ class _SimulationScreenState extends State<SimulationScreen>
           ],
         ),
         SizedBox(height: isShort ? 12 : 20),
-        
+
         // Legend row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('0 = Neutral', style: TextStyle(color: _inkText.withValues(alpha: 0.5), fontSize: isShort ? 10 : 12, fontWeight: FontWeight.w500)),
-            Text('10 = Extremely', style: TextStyle(color: _inkText.withValues(alpha: 0.5), fontSize: isShort ? 10 : 12, fontWeight: FontWeight.w500)),
+            Text(
+              '0 = Neutral',
+              style: TextStyle(
+                color: _inkText.withValues(alpha: 0.5),
+                fontSize: isShort ? 10 : 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            Text(
+              '10 = Extremely',
+              style: TextStyle(
+                color: _inkText.withValues(alpha: 0.5),
+                fontSize: isShort ? 10 : 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ],
@@ -4622,10 +4665,7 @@ class _SimulationScreenState extends State<SimulationScreen>
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF537E5D) : Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: const Color(0xFF537E5D),
-            width: 1.5,
-          ),
+          border: Border.all(color: const Color(0xFF537E5D), width: 1.5),
         ),
         child: Center(
           child: Text(
@@ -4661,8 +4701,8 @@ class _SimulationScreenState extends State<SimulationScreen>
               child: Container(
                 width: double.infinity,
                 constraints: BoxConstraints(maxWidth: isShort ? 480 : 520),
-                padding: isShort 
-                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) 
+                padding: isShort
+                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16)
                     : const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -4744,7 +4784,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                       onPressed: () => _leaveSimulation(false),
                       style: TextButton.styleFrom(
                         foregroundColor: _inkText,
-                        padding: isShort ? const EdgeInsets.symmetric(vertical: 6) : null,
+                        padding: isShort
+                            ? const EdgeInsets.symmetric(vertical: 6)
+                            : null,
                       ),
                       child: const Text('Finish for today'),
                     ),
@@ -4774,7 +4816,8 @@ class _SimulationScreenState extends State<SimulationScreen>
     } else {
       await _playGuidance(
         audioPath: 'assets/audio/rate_high_guidance.mp3',
-        fallbackText: "Ok, some distress is still present. Let's continue processing.",
+        fallbackText:
+            "Ok, some distress is still present. Let's continue processing.",
         onDone: () {
           if (mounted) _handleSudsContinue();
         },
@@ -4812,9 +4855,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: Text(
-              _setComplete
-                  ? 'Set complete'
-                  : '${_remainingSetTime.inSeconds}s',
+              _setComplete ? 'Set complete' : '${_remainingSetTime.inSeconds}s',
               style: const TextStyle(
                 color: Colors.black87,
                 fontSize: 13,
@@ -4827,10 +4868,7 @@ class _SimulationScreenState extends State<SimulationScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF537E5D),
               elevation: 0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 22,
-                vertical: 10,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -4875,7 +4913,6 @@ class _SimulationScreenState extends State<SimulationScreen>
       ),
     );
   }
-
 }
 
 class _PaperTexturePainter extends CustomPainter {
@@ -4895,6 +4932,3 @@ class _PaperTexturePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
-
-
-
