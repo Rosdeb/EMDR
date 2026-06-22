@@ -32,12 +32,20 @@ class _SessionSixState extends State<SessionSix> {
   }
 
   void _onVideoUpdate() {
-    if (!mounted || _completed) return;
+    if (!mounted) return;
     final c = _controller;
-    if (c.value.duration > Duration.zero &&
+    if (!_completed && c.value.duration > Duration.zero &&
         c.value.position >= c.value.duration) {
       setState(() => _completed = true);
+    } else {
+      setState(() {});
     }
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   void _continue() {
@@ -156,6 +164,71 @@ class _SessionSixState extends State<SessionSix> {
                                                     Icons.play_arrow_rounded,
                                                     color: Colors.white,
                                                     size: 48,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Positioned(
+                                              bottom: 0,
+                                              left: 0,
+                                              right: 0,
+                                              child: IgnorePointer(
+                                                ignoring: _controller.value.isPlaying,
+                                                child: AnimatedOpacity(
+                                                  opacity: _controller.value.isPlaying
+                                                      ? 0.0
+                                                      : 1.0,
+                                                  duration: const Duration(
+                                                      milliseconds: 250),
+                                                  child: GestureDetector(
+                                                    onTap: () {}, // Absorb taps to prevent pause toggle
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        gradient: LinearGradient(
+                                                          begin: Alignment.bottomCenter,
+                                                          end: Alignment.topCenter,
+                                                          colors: [
+                                                            Colors.black.withValues(alpha: 0.65),
+                                                            Colors.transparent,
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                                                      child: Row(
+                                                        children: [
+                                                          Text(
+                                                            _formatDuration(_controller.value.position),
+                                                            style: const TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Expanded(
+                                                            child: VideoProgressIndicator(
+                                                              _controller,
+                                                              allowScrubbing: true,
+                                                              colors: const VideoProgressColors(
+                                                                playedColor: Color(0xFF7A9A6A),
+                                                                bufferedColor: Colors.white24,
+                                                                backgroundColor: Colors.white12,
+                                                              ),
+                                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                                            ),
+                                                          ),
+                                                          const SizedBox(width: 12),
+                                                          Text(
+                                                            _formatDuration(_controller.value.duration),
+                                                            style: const TextStyle(
+                                                              color: Colors.white,
+                                                              fontSize: 12,
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
                                                   ),
                                                 ),
                                               ),

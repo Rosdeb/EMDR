@@ -713,7 +713,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Get.to(() => const SessionSix(), arguments: arguments);
         break;
       default:
-        Get.to(() => const SessionSeven(), arguments: arguments);
+        Get.to(() => const SessionSix(), arguments: arguments);
     }
   }
 
