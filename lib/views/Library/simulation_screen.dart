@@ -2266,14 +2266,31 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool _showClosingGuidance = false;
   bool _showCompletionQuestions = false;
   bool _hasAudioSource = false;
-  bool? _firstCompletionAnswer;
   bool _showSudsRating = false;
   int _sudsRating = 5;
+  bool _guidanceAudioPlaying = false;
+  bool _guidanceAudioCompleted = false;
+  bool _showStuckScreen = false;
+  bool _summaryAudioPlaying = false;
+  late AnimationDirection _currentDirection;
+  VoidCallback? _onGuidanceAudioComplete;
+  final AudioPlayer _guidanceAudioPlayer = AudioPlayer();
   static const Map<String, BlsToneProfile> _htmlToneProfiles = kBlsToneProfiles;
 
   @override
   void initState() {
     super.initState();
+    _currentDirection = widget.settings.direction;
+    _guidanceAudioPlayer.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() {
+        _guidanceAudioPlaying = false;
+        _guidanceAudioCompleted = true;
+      });
+      if (_onGuidanceAudioComplete != null) {
+        _onGuidanceAudioComplete!();
+      }
+    });
 
     debugPrint('🎮 Device Performance Tier: ${DevicePerformance.tier}');
     debugPrint('🎮 Blur Effects: ${DevicePerformance.shouldUseBlurEffects}');
@@ -2429,15 +2446,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     _startSessionTimer();
 
     if (widget.settings.showCompletionQuestions) {
-      final roadmap = widget.settings.roadmapSummary?.trim();
-      final intro = [
-        'The bilateral stimulation will start now.',
-        if (roadmap != null && roadmap.isNotEmpty)
-          'Your roadmap summary is: $roadmap.',
-        'When you have the image and feeling in mind, press start.',
-        'When you start, let your mind wander. Your thoughts may go forward or backwards in time. Simply notice what comes up.',
-      ].join(' ');
-      unawaited(_voice.speak(intro));
+      // Do not auto-play summary audio. It will only play when clicking "Play Summary"
     } else {
       _startMotion();
     }
@@ -2585,10 +2594,12 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Future<void> _handleIntroStart() async {
+    await _guidanceAudioPlayer.stop();
     await _voice.stop();
     if (!mounted) return;
 
     setState(() {
+      _summaryAudioPlaying = false;
       _showIntroGuidance = false;
       _setComplete = false;
       _isPaused = false;
@@ -2922,7 +2933,6 @@ class _SimulationScreenState extends State<SimulationScreen>
     setState(() {
       _showCompletionQuestions = false;
       _showClosingGuidance = false;
-      _firstCompletionAnswer = null;
       _showSudsRating = false;
       _sudsRating = 5;
       _setComplete = false;
@@ -2947,38 +2957,24 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Future<void> _handleFirstCompletionAnswer(bool answer) async {
-    setState(() {
-      _firstCompletionAnswer = answer;
-    });
     await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     if (answer) {
-      unawaited(
-        _voice.speak(
-          'Ok, good. Go with that, or go with where you left off.',
-          onDone: () {
-            Future.delayed(const Duration(milliseconds: 900), () {
-              if (mounted) unawaited(_restartSet());
-            });
-          },
-        ),
+      await _playGuidance(
+        audioPath: 'assets/audio/changing_guidance.mp3',
+        fallbackText: 'Ok, good. Go with that, or go with where you left off.',
+        onDone: () {
+          Future.delayed(const Duration(milliseconds: 400), () {
+            if (mounted) unawaited(_restartSet());
+          });
+        },
       );
-      return;
     }
-
-    if (!mounted) return;
-    setState(() {
-      _showSudsRating = true;
-    });
-    unawaited(
-      _voice.speak(
-        'Ok. Without any tapping or eye movement, notice what you see and feel. Rate your negative emotion.',
-      ),
-    );
   }
 
   Future<void> _handleSudsContinue() async {
     if (_sudsRating <= 1) {
+      await _guidanceAudioPlayer.stop();
       await _voice.stop();
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -2990,11 +2986,6 @@ class _SimulationScreenState extends State<SimulationScreen>
       return;
     }
 
-    unawaited(
-      _voice.speak(
-        'Ok, let us continue with what you noticed about your original image.',
-      ),
-    );
     await _restartSet();
   }
 
@@ -3186,6 +3177,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     _audioPlayer.dispose();
     _leftPulsePlayer.dispose();
     _rightPulsePlayer.dispose();
+    _guidanceAudioPlayer.dispose();
     _videoPlayingNotifier.dispose();
     _voice.dispose();
     super.dispose();
@@ -3747,7 +3739,7 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Widget _wrapFacingTurnWithAngle(double angle, Widget child) {
     final matrix = Matrix4.identity()..setEntry(3, 2, 0.0018);
-    switch (widget.settings.direction) {
+    switch (_currentDirection) {
       case AnimationDirection.vertical:
         matrix.rotateX(angle);
         break;
@@ -3966,26 +3958,72 @@ class _SimulationScreenState extends State<SimulationScreen>
     }
   }
 
+  Future<void> _playGuidance({
+    required String audioPath,
+    required String fallbackText,
+    VoidCallback? onDone,
+  }) async {
+    await _guidanceAudioPlayer.stop();
+    await _voice.stop();
+    
+    if (!mounted) return;
+    setState(() {
+      _guidanceAudioPlaying = true;
+      _guidanceAudioCompleted = false;
+      _onGuidanceAudioComplete = onDone;
+    });
+
+    try {
+      String assetPath = audioPath;
+      if (assetPath.startsWith('assets/')) {
+        assetPath = assetPath.substring(7);
+      }
+      await _guidanceAudioPlayer.setSource(AssetSource(assetPath));
+      await _guidanceAudioPlayer.resume();
+    } catch (e) {
+      debugPrint('Error playing guidance audio: $e. Falling back to TTS.');
+      if (mounted) {
+        await _voice.speak(
+          fallbackText,
+          onDone: () {
+            if (!mounted) return;
+            setState(() {
+              _guidanceAudioPlaying = false;
+              _guidanceAudioCompleted = true;
+            });
+            if (onDone != null) {
+              onDone();
+            }
+          },
+        );
+      }
+    }
+  }
+
   Widget _buildIntroOverlay() {
-    final roadmap = widget.settings.roadmapSummary?.trim();
+    final screenSize = MediaQuery.sizeOf(context);
+    final isShort = screenSize.height < 450;
+
     return Positioned.fill(
       child: Container(
-        color: Colors.black.withValues(alpha: 0.42),
+        color: Colors.black.withValues(alpha: 0.45),
         child: SafeArea(
-          child: Align(
-            alignment: const Alignment(0, -0.18),
+          child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+              padding: const EdgeInsets.all(16),
               child: Container(
-                constraints: const BoxConstraints(maxWidth: 520),
-                padding: const EdgeInsets.fromLTRB(24, 22, 24, 20),
+                constraints: BoxConstraints(maxWidth: isShort ? 480 : 520),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isShort ? 24 : 32,
+                  vertical: isShort ? 16 : 36,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 28,
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 30,
                       offset: const Offset(0, 10),
                     ),
                   ],
@@ -3993,43 +4031,129 @@ class _SimulationScreenState extends State<SimulationScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text(
-                      'Phase 1 — Bilateral Stimulation',
+                    Text(
+                      'EMDR Processing',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _inkText,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                        fontSize: isShort ? 20 : 26,
+                        fontWeight: FontWeight.w400,
                         fontFamily: 'Serif',
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      [
-                        '1. The bilateral stimulation will start when you press Start.',
-                        if (roadmap != null && roadmap.isNotEmpty)
-                          '2. Roadmap: $roadmap',
-                        '3. Bring your image and feeling into mind.',
-                        '4. Let your mind wander — thoughts may move forward or backward in time.',
-                      ].join('\n'),
-                      style: const TextStyle(
-                        color: _inkText,
-                        fontSize: 15,
-                        height: 1.35,
+                    SizedBox(height: isShort ? 12 : 24),
+                    
+                    // Play Summary Area
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(isShort ? 10 : 16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F9F5),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEBEFE8), width: 1.0),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    ElevatedButton(
-                      onPressed: _handleIntroStart,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6A8A5A),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                      child: Center(
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            if (_summaryAudioPlaying) {
+                              await _guidanceAudioPlayer.stop();
+                              await _voice.stop();
+                              setState(() {
+                                _summaryAudioPlaying = false;
+                              });
+                            } else {
+                              setState(() {
+                                _summaryAudioPlaying = true;
+                              });
+                              await _playGuidance(
+                                audioPath: 'assets/audio/summary.mp3',
+                                fallbackText: "This EMDR processing session utilizes bilateral stimulation. Focus on your target memory and follow the visual movement while keeping your session duration in mind.",
+                                onDone: () {
+                                  setState(() {
+                                    _summaryAudioPlaying = false;
+                                  });
+                                }
+                              );
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF151515),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: isShort ? 10 : 14,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          child: Text(
+                            _summaryAudioPlaying ? 'Stop Summary' : 'Play Summary',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
                       ),
-                      child: const Text('Start'),
+                    ),
+                    SizedBox(height: isShort ? 14 : 28),
+                    
+                    // Select Session Duration title
+                    Text(
+                      'SELECT SESSION DURATION',
+                      style: TextStyle(
+                        color: _inkText.withValues(alpha: 0.5),
+                        fontSize: isShort ? 11 : 12,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    SizedBox(height: isShort ? 8 : 14),
+                    
+                    // Duration Buttons Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildDurationButton('1 Hour', 60, isShort),
+                        const SizedBox(width: 16),
+                        _buildDurationButton('1.5 Hours', 90, isShort),
+                      ],
+                    ),
+                    SizedBox(height: isShort ? 16 : 32),
+                    
+                    // Start Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          // Stop any summary playing
+                          await _guidanceAudioPlayer.stop();
+                          await _voice.stop();
+                          setState(() {
+                            _summaryAudioPlaying = false;
+                          });
+                          _handleIntroStart();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF537E5D),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'I have the image in mind - Start',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -4041,7 +4165,54 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
+  Widget _buildDurationButton(String label, int minutes, bool isShort) {
+    final isSelected = _selectedDurationMinutes == minutes;
+    return OutlinedButton(
+      onPressed: () {
+        setState(() {
+          _selectedDurationMinutes = minutes;
+        });
+      },
+      style: OutlinedButton.styleFrom(
+        foregroundColor: isSelected ? const Color(0xFF537E5D) : _inkText,
+        backgroundColor: isSelected 
+            ? const Color(0xFF537E5D).withValues(alpha: 0.08) 
+            : Colors.white,
+        side: BorderSide(
+          color: isSelected ? const Color(0xFF537E5D) : const Color(0xFFD8D2C8),
+          width: isSelected ? 1.8 : 1.2,
+        ),
+        padding: EdgeInsets.symmetric(horizontal: 28, vertical: isShort ? 10 : 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          fontSize: 15,
+        ),
+      ),
+    );
+  }
+
   Widget _buildCompletionOverlay() {
+    final screenSize = MediaQuery.sizeOf(context);
+    final isShort = screenSize.height < 450;
+    
+    Widget cardChild;
+    double maxCardWidth = 460;
+    
+    if (_showStuckScreen) {
+      maxCardWidth = 520;
+      cardChild = _buildStuckScreenContent(isShort);
+    } else if (_showSudsRating) {
+      maxCardWidth = 520;
+      cardChild = _buildSudsRatingContent(isShort);
+    } else {
+      maxCardWidth = 480;
+      cardChild = _buildCheckInContent(isShort);
+    }
+
     return Positioned.fill(
       child: Container(
         decoration: const BoxDecoration(
@@ -4054,33 +4225,415 @@ class _SimulationScreenState extends State<SimulationScreen>
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text(
-                    'Take a gentle breath.\nNotice what you experienced.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: _inkText,
-                      fontSize: 19,
-                      fontStyle: FontStyle.italic,
-                      height: 1.6,
+              padding: EdgeInsets.all(isShort ? 12 : 24),
+              child: Container(
+                width: double.infinity,
+                constraints: BoxConstraints(maxWidth: maxCardWidth),
+                padding: isShort 
+                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) 
+                    : const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 30,
+                      offset: const Offset(0, 12),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  if (_showSudsRating)
-                    _buildSudsCard()
-                  else
-                    _buildQuestionCard(
-                      text:
-                      'Is it changing and still connected to your original image?',
-                      selectedAnswer: _firstCompletionAnswer,
-                      onYes: () => _handleFirstCompletionAnswer(true),
-                      onNo: () => _handleFirstCompletionAnswer(false),
-                    ),
-                ],
+                  ],
+                ),
+                child: cardChild,
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCheckInContent(bool isShort) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'CHECK-IN',
+          style: TextStyle(
+            color: _inkText.withValues(alpha: 0.5),
+            fontSize: isShort ? 10 : 12,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.5,
+          ),
+        ),
+        SizedBox(height: isShort ? 8 : 16),
+        Text(
+          'Is it changing and still connected?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _inkText,
+            fontSize: isShort ? 18 : 22,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Serif',
+          ),
+        ),
+        SizedBox(height: isShort ? 8 : 14),
+        Text(
+          'Choose the closest answer. SUDS rating appears only if it is not changing.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _inkText.withValues(alpha: 0.7),
+            fontSize: isShort ? 12 : 14,
+            height: 1.3,
+          ),
+        ),
+        SizedBox(height: isShort ? 16 : 28),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _handleFirstCompletionAnswer(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF537E5D),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Changing',
+                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _showSudsRating = true;
+                    _showStuckScreen = false;
+                  });
+                  _playGuidance(
+                    audioPath: 'assets/audio/rate_guidance.mp3',
+                    fallbackText: 'Without any tapping or eye movement, just take a moment to notice what you see and feel. How disturbing is it right now?',
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _inkText,
+                  side: const BorderSide(color: Color(0xFFD8D2C8), width: 1.2),
+                  padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Not Changing',
+                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _showStuckScreen = true;
+                    _showSudsRating = false;
+                  });
+                  _playGuidance(
+                    audioPath: 'assets/audio/stuck_guidance.mp3',
+                    fallbackText: "If you're not getting past a certain thought or feeling, try changing the direction of the bilateral stimulation. Choose a new direction, then continue after the audio finishes.",
+                  );
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFB05C2E),
+                  side: const BorderSide(color: Color(0xFFF0B03F), width: 1.2),
+                  padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Stuck',
+                  style: TextStyle(fontSize: isShort ? 13 : 15, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStuckScreenContent(bool isShort) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Feeling Stuck?',
+          style: TextStyle(
+            color: _inkText,
+            fontSize: isShort ? 18 : 24,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Serif',
+          ),
+        ),
+        SizedBox(height: isShort ? 6 : 12),
+        Text(
+          "If you're not getting past a certain thought or feeling, try changing the direction of the bilateral stimulation.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _inkText.withValues(alpha: 0.8),
+            fontSize: isShort ? 12 : 14,
+            height: 1.3,
+          ),
+        ),
+        SizedBox(height: isShort ? 12 : 24),
+        
+        // Direction buttons grid
+        Column(
+          children: [
+            Row(
+              children: [
+                _buildDirectionOption('Horizontal', AnimationDirection.horizontal, widget.settings.direction == AnimationDirection.horizontal, isShort),
+                const SizedBox(width: 12),
+                _buildDirectionOption('Vertical', AnimationDirection.vertical, widget.settings.direction == AnimationDirection.vertical, isShort),
+              ],
+            ),
+            SizedBox(height: isShort ? 8 : 12),
+            Row(
+              children: [
+                _buildDirectionOption('Diagonal Up', AnimationDirection.diagonal, widget.settings.direction == AnimationDirection.diagonal, isShort),
+                const SizedBox(width: 12),
+                _buildDirectionOption('Diagonal Down', AnimationDirection.diagonalReverse, widget.settings.direction == AnimationDirection.diagonalReverse, isShort),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: isShort ? 12 : 24),
+        
+        // Guidance Box
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: isShort ? 12 : 16, vertical: isShort ? 8 : 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6F6F4),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            _guidanceAudioPlaying
+                ? "Guidance audio is playing. Choose a new direction, then continue after the audio finishes."
+                : "Guidance audio finished. Select a new direction and tap Continue.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _inkText.withValues(alpha: 0.8),
+              fontSize: isShort ? 11 : 13,
+            ),
+          ),
+        ),
+        SizedBox(height: isShort ? 12 : 24),
+        
+        // Continue Session Button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _guidanceAudioCompleted
+                ? () {
+                    setState(() {
+                      _showStuckScreen = false;
+                      _showCompletionQuestions = false;
+                    });
+                    _restartSet();
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6A8A5A),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: const Color(0xFFD8D2C8),
+              disabledForegroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: isShort ? 12 : 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              elevation: 0,
+            ),
+            child: Text(
+              'Continue Session',
+              style: TextStyle(fontSize: isShort ? 14 : 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDirectionOption(String title, AnimationDirection direction, bool isOriginal, bool isShort) {
+    final isSelected = _currentDirection == direction;
+    final enabled = _guidanceAudioCompleted;
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: enabled ? () {
+          setState(() {
+            _currentDirection = direction;
+          });
+        } : null,
+        child: Container(
+          height: isShort ? 46 : 64,
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? const Color(0xFFF0F2EE) 
+                : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected 
+                  ? const Color(0xFF7A9A6A) 
+                  : const Color(0xFFD8D2C8),
+              width: isSelected ? 2.0 : 1.2,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: isSelected 
+                      ? const Color(0xFF5A6A50) 
+                      : (enabled ? _inkText : _inkText.withValues(alpha: 0.4)),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: isShort ? 13 : 15,
+                ),
+              ),
+              if (isOriginal)
+                Text(
+                  'CURRENT',
+                  style: TextStyle(
+                    color: isSelected 
+                        ? const Color(0xFF7A9A6A).withValues(alpha: 0.8)
+                        : const Color(0xFF8A9A8A),
+                    fontSize: isShort ? 7 : 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSudsRatingContent(bool isShort) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Rate your negative emotion',
+          style: TextStyle(
+            color: _inkText,
+            fontSize: isShort ? 18 : 24,
+            fontWeight: FontWeight.w500,
+            fontFamily: 'Serif',
+          ),
+        ),
+        SizedBox(height: isShort ? 6 : 12),
+        Text(
+          "Without any tapping or eye movement, just take a moment to notice what you see and feel. How disturbing is it right now?",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: _inkText.withValues(alpha: 0.8),
+            fontSize: isShort ? 12 : 14,
+            height: 1.3,
+          ),
+        ),
+        SizedBox(height: isShort ? 10 : 20),
+        
+        // Info Box
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(isShort ? 10 : 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF6F6F4),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '0 or 1: distress is almost gone.',
+                style: TextStyle(
+                  color: _inkText,
+                  fontSize: isShort ? 12 : 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              SizedBox(height: isShort ? 4 : 6),
+              Text(
+                '2 to 10: some distress is still present.',
+                style: TextStyle(
+                  color: _inkText,
+                  fontSize: isShort ? 12 : 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: isShort ? 12 : 24),
+        
+        // Rating circles Row/Grid
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(9, (index) => _buildRatingCircle(index, isShort)),
+        ),
+        SizedBox(height: isShort ? 10 : 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildRatingCircle(9, isShort),
+            SizedBox(width: isShort ? 10 : 16),
+            _buildRatingCircle(10, isShort),
+          ],
+        ),
+        SizedBox(height: isShort ? 12 : 20),
+        
+        // Legend row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('0 = Neutral', style: TextStyle(color: _inkText.withValues(alpha: 0.5), fontSize: isShort ? 10 : 12, fontWeight: FontWeight.w500)),
+            Text('10 = Extremely', style: TextStyle(color: _inkText.withValues(alpha: 0.5), fontSize: isShort ? 10 : 12, fontWeight: FontWeight.w500)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRatingCircle(int score, bool isShort) {
+    final enabled = _guidanceAudioCompleted;
+    final isSelected = _sudsRating == score;
+    final size = isShort ? 30.0 : 38.0;
+    return GestureDetector(
+      onTap: enabled ? () => _handleRatingSelection(score) : null,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF537E5D) : Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: const Color(0xFF537E5D),
+            width: 1.5,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            score.toString(),
+            style: TextStyle(
+              color: isSelected ? Colors.white : const Color(0xFF537E5D),
+              fontWeight: FontWeight.w600,
+              fontSize: isShort ? 12 : 14,
             ),
           ),
         ),
@@ -4089,6 +4642,9 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Widget _buildClosingGuidanceOverlay() {
+    final screenSize = MediaQuery.sizeOf(context);
+    final isShort = screenSize.height < 450;
+
     return Positioned.fill(
       child: Container(
         decoration: const BoxDecoration(
@@ -4101,11 +4657,13 @@ class _SimulationScreenState extends State<SimulationScreen>
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isShort ? 12 : 24),
               child: Container(
                 width: double.infinity,
-                constraints: const BoxConstraints(maxWidth: 520),
-                padding: const EdgeInsets.all(28),
+                constraints: BoxConstraints(maxWidth: isShort ? 480 : 520),
+                padding: isShort 
+                    ? const EdgeInsets.symmetric(horizontal: 24, vertical: 16) 
+                    : const EdgeInsets.all(28),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(22),
@@ -4120,44 +4678,44 @@ class _SimulationScreenState extends State<SimulationScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.spa_outlined,
-                      color: Color(0xFF6A8A5A),
-                      size: 42,
+                      color: const Color(0xFF6A8A5A),
+                      size: isShort ? 30 : 42,
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: isShort ? 8 : 16),
+                    Text(
                       'Return to your calm place',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _inkText,
-                        fontSize: 21,
+                        fontSize: isShort ? 18 : 21,
                         fontWeight: FontWeight.w700,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const Text(
+                    SizedBox(height: isShort ? 8 : 14),
+                    Text(
                       'Bring up your pincode and spend one minute finding that calm feeling in your body.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _inkText,
-                        fontSize: 15,
-                        height: 1.45,
+                        fontSize: isShort ? 13 : 15,
+                        height: 1.3,
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    const Text(
+                    SizedBox(height: isShort ? 8 : 14),
+                    Text(
                       'Please wait 4 days to 1 week before the next session while processing continues.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _inkText,
-                        fontSize: 13,
-                        height: 1.45,
+                        fontSize: isShort ? 11 : 13,
+                        height: 1.3,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: isShort ? 16 : 24),
                     ElevatedButton(
                       onPressed: () async {
                         await _voice.stop();
@@ -4174,17 +4732,20 @@ class _SimulationScreenState extends State<SimulationScreen>
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6A8A5A),
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 48),
+                        minimumSize: Size(double.infinity, isShort ? 40 : 48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(24),
                         ),
                       ),
                       child: const Text('Open calm place (pincode)'),
                     ),
-                    const SizedBox(height: 10),
+                    SizedBox(height: isShort ? 6 : 10),
                     TextButton(
                       onPressed: () => _leaveSimulation(false),
-                      style: TextButton.styleFrom(foregroundColor: _inkText),
+                      style: TextButton.styleFrom(
+                        foregroundColor: _inkText,
+                        padding: isShort ? const EdgeInsets.symmetric(vertical: 6) : null,
+                      ),
                       child: const Text('Finish for today'),
                     ),
                   ],
@@ -4197,155 +4758,28 @@ class _SimulationScreenState extends State<SimulationScreen>
     );
   }
 
-  Widget _buildSudsCard() {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 460),
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Return to the original image. Without tapping or eye movement, notice what you see and feel.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _inkText,
-              fontSize: 15,
-              fontStyle: FontStyle.italic,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: 22),
-          Text(
-            'Negative emotion: $_sudsRating / 10',
-            style: const TextStyle(
-              color: _inkText,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          Slider(
-            value: _sudsRating.toDouble(),
-            min: 0,
-            max: 10,
-            divisions: 10,
-            activeColor: const Color(0xFF6A8A5A),
-            inactiveColor: const Color(0xFFD8D2C8),
-            label: _sudsRating.toString(),
-            onChanged: (value) {
-              setState(() => _sudsRating = value.round());
-            },
-          ),
-          const SizedBox(height: 8),
-          ElevatedButton(
-            onPressed: _handleSudsContinue,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6A8A5A),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-            child: Text(
-              _sudsRating <= 1 ? 'Move to phase 2' : 'Continue processing',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Future<void> _handleRatingSelection(int score) async {
+    setState(() {
+      _sudsRating = score;
+    });
 
-  Widget _buildQuestionCard({
-    required String text,
-    required bool? selectedAnswer,
-    required VoidCallback onYes,
-    required VoidCallback onNo,
-  }) {
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxWidth: 420),
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.07),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: _inkText,
-              fontSize: 16,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: _buildQuestionButton(
-                  'Yes',
-                  onYes,
-                  selected: selectedAnswer == true,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildQuestionButton(
-                  'No',
-                  onNo,
-                  selected: selectedAnswer == false,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuestionButton(
-      String text,
-      VoidCallback onTap, {
-        required bool selected,
-      }) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: selected ? const Color(0xFF5A6A50) : _inkText,
-        backgroundColor: selected
-            ? const Color(0xFF7A9A6A).withValues(alpha: 0.18)
-            : Colors.white,
-        side: BorderSide(
-          color: selected ? const Color(0xFF7A9A6A) : const Color(0xFFD8D2C8),
-          width: 1.6,
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 13),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-      ),
-      child: Text(text),
-    );
+    if (score <= 1) {
+      await _playGuidance(
+        audioPath: 'assets/audio/rate_low_guidance.mp3',
+        fallbackText: "Great, distress is almost gone. Let's move to phase 2.",
+        onDone: () {
+          if (mounted) _handleSudsContinue();
+        },
+      );
+    } else {
+      await _playGuidance(
+        audioPath: 'assets/audio/rate_high_guidance.mp3',
+        fallbackText: "Ok, some distress is still present. Let's continue processing.",
+        onDone: () {
+          if (mounted) _handleSudsContinue();
+        },
+      );
+    }
   }
 
   Widget _buildTopBar() {
