@@ -15,6 +15,8 @@ class BilateralAudioSync {
   final Map<String, Uint8List> _toneCache = {};
 
   bool _isContinuous = false;
+  double _currentLeftRate = 1.0;
+  double _currentRightRate = 1.0;
 
   Future<void> initPlayers({
     required String soundKey,
@@ -29,6 +31,9 @@ class BilateralAudioSync {
     _leftPulsePlayer = AudioPlayer();
     _rightPulsePlayer = AudioPlayer();
     _continuousPlayer = AudioPlayer();
+    
+    _currentLeftRate = 1.0;
+    _currentRightRate = 1.0;
 
     await _leftPulsePlayer.setVolume(1);
     await _rightPulsePlayer.setVolume(1);
@@ -97,7 +102,16 @@ class BilateralAudioSync {
       } else {
         rate = 0.65;
       }
-      await player.setPlaybackRate(rate);
+      
+      final currentRate = isRight ? _currentRightRate : _currentLeftRate;
+      if (currentRate != rate) {
+        await player.setPlaybackRate(rate);
+        if (isRight) {
+          _currentRightRate = rate;
+        } else {
+          _currentLeftRate = rate;
+        }
+      }
 
       if (_isContinuous) {
         await player.setVolume(1);
