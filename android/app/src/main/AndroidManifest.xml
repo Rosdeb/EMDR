@@ -32,7 +32,7 @@
 
             <!-- ডিসপ্লে রিফ্রেশ রেট কন্ট্রোল -->
             <meta-data
-                android:name="android.display.refresh_rate"
+                android:name="io.flutter.embedding.android.MaxRefreshRate"
                 android:value="60" />
 
             <meta-data

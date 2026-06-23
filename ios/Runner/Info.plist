@@ -43,7 +43,7 @@
 	</array>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
-    <true/>
+    <false/>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationLandscapeLeft</string>
@@ -51,7 +51,7 @@
     </array>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+	<false/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>

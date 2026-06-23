@@ -1,9 +1,12 @@
 
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:jonssony/views/Library/bls/bilateral_animation_controller.dart';
+import 'package:jonssony/views/Library/bls/bilateral_audio_sync.dart';
+import 'package:jonssony/views/Library/bls/bilateral_session_orchestrator.dart';
+
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -22,9 +25,6 @@ import '../../services/Device_Perfomace/device_performance.dart';
 import 'bls_pdf_visuals.dart';
 import 'clam_space_ex.dart';
 import 'simulation_settings.dart';
-import 'package:http/http.dart' as http;
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
 
 class SimulationScreen extends StatefulWidget {
   final SimulationSettings settings;
@@ -37,50 +37,25 @@ class SimulationScreen extends StatefulWidget {
 class _SimulationScreenState extends State<SimulationScreen>
     with TickerProviderStateMixin {
   static const Color _inkText = Color(0xFF151515);
-  late AnimationController _controller;
-  late Animation<double> _animation;
+
+  late final BilateralAnimationController _blsAnimation;
+  late final BilateralAudioSync _blsAudio;
+  late final BilateralSessionOrchestrator _blsSession;
+
+  Animation<double> get _animation => _blsAnimation.animation;
+
   late AnimationController _wingController;
   late Animation<double> _wingAnimation;
   late AnimationController _effectController;
-  final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _leftPulsePlayer = AudioPlayer();
-  final AudioPlayer _rightPulsePlayer = AudioPlayer();
-  late final Future<void> _pulsePlayersReady;
   final VoiceService _voice = VoiceService();
-  final Map<String, Uint8List> _toneCache = {};
   final ValueNotifier<bool> _videoPlayingNotifier = ValueNotifier(false);
   Widget? _stableVideoVisual;
   Widget? _sessionMovingVisual;
 
-  bool _leftAudioFired = false;
-  bool _rightAudioFired = false;
-
-  Duration get _halfCycleDuration {
-    final milliseconds = (widget.settings.speed * 1000).round();
-    return Duration(milliseconds: milliseconds.clamp(1, 20000));
-  }
-
-  Duration get _fullCycleDuration => _halfCycleDuration * 2;
-
-  Timer? _setTimer;
-  Timer? _sessionTimer;
-  late Duration _setDuration;
-  late Duration _remainingSetTime;
   late int _selectedDurationMinutes;
-  Duration _processingElapsed = Duration.zero;
-  int _moveCount = 0;
-  bool _visitedRightThisSet = false;
-  bool _isPaused = false;
-  bool _isReversing = false;
-  late AnimationController _turnController;
-  Animation<double>? _activeTurn;
-  final ValueNotifier<double> _displayFacingAngle = ValueNotifier(0.0);
-  bool _motionStarted = false;
-  bool _setComplete = false;
   bool _showIntroGuidance = false;
   bool _showClosingGuidance = false;
   bool _showCompletionQuestions = false;
-  bool _hasAudioSource = false;
   bool _showSudsRating = false;
   int _sudsRating = 5;
   bool _guidanceAudioPlaying = false;
@@ -90,7 +65,16 @@ class _SimulationScreenState extends State<SimulationScreen>
   late AnimationDirection _currentDirection;
   VoidCallback? _onGuidanceAudioComplete;
   final AudioPlayer _guidanceAudioPlayer = AudioPlayer();
-  static const Map<String, BlsToneProfile> _htmlToneProfiles = kBlsToneProfiles;
+
+  late AnimationController _turnController;
+  Animation<double>? _activeTurn;
+  final ValueNotifier<double> _displayFacingAngle = ValueNotifier(0.0);
+
+  bool get _setComplete => _blsSession.setComplete;
+  bool get _isPaused => _blsSession.isPaused;
+  bool get _motionStarted => _blsSession.motionStarted;
+  int get _moveCount => _blsSession.moveCount;
+  Duration get _sessionRemaining => _blsSession.sessionRemaining;
 
   @override
   void initState() {
@@ -107,72 +91,44 @@ class _SimulationScreenState extends State<SimulationScreen>
       }
     });
 
-    debugPrint('🎮 Device Performance Tier: ${DevicePerformance.tier}');
-    debugPrint('🎮 Blur Effects: ${DevicePerformance.shouldUseBlurEffects}');
-    debugPrint(
-      '🎮 Backdrop Filter: ${DevicePerformance.shouldUseBackdropFilter}',
-    );
-
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
 
-    _setDuration = _resolveSetDuration();
-    _remainingSetTime = _setDuration;
-    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90
-        ? 90
-        : 60;
+    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90 ? 90 : 60;
     _showIntroGuidance = widget.settings.showCompletionQuestions;
 
-    _controller = AnimationController(
-      duration: _halfCycleDuration,
+    _blsAnimation = BilateralAnimationController(
       vsync: this,
+      halfCycleDuration: _halfCycleDuration,
     );
 
-    _controller.addStatusListener((status) async {
-      if (status == AnimationStatus.completed) {
-        if (!_rightAudioFired) {
-          _rightAudioFired = true;
-          _leftAudioFired = false;
-          unawaited(_playEndpointAudio(isRight: true));
-        }
-        _handleEndpointReached(isRight: true);
-        if (_setComplete || _isPaused) return;
-        _isReversing = true;
-        _beginFacingTurn(faceLeft: true);
+    _blsAudio = BilateralAudioSync();
 
-        // ✅ Endpoint-এ Speed অনুযায়ী pause
-        await Future.delayed(_endpointPauseDuration);
+    _blsSession = BilateralSessionOrchestrator(
+      totalSets: widget.settings.totalSets,
+      sessionLimit: _selectedDurationMinutes > 0 ? Duration(minutes: _selectedDurationMinutes) : Duration.zero,
+      setDuration: _resolveSetDuration(),
+      animationController: _blsAnimation,
+      onSetComplete: _onSetComplete,
+      onSessionComplete: _onSessionComplete,
+    );
 
-        if (!mounted || _setComplete || _isPaused) return;
-        _leftAudioFired = false;
-        _controller.reverse();
-      } else if (status == AnimationStatus.dismissed) {
-        if (!_leftAudioFired) {
-          _leftAudioFired = true;
-          _rightAudioFired = false;
-          unawaited(_playEndpointAudio(isRight: false));
-        }
-        _handleEndpointReached(isRight: false);
-        if (_setComplete || _isPaused) return;
-        _isReversing = false;
-        _beginFacingTurn(faceLeft: false);
-
-        // ✅ Endpoint-এ Speed অনুযায়ী pause
-        await Future.delayed(_endpointPauseDuration);
-
-        if (!mounted || _setComplete || _isPaused) return;
-        _rightAudioFired = false;
-        _controller.forward();
-      }
+    _blsSession.addListener(() {
+      if (mounted) setState(() {});
     });
 
+    _blsAnimation.endpointStream.listen((event) {
+      if (!_blsSession.motionStarted || _blsSession.setComplete || _blsSession.isPaused) return;
 
-    _animation = Tween<double>(
-      begin: -1.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
+      _blsAudio.playEndpoint(
+        isRight: event.endpoint == BlsEndpoint.right,
+        speedSeconds: widget.settings.speed,
+      );
+
+      _beginFacingTurn(faceLeft: event.endpoint == BlsEndpoint.right);
+    });
 
     _turnController = AnimationController(
       duration: const Duration(milliseconds: 420),
@@ -194,6 +150,20 @@ class _SimulationScreenState extends State<SimulationScreen>
     if (_needsEffectAnimation) {
       _effectController.repeat();
     }
+
+    _setupVisuals();
+
+    _blsAudio.initPlayers(
+      soundKey: _resolvedSoundKey,
+      audioAsset: _resolvedAudioAsset,
+    ).then((_) {
+      if (!widget.settings.showCompletionQuestions) {
+        _startMotion();
+      }
+    });
+  }
+
+  void _setupVisuals() {
     if (_usesAssetAnimatedVisual || _usesVideoVisual) {
       _videoPlayingNotifier.value = true;
       if (_usesAssetAnimatedVisual) {
@@ -230,15 +200,23 @@ class _SimulationScreenState extends State<SimulationScreen>
         child: _stableVideoVisual ?? _buildVisualObject(size: _objectSize),
       ),
     );
-    _pulsePlayersReady = _configurePulsePlayers();
-    _precacheEndpointSounds();
-    _startSessionTimer();
+  }
 
-    if (widget.settings.showCompletionQuestions) {
-      // Do not auto-play summary audio. It will only play when clicking "Play Summary"
-    } else {
-      _startMotion();
+  Duration get _halfCycleDuration {
+    // Multiplied by 2000 instead of 1000 to make the physical speed slower
+    final milliseconds = (widget.settings.speed * 2000).round();
+    return Duration(milliseconds: milliseconds.clamp(1, 20000));
+  }
+
+  Duration get _fullCycleDuration => _halfCycleDuration * 2;
+
+  Duration _resolveSetDuration() {
+    if (widget.settings.totalSets > 0) {
+      final totalSets = widget.settings.totalSets;
+      final milliseconds = _fullCycleDuration.inMilliseconds * totalSets;
+      return Duration(milliseconds: milliseconds < 1000 ? 1000 : milliseconds);
     }
+    return const Duration(seconds: 45);
   }
 
   @override
@@ -246,106 +224,34 @@ class _SimulationScreenState extends State<SimulationScreen>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.settings.audioAsset != widget.settings.audioAsset ||
         oldWidget.settings.soundKey != widget.settings.soundKey) {
-      _pulsePlayersReady = _configurePulsePlayers();
+      _blsAudio.initPlayers(
+        soundKey: _resolvedSoundKey,
+        audioAsset: _resolvedAudioAsset,
+      );
     }
-  }
-
-  String? _cachedNetworkAudioPath;
-
-  Future<void> _configurePulsePlayers() async {
-    await _leftPulsePlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _rightPulsePlayer.setPlayerMode(PlayerMode.lowLatency);
-    await _leftPulsePlayer.setVolume(1);
-    await _rightPulsePlayer.setVolume(1);
-    await _leftPulsePlayer.setBalance(-1);
-    await _rightPulsePlayer.setBalance(1);
-    await _leftPulsePlayer.setReleaseMode(ReleaseMode.stop);
-    await _rightPulsePlayer.setReleaseMode(ReleaseMode.stop);
-
-    final profile = _resolvedToneProfile;
-    if (profile != null) {
-      final leftBytes = _toneBytes(profile: profile, isRight: false);
-      final rightBytes = _toneBytes(profile: profile, isRight: true);
-      await _leftPulsePlayer.setSourceBytes(leftBytes, mimeType: 'audio/wav');
-      await _rightPulsePlayer.setSourceBytes(rightBytes, mimeType: 'audio/wav');
-    } else {
-      final source = _resolvedAudioAsset;
-      if (source.isNotEmpty) {
-        if (_isNetworkUrl(source)) {
-          try {
-            final response = await http.get(Uri.parse(source));
-            if (response.statusCode == 200) {
-              final tempDir = await getTemporaryDirectory();
-              final file = File('${tempDir.path}/cached_bls_audio.mp3');
-              await file.writeAsBytes(response.bodyBytes);
-              _cachedNetworkAudioPath = file.path;
-              await _leftPulsePlayer.setSource(DeviceFileSource(_cachedNetworkAudioPath!));
-              await _rightPulsePlayer.setSource(DeviceFileSource(_cachedNetworkAudioPath!));
-            } else {
-              await _leftPulsePlayer.setSource(UrlSource(source));
-              await _rightPulsePlayer.setSource(UrlSource(source));
-            }
-          } catch (_) {
-            await _leftPulsePlayer.setSource(UrlSource(source));
-            await _rightPulsePlayer.setSource(UrlSource(source));
-          }
-        } else {
-          var assetPath = source;
-          if (assetPath.startsWith('assets/')) {
-            assetPath = assetPath.substring(7);
-          }
-          await _leftPulsePlayer.setSource(AssetSource(assetPath));
-          await _rightPulsePlayer.setSource(AssetSource(assetPath));
-        }
-      }
-    }
-  }
-
-  void _precacheEndpointSounds() {
-    final profile = _resolvedToneProfile;
-    if (profile == null) return;
-    _toneBytes(profile: profile, isRight: false);
-    _toneBytes(profile: profile, isRight: true);
   }
 
   String get _resolvedSoundKey {
     final rawKey = widget.settings.soundKey.trim();
     if (rawKey.isEmpty || rawKey == 'none') return rawKey;
-
     final normalized = BlsBuiltInSounds.normalizeKey(rawKey);
-    if (_htmlToneProfiles.containsKey(normalized)) return normalized;
-    if (_htmlToneProfiles.containsKey(rawKey)) return rawKey;
+    if (kBlsToneProfiles.containsKey(normalized)) return normalized;
+    if (kBlsToneProfiles.containsKey(rawKey)) return rawKey;
     if (BlsBuiltInSounds.isBuiltInKey(rawKey)) return normalized;
-
     return normalized;
   }
 
   String get _resolvedAudioAsset {
     final asset = widget.settings.audioAsset.trim();
     if (asset.isNotEmpty) return asset;
-
     final rawKey = widget.settings.soundKey.trim();
     if (_isNetworkUrl(rawKey)) return rawKey;
     return asset;
   }
 
-  BlsToneProfile? get _resolvedToneProfile {
-    final key = _resolvedSoundKey;
-    if (key.isEmpty || key == 'none') return null;
-
-    final audioAsset = _resolvedAudioAsset;
-    if (audioAsset.isNotEmpty && !_htmlToneProfiles.containsKey(key)) {
-      return null;
-    }
-
-    return _htmlToneProfiles[key] ?? kBlsToneProfiles[BlsBuiltInSounds.defaultKey];
-  }
-
   List<SessionVisualCandidate> get _sessionVisualCandidates {
     final configured = widget.settings.visualPlaybackUrl?.trim();
-    final source = configured?.isNotEmpty == true
-        ? configured!
-        : widget.settings.visualObject.trim();
+    final source = configured?.isNotEmpty == true ? configured! : widget.settings.visualObject.trim();
     return buildSessionVisualCandidates(
       source: source,
       transparentUrl: widget.settings.visualTransparentUrl,
@@ -358,9 +264,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     final candidates = _sessionVisualCandidates;
     if (candidates.isNotEmpty) return candidates.first.url;
     final configured = widget.settings.visualPlaybackUrl?.trim();
-    final source = configured?.isNotEmpty == true
-        ? configured!
-        : widget.settings.visualObject.trim();
+    final source = configured?.isNotEmpty == true ? configured! : widget.settings.visualObject.trim();
     return resolveSimulationVisualUrl(
       source,
       label: widget.settings.visualLabel,
@@ -370,95 +274,45 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool _looksLikeVideo(String source) {
     final path = _mediaPath(source);
-    return path.endsWith('.mp4') ||
-        path.endsWith('.mov') ||
-        path.endsWith('.webm') ||
-        path.contains('/video/upload/');
+    return path.endsWith('.mp4') || path.endsWith('.mov') || path.endsWith('.webm') || path.contains('/video/upload/');
   }
 
   bool get _usesAssetAnimatedVisual {
     final source = _resolvedVisualObject;
-    if (isBlsLocalVisualAsset(source) || resolveLocalVisual(source) != null) {
-      return true;
-    }
+    if (isBlsLocalVisualAsset(source) || resolveLocalVisual(source) != null) return true;
     return source.startsWith('assets/') && isAnimatedAssetVisual(source);
   }
 
   bool get _usesVideoVisual {
     if (_usesAssetAnimatedVisual) return false;
-    if (widget.settings.visualMediaType.toLowerCase() == 'video') {
-      return _sessionVisualCandidates.isNotEmpty;
-    }
+    if (widget.settings.visualMediaType.toLowerCase() == 'video') return _sessionVisualCandidates.isNotEmpty;
     return _isVideoVisual(_videoPlaybackUrl);
   }
 
-  bool get _needsEffectAnimation =>
-      bilateralObjectFromSource(_resolvedVisualObject) != null;
-
-  // void _startMotion() {
-  //   if (!mounted || _setComplete || _isPaused) return;
-  //   if (!_motionStarted) {
-  //     _currentDirection = widget.settings.direction;
-  //     _controller.value = 0.0;
-  //     WidgetsBinding.instance.addPostFrameCallback((_) {
-  //       if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
-  //       _controller.forward();
-  //     });
-  //   } else {
-  //     _controller.forward();
-  //   }
-  //   _motionStarted = true;
-  //   if (_needsEffectAnimation && !_effectController.isAnimating) {
-  //     _effectController.repeat();
-  //   }
-  //   _videoPlayingNotifier.value = true;
-  //   if (_shouldFlapWings) {
-  //     _wingController.repeat(reverse: true);
-  //   }
-  //   if (_usesContinuousSessionAudio) {
-  //     unawaited(_setupAudio());
-  //   }
-  //   _startSetTimer();
-  // }
+  bool get _needsEffectAnimation => bilateralObjectFromSource(_resolvedVisualObject) != null;
 
   void _startMotion() {
     if (!mounted || _setComplete || _isPaused) return;
     if (!_motionStarted) {
       _currentDirection = widget.settings.direction;
-      _controller.value = 0.0;
-      _motionStarted = true; // ← move here, after controller positioned
-      _controller.forward(); // ← direct call, no postFrameCallback
-    } else {
-      _controller.forward();
     }
+
+    _blsSession.motionStarted = true;
+    _blsAnimation.start();
+    _blsAudio.startContinuous();
+    _blsSession.startSetTimer();
+    _blsSession.startSessionTimer();
+
     if (_needsEffectAnimation && !_effectController.isAnimating) {
       _effectController.repeat();
     }
     _videoPlayingNotifier.value = true;
     if (_shouldFlapWings) _wingController.repeat(reverse: true);
-    if (_usesContinuousSessionAudio) unawaited(_setupAudio());
-    _startSetTimer();
-  }
 
-  void _continueFromEndpoint({required bool reverse}) {
-    if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
-    if (reverse) {
-      _controller.reverse();
-    } else {
-      _controller.forward();
-    }
+    _blsAnimation.animation.addListener(() {
+      _blsAudio.updateContinuousBalance(_blsAnimation.animation.value);
+    });
   }
-
-  // void _continueFromEndpoint({required bool reverse}) {
-  //   WidgetsBinding.instance.addPostFrameCallback((_) {
-  //     if (!mounted || _setComplete || _isPaused || !_motionStarted) return;
-  //     if (reverse) {
-  //       _controller.reverse();
-  //     } else {
-  //       _controller.forward();
-  //     }
-  //   });
-  // }
 
   Future<void> _handleIntroStart() async {
     await _guidanceAudioPlayer.stop();
@@ -468,329 +322,59 @@ class _SimulationScreenState extends State<SimulationScreen>
     setState(() {
       _summaryAudioPlaying = false;
       _showIntroGuidance = false;
-      _setComplete = false;
-      _isPaused = false;
-      _motionStarted = false;
-      _moveCount = 0;
-      _visitedRightThisSet = false;
-      _remainingSetTime = _setDuration;
-      _isReversing = false;
       _displayFacingAngle.value = 0;
     });
 
     _turnController.stop();
     _turnController.reset();
-    _controller.reset();
-    _leftAudioFired = false;
-    _rightAudioFired = false;
-    _effectController
-      ..reset()
-      ..repeat();
+    _effectController..reset()..repeat();
+
+    _blsSession.restartSet();
     _startMotion();
   }
 
-  bool get _usesContinuousSessionAudio {
-    if (_resolvedSoundKey == 'none') return false;
-    return _resolvedAudioAsset.isNotEmpty;
-  }
-
-
-  bool get _usesEndpointAudio {
-    if (_resolvedSoundKey == 'none') return false;
-    return true;
-  }
-
-  Duration get _endpointPauseDuration {
-    final ms = _halfCycleDuration.inMilliseconds;
-    if (ms <= 250) return const Duration(milliseconds: 00);  // Faster
-    if (ms <= 450) return const Duration(milliseconds: 00);  // Fast
-    if (ms <= 700) return const Duration(milliseconds: 10);  // Medium
-    return const Duration(milliseconds: 116);                // Slow
-  }
-
-
-  Duration get _sessionLimit => _selectedDurationMinutes > 0
-      ? Duration(minutes: _selectedDurationMinutes)
-      : Duration.zero;
-
-  Duration get _sessionRemaining {
-    final limit = _sessionLimit;
-    if (limit == Duration.zero) return Duration.zero;
-    final remaining = limit - _processingElapsed;
-    return remaining.isNegative ? Duration.zero : remaining;
-  }
-
-  Duration _resolveSetDuration() {
-    if (widget.settings.totalSets > 0) {
-      final totalSets = widget.settings.totalSets;
-      final milliseconds = _fullCycleDuration.inMilliseconds * totalSets;
-      return Duration(milliseconds: milliseconds < 1000 ? 1000 : milliseconds);
-    }
-    return const Duration(seconds: 45);
-  }
-
-  void _startSessionTimer() {
-    _sessionTimer?.cancel();
-    if (_sessionLimit == Duration.zero) return;
-
-    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || _setComplete || _showClosingGuidance) return;
-      if (!_motionStarted || _isPaused) return;
-
-      setState(() {
-        _processingElapsed += const Duration(seconds: 1);
-      });
-
-      if (_processingElapsed >= _sessionLimit) {
-        unawaited(_completeByTimeLimit());
-      }
-    });
-  }
-
-  Future<void> _completeByTimeLimit() async {
-    if (!mounted || _showClosingGuidance) return;
-    _setTimer?.cancel();
-    _motionStarted = false;
-    _setComplete = true;
-    _controller.stop();
+  void _onSetComplete() {
+    _blsAnimation.stop();
     _wingController.stop();
     _effectController.stop();
     _videoPlayingNotifier.value = false;
-    await _audioPlayer.pause();
-    await _leftPulsePlayer.stop();
-    await _rightPulsePlayer.stop();
-    await _voice.stop();
-    if (!mounted) return;
-    setState(() {
-      _isPaused = true;
-      _showCompletionQuestions = false;
-      _showClosingGuidance = true;
-      _remainingSetTime = Duration.zero;
-    });
-    unawaited(
-      _voice.speak(
-        'You have reached the session time you chose. Return to your calm place now. Bring up your pincode and spend a minute finding that calm feeling in your body.',
-      ),
-    );
-  }
+    _blsAudio.stop();
 
-  void _startSetTimer() {
-    _setTimer?.cancel();
-    if (_setComplete || _isPaused) return;
-
-    if (widget.settings.totalSets > 0) {
-      return;
-    }
-
-    _setTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
-      if (_remainingSetTime.inSeconds <= 1) {
-        unawaited(_completeSet());
-        return;
-      }
-      setState(() {
-        _remainingSetTime -= const Duration(seconds: 1);
-      });
-    });
-  }
-
-  void _handleEndpointReached({required bool isRight}) {
-    if (!mounted || !_motionStarted || _setComplete || _isPaused) return;
-    if (widget.settings.totalSets <= 0) return;
-
-    if (isRight) {
-      _visitedRightThisSet = true;
-      return;
-    }
-
-    if (!_visitedRightThisSet) return;
-    _visitedRightThisSet = false;
-    _registerCompletedSet();
-  }
-
-  void _registerCompletedSet() {
-    final totalSets = widget.settings.totalSets;
-    if (!mounted || _setComplete || _isPaused) return;
-    if (_moveCount >= totalSets) {
-      unawaited(_completeSet());
-      return;
-    }
-
-    setState(() {
-      _moveCount++;
-      if (widget.settings.totalSets > 0) {
-        final stepMs = _fullCycleDuration.inMilliseconds;
-        final remainingMs = _setDuration.inMilliseconds - (stepMs * _moveCount);
-        _remainingSetTime = Duration(
-          milliseconds: remainingMs < 0 ? 0 : remainingMs,
-        );
-      }
-    });
-
-    if (_moveCount >= totalSets) {
-      unawaited(_completeSet());
-    }
-  }
-
-  Future<void> _completeSet() async {
-    if (!mounted || _setComplete) return;
-    _setTimer?.cancel();
-    _motionStarted = false;
-    _controller.stop();
-    _wingController.stop();
-    _effectController.stop();
-    _videoPlayingNotifier.value = false;
-    await _audioPlayer.pause();
-    await _leftPulsePlayer.stop();
-    await _rightPulsePlayer.stop();
-    if (!mounted) return;
     if (widget.settings.showCompletionQuestions) {
       setState(() {
         _showCompletionQuestions = true;
-        _isPaused = true;
-        _remainingSetTime = Duration.zero;
       });
-      unawaited(
-        _voice.speak(
-          'Take a gentle breath. Notice what you experienced. Is it changing and still connected to your original image?',
-        ),
-      );
-      return;
+      _voice.speak('Take a gentle breath. Notice what you experienced. Is it changing and still connected to your original image?');
     }
+  }
+
+  void _onSessionComplete() {
+    _blsAnimation.stop();
+    _wingController.stop();
+    _effectController.stop();
+    _videoPlayingNotifier.value = false;
+    _blsAudio.stop();
+    _voice.stop();
 
     setState(() {
-      _setComplete = true;
-      _isPaused = true;
-      _remainingSetTime = Duration.zero;
+      _showCompletionQuestions = false;
+      _showClosingGuidance = true;
     });
-  }
 
-  Future<void> _setupAudio() async {
-    try {
-      final source = _resolvedAudioAsset;
-      if (source.isEmpty) return;
-
-      if (_isNetworkUrl(source)) {
-        await _audioPlayer.setSource(UrlSource(source));
-      } else if (widget.settings.requireNetworkAudio) {
-        debugPrint('Skipping non-API bilateral audio source.');
-        return;
-      } else {
-        var assetPath = source;
-        if (assetPath.startsWith('assets/')) {
-          assetPath = assetPath.substring(7);
-        }
-        await _audioPlayer.setSource(AssetSource(assetPath));
-      }
-      _hasAudioSource = true;
-      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
-
-
-      double lastBalance = 2.0;
-      _controller.addListener(() {
-        if (mounted && !_isPaused) {
-          final currentBalance = _animation.value;
-          if ((currentBalance - lastBalance).abs() > 0.05) {
-            lastBalance = currentBalance;
-            unawaited(_audioPlayer.setBalance(currentBalance));
-          }
-        }
-      });
-
-      await _audioPlayer.resume();
-    } catch (e) {
-      debugPrint("Audio Error: $e");
-    }
-  }
-
-  Future<void> _playEndpointAudio({required bool isRight}) async {
-    final profile = _resolvedToneProfile;
-    if (profile != null) {
-      final player = isRight ? _rightPulsePlayer : _leftPulsePlayer;
-      try {
-        await _pulsePlayersReady;
-        await player.stop();
-        double rate;
-        if (widget.settings.speed <= 0.3) {
-          rate = 1.5; // Fast mode: faster audio speed
-        } else if (widget.settings.speed <= 0.5) {
-          rate = 0.85; // Medium mode: a bit slower
-        } else {
-          rate = 0.65; // Slow mode: very slow audio for longer pause
-        }
-
-        await player.setPlaybackRate(rate);
-        await player.resume();
-      } catch (e) {
-        debugPrint('${isRight ? 'Right' : 'Left'} tone error: $e');
-      }
-      return;
-    }
-    await _playFilePulse(isRight: isRight);
-  }
-
-  Future<void> _playFilePulse({required bool isRight}) async {
-    final source = _resolvedAudioAsset;
-    if (source.isEmpty) return;
-
-    await _pulsePlayersReady;
-
-    final player = isRight ? _rightPulsePlayer : _leftPulsePlayer;
-    try {
-      await player.stop();
-      await player.setVolume(1);
-      await player.setBalance(isRight ? 1 : -1);
-      
-      double rate;
-      if (widget.settings.speed <= 0.3) {
-        rate = 1.5; // Fast mode
-      } else if (widget.settings.speed <= 0.5) {
-        rate = 0.85; // Medium mode
-      } else {
-        rate = 0.65; // Slow mode
-      }
-      await player.setPlaybackRate(rate);
-      
-      int offsetMs = isRight ? 500 : 0;
-      await player.seek(Duration(milliseconds: offsetMs));
-      await player.resume();
-      
-      int waitMs = (450 / rate).round();
-      Future.delayed(Duration(milliseconds: waitMs), () async {
-        if (mounted && player.state == PlayerState.playing) {
-          await player.stop();
-        }
-      });
-    } catch (e) {
-      debugPrint('Endpoint audio error: $e');
-    }
-  }
-
-  Uint8List _toneBytes({
-    required BlsToneProfile profile,
-    required bool isRight,
-  }) {
-    final key = '${_resolvedSoundKey}-${isRight ? 'right' : 'left'}';
-    return _toneCache.putIfAbsent(
-      key,
-      () => buildBlsToneWav(profile: profile, isRight: isRight),
-    );
+    _voice.speak('You have reached the session time you chose. Return to your calm place now. Bring up your pincode and spend a minute finding that calm feeling in your body.');
   }
 
   Future<void> _stopSessionAudio() async {
     try {
-      await _audioPlayer.stop();
-      await _leftPulsePlayer.stop();
-      await _rightPulsePlayer.stop();
+      _blsAudio.stop();
       await _voice.stop();
+      await _guidanceAudioPlayer.stop();
     } catch (_) {}
   }
 
   bool _isNetworkUrl(String value) {
     final uri = Uri.tryParse(value.trim());
-    return uri != null &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
+    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
   }
 
   String _mediaPath(String value) {
@@ -801,11 +385,7 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool _isImageVisual(String value) {
     final source = _mediaPath(value);
-    return source.endsWith('.png') ||
-        source.endsWith('.jpg') ||
-        source.endsWith('.jpeg') ||
-        source.endsWith('.webp') ||
-        source.endsWith('.gif');
+    return source.endsWith('.png') || source.endsWith('.jpg') || source.endsWith('.jpeg') || source.endsWith('.webp') || source.endsWith('.gif');
   }
 
   bool _isAnimatedImageVisual(String value) {
@@ -815,18 +395,11 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool _isVideoVisual(String value) {
     if (_isImageVisual(value)) return false;
     final source = _mediaPath(value);
-    return widget.settings.visualMediaType.toLowerCase() == 'video' ||
-        source.endsWith('.mp4') ||
-        source.endsWith('.mov') ||
-        source.endsWith('.webm') ||
-        source.contains('video');
+    return widget.settings.visualMediaType.toLowerCase() == 'video' || source.endsWith('.mp4') || source.endsWith('.mov') || source.endsWith('.webm') || source.contains('video');
   }
 
   Future<void> _restartSet() async {
-    _setTimer?.cancel();
-    await _audioPlayer.pause();
-    await _leftPulsePlayer.stop();
-    await _rightPulsePlayer.stop();
+    _blsAudio.stop();
     if (!mounted) return;
 
     setState(() {
@@ -834,24 +407,15 @@ class _SimulationScreenState extends State<SimulationScreen>
       _showClosingGuidance = false;
       _showSudsRating = false;
       _sudsRating = 5;
-      _setComplete = false;
-      _isPaused = false;
-      _motionStarted = false;
-      _remainingSetTime = _setDuration;
-      _moveCount = 0;
-      _isReversing = false;
       _displayFacingAngle.value = 0;
     });
 
     _turnController.stop();
     _turnController.reset();
-    _controller.reset();
-    _leftAudioFired = false;
-    _rightAudioFired = false;
-    _effectController
-      ..reset()
-      ..repeat();
+    _effectController..reset()..repeat();
     _videoPlayingNotifier.value = true;
+
+    _blsSession.restartSet();
     _startMotion();
   }
 
@@ -864,7 +428,7 @@ class _SimulationScreenState extends State<SimulationScreen>
         fallbackText: 'Ok, good. Go with that, or go with where you left off.',
         onDone: () {
           Future.delayed(const Duration(milliseconds: 400), () {
-            if (mounted) unawaited(_restartSet());
+            if (mounted) _restartSet();
           });
         },
       );
@@ -880,56 +444,35 @@ class _SimulationScreenState extends State<SimulationScreen>
       return;
     }
 
-    if (_sessionLimit != Duration.zero && _sessionRemaining == Duration.zero) {
-      await _completeByTimeLimit();
-      return;
-    }
+    if (_blsSession.sessionComplete) return;
 
     await _restartSet();
   }
 
   void _togglePause() {
     if (_showCompletionQuestions) return;
-
     if (_setComplete) {
       Navigator.pop(context);
       return;
     }
 
-    setState(() {
-      _isPaused = !_isPaused;
-      if (_isPaused) {
-        _setTimer?.cancel();
-        _controller.stop();
-        _turnController.stop();
-        _effectController.stop();
-        _videoPlayingNotifier.value = false;
-        if (_shouldFlapWings) {
-          _wingController.stop();
-        }
-        _audioPlayer.pause();
-        _leftPulsePlayer.stop();
-        _rightPulsePlayer.stop();
-        unawaited(_voice.stop());
-      } else {
-        _leftAudioFired = false;
-        _rightAudioFired = false;
-        if (_isReversing) {
-          _controller.reverse();
-        } else {
-          _controller.forward();
-        }
-        _effectController.repeat();
-        _videoPlayingNotifier.value = true;
-        if (_shouldFlapWings) {
-          _wingController.repeat(reverse: true);
-        }
-        if (_hasAudioSource) {
-          _audioPlayer.resume();
-        }
-        _startSetTimer();
-      }
-    });
+    if (_blsSession.isPaused) {
+      _blsSession.resume();
+      _blsAnimation.resume();
+      _blsAudio.resume();
+      _effectController.repeat();
+      _videoPlayingNotifier.value = true;
+      if (_shouldFlapWings) _wingController.repeat(reverse: true);
+    } else {
+      _blsSession.pause();
+      _blsAnimation.pause();
+      _blsAudio.pause();
+      _turnController.stop();
+      _effectController.stop();
+      _videoPlayingNotifier.value = false;
+      if (_shouldFlapWings) _wingController.stop();
+      _voice.stop();
+    }
   }
 
   bool get _isSpriteVisual => shouldUseSpriteVisual(_resolvedVisualObject);
@@ -948,10 +491,7 @@ class _SimulationScreenState extends State<SimulationScreen>
     _activeTurn = Tween<double>(begin: begin, end: end).animate(
       CurvedAnimation(parent: _turnController, curve: Curves.easeInOutCubic),
     );
-    _turnController
-      ..stop()
-      ..reset()
-      ..forward();
+    _turnController..stop()..reset()..forward();
   }
 
   Matrix4 _facingTransformMatrix() {
@@ -981,31 +521,19 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Offset _objectPosition(double value, Size screenSize, EdgeInsets padding) {
     final t = (value + 1) / 2;
-
-    // Add endpoint correction for better visual alignment
     final horizontalCorrection = _horizontalEndpointCorrection;
     final usableWidth = screenSize.width - padding.left - padding.right;
     final usableHeight = screenSize.height - padding.top - padding.bottom;
-
-    // Apply correction to minX and maxX
     final minX = -horizontalCorrection;
-    final maxX = math.max(
-      minX,
-      usableWidth - _objectSize - horizontalCorrection,
-    );
+    final maxX = math.max(minX, usableWidth - _objectSize - horizontalCorrection);
     final maxY = math.max(0.0, usableHeight - _objectSize);
-
-    // Calculate x position with correction
     final x = minX + (t * (maxX - minX));
 
     switch (_currentDirection) {
       case AnimationDirection.horizontal:
         return Offset(padding.left + x, padding.top + maxY / 2);
       case AnimationDirection.vertical:
-        return Offset(
-          padding.left + (usableWidth - _objectSize) / 2,
-          padding.top + t * maxY,
-        );
+        return Offset(padding.left + (usableWidth - _objectSize) / 2, padding.top + t * maxY);
       case AnimationDirection.diagonal:
         return Offset(padding.left + x, padding.top + t * maxY);
       case AnimationDirection.diagonalReverse:
@@ -1020,30 +548,25 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool get _hasObjectReflection {
     final advancedObject = bilateralObjectFromSource(_resolvedVisualObject);
-    if (advancedObject != null) {
-      return bilateralObjectHasReflection(advancedObject);
-    }
+    if (advancedObject != null) return bilateralObjectHasReflection(advancedObject);
     return blsObjectHasReflection(widget.settings.visualObject.trim());
   }
 
   @override
   void dispose() {
-    unawaited(_stopSessionAudio());
+    _stopSessionAudio();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
     _displayFacingAngle.dispose();
-    _controller.dispose();
+    _blsAnimation.dispose();
+    _blsAudio.dispose();
+    _blsSession.dispose();
     _turnController.dispose();
     _wingController.dispose();
     _effectController.dispose();
-    _setTimer?.cancel();
-    _sessionTimer?.cancel();
-    _audioPlayer.dispose();
-    _leftPulsePlayer.dispose();
-    _rightPulsePlayer.dispose();
     _guidanceAudioPlayer.dispose();
     _videoPlayingNotifier.dispose();
     _voice.dispose();
@@ -1420,9 +943,8 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   void _leaveSimulation([dynamic result]) {
     _videoPlayingNotifier.value = false;
-    _controller.stop();
+    _blsAnimation.stop();
     _turnController.stop();
-    _isReversing = false;
     _displayFacingAngle.value = 0;
     unawaited(_stopSessionAudio());
     Navigator.pop(context, result);
@@ -2757,7 +2279,7 @@ class _SimulationScreenState extends State<SimulationScreen>
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: Text(
-              _setComplete ? 'Set complete' : '${_remainingSetTime.inSeconds}s',
+              _setComplete ? 'Set complete' : '${_blsSession.remainingSetTime.inSeconds}s',
               style: const TextStyle(
                 color: Colors.black87,
                 fontSize: 13,

@@ -1,6 +1,5 @@
-/// Bilateral stimulation speed presets (seconds per half-cycle: left→right or right→left).
-///
-/// Deliberately paced for slower bilateral movement.
+/// Bilateral stimulation speed presets (seconds per half-cycle: left→right or right→left)
+/// Deliberately paced for slower bilateral movement
 class BlsSpeedPresets {
   BlsSpeedPresets._();
 
