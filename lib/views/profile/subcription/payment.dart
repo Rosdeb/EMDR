@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/controller/subscription_controller.dart';
-import 'package:jonssony/views/home/my_homework.dart';
+import '../../home/MyHomeWork/my_homework.dart';
 
 class CompletePaymentSheet extends StatefulWidget {
   const CompletePaymentSheet({super.key});

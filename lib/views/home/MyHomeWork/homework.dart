@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/views/profile/Subscription.dart';
 
+import 'BehaviourScreen.dart';
+import 'Thoughts.dart';
+import 'emotion_start.dart';
+
 class MyHomework extends StatefulWidget {
   const MyHomework({super.key});
 
@@ -11,7 +15,7 @@ class MyHomework extends StatefulWidget {
 }
 
 class _MyHomeworkState extends State<MyHomework> {
-  bool isOverlayVisible = true;
+  bool isOverlayVisible = false;
 
   Future<void> _onStartHealing() async {
     await Get.to(() => SubscriptionScreen());
@@ -74,16 +78,25 @@ class _MyHomeworkState extends State<MyHomework> {
                     title: "Behaviours",
                     desc: "Transform what you're doing or not doing",
                     image: 'assets/images/behaviour_img.jpg',
+                    onTap: (){
+                      Get.to(BehaviourScreen());
+                    }
                   ),
                   _resourceCard(
                     title: "Thoughts",
                     desc: "Understanding and reshaping your thinking",
                     image: 'assets/images/thoughts_img.jpg',
+                    onTap: (){
+                      Get.to(CalmExercise());
+                    }
                   ),
                   _resourceCard(
                     title: "Emotions",
                     desc: "Tools to manage bigger emotions",
                     image: 'assets/images/emotions_img.jpg',
+                    onTap: (){
+                      Get.to(EmotionStartScreen());
+                      }
                   ),
                   const SizedBox(height: 100),
                 ],
@@ -185,81 +198,85 @@ class _MyHomeworkState extends State<MyHomework> {
     required String title,
     required String desc,
     required String image,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 25),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.07),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            child: Row(
-              children: [
-                // Circular image
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.12),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: CircleAvatar(
-                    radius: 40,
-                    backgroundImage: AssetImage(image),
-                  ),
-                ),
-
-                const SizedBox(width: 18),
-
-                // Text
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF2E3E32),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 25),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+              child: Row(
+                children: [
+                  // Circular image
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        desc,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black54,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: 40,
+                      backgroundImage: AssetImage(image),
+                    ),
                   ),
-                ),
 
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: Color(0xFF537E5D),
-                  size: 26,
-                ),
-              ],
+                  const SizedBox(width: 18),
+
+                  // Text
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E3E32),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          desc,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Color(0xFF537E5D),
+                    size: 26,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

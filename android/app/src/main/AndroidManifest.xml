@@ -30,10 +30,7 @@
                 android:name="android.max_aspect"
                 android:value="2.1" />
 
-            <!-- ডিসপ্লে রিফ্রেশ রেট কন্ট্রোল -->
-            <meta-data
-                android:name="io.flutter.embedding.android.MaxRefreshRate"
-                android:value="60" />
+            <!-- 120Hz enabled natively -->
 
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"

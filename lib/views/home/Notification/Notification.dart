@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:jonssony/controller/notification_controller.dart';
+import 'package:jonssony/controller/NotificationController/notification_controller.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
@@ -103,7 +103,7 @@ class NotificationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: notification.isRead
-                      ? iconBgColor.withValues(alpha: 0.5)
+                      ? iconBgColor.withValues(alpha: 0.9)
                       : iconBgColor,
 
                   shape: BoxShape.circle,
@@ -124,7 +124,7 @@ class NotificationScreen extends StatelessWidget {
                         notification.title,
                         style: TextStyle(
                           fontSize: 16,
-                          color: notification.isRead ? const Color(0xFFAAAAAA) : const Color(0xFF4A4A4A),
+                          color: notification.isRead ?  Colors.black : const Color(0xFF4A4A4A),
                           fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
                         ),
                       ),
@@ -135,7 +135,7 @@ class NotificationScreen extends StatelessWidget {
                         notification.body,
                         style: TextStyle(
                           fontSize: 14,
-                          color: notification.isRead ? const Color(0xFFAAAAAA) : const Color(0xFF6D6D6D),
+                          color: notification.isRead ? Colors.black : const Color(0xFF6D6D6D),
                           height: 1.4,
                         ),
                       ),

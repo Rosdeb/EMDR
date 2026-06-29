@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-
 import '../../controller/journey_controller.dart';
-import '../../controller/notification_controller.dart';
+import '../../controller/NotificationController/notification_controller.dart';
 import '../../controller/profile_controller.dart';
 import '../../controller/session_progress_controller.dart';
 import '../../healper/route.dart';
@@ -18,12 +18,11 @@ import '../../utils/app_text.dart';
 import '../sessions/SessionFourPage.dart' hide AppText;
 import '../sessions/session_five.dart';
 import '../sessions/session_one.dart';
-import '../sessions/session_seven.dart';
 import '../sessions/session_six.dart';
 import '../sessions/session_three.dart';
 import '../sessions/session_two.dart';
-import 'MyCalmSpace.dart';
-import 'homework.dart';
+import 'MyClamSpace/MyCalmSpace.dart';
+import 'MyHomeWork/homework.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -777,10 +776,28 @@ class _HomeScreenState extends State<HomeScreen> {
                       children: [
                         CircleAvatar(
                           radius: 24,
-                          backgroundImage:
-                              imageUrl != null && imageUrl.isNotEmpty
-                              ? NetworkImage(imageUrl) as ImageProvider
-                              : const AssetImage('assets/images/emdr_sun.jpg'),
+                          backgroundColor: Colors.grey.shade200,
+                          child: ClipOval(
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl ?? "",
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Image.asset(
+                                'assets/images/emdr_sun.jpg',
+                                width: 48,
+                                height: 48,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 15),
                         Expanded(

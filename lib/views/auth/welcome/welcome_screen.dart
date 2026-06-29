@@ -7,7 +7,7 @@ import 'package:jonssony/utils/app_text.dart';
 import 'package:jonssony/views/profile/PrivacyPolicyScreen.dart';
 import 'package:jonssony/views/profile/TermsOfServiceScreen.dart';
 import 'package:jonssony/controller/auth_controller.dart';
-import '../../healper/route.dart';
+import '../../../healper/route.dart';
 
 class AuthWelcomeScreen extends StatelessWidget {
   const AuthWelcomeScreen({super.key});

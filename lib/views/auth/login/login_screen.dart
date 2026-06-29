@@ -203,12 +203,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      Obx(
-                        () => _buildGoogleButton(
+                      Obx(() => _buildGoogleButton(
                           onPressed: authController.isLoading.value
                               ? null
                               : () => authController.signInWithGoogle(),
-                          isLoading: authController.isLoading.value,
+                          isLoading: authController.isGoogleLoading.value,
                         ),
                       ),
                       const SizedBox(height: 14),

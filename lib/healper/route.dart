@@ -1,18 +1,18 @@
 import 'package:get/get.dart';
-import 'package:jonssony/views/auth/Forget_Password.dart';
-import 'package:jonssony/views/auth/SendVerifyCodeScreen.dart';
-import 'package:jonssony/views/auth/ChangePasswordScreen.dart';
-import 'package:jonssony/views/auth/SignUp_Verification.dart';
+import 'package:jonssony/views/auth/forgot/Forget_Password.dart';
+import 'package:jonssony/views/auth/sendverification/SendVerifyCodeScreen.dart';
+import 'package:jonssony/views/auth/change_password/ChangePasswordScreen.dart';
+import 'package:jonssony/views/auth/signup_verification/SignUp_Verification.dart';
 import 'package:jonssony/views/home/home_screen.dart';
 import 'package:jonssony/views/main_screen.dart';
 import '../views/splash_screen.dart';
-import '../views/auth/welcome_screen.dart';
-import '../views/auth/login_screen.dart';
-import '../views/auth/signup_screen.dart';
+import '../views/auth/welcome/welcome_screen.dart';
+import '../views/auth/login/login_screen.dart';
+import '../views/auth/signup/signup_screen.dart';
 import '../views/Library/library_page.dart';
 import '../views/progress/progress_page.dart';
 import '../views/profile/profile_page.dart';
-import '../views/home/Notification.dart';
+import '../views/home/Notification/Notification.dart';
 
 
 class RouteHelper {

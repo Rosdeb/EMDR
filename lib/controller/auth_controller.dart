@@ -10,6 +10,7 @@ class AuthController extends GetxController {
 
   // ─── Observable state ──────────────────────────────────────
   final RxBool isLoading = false.obs;
+  final RxBool isGoogleLoading = false.obs;
   final RxString errorMessage = ''.obs;
 
   // Shared email across OTP screens (set after signup / forget password)
@@ -164,7 +165,7 @@ class AuthController extends GetxController {
 
   // ─── 4.1. Google Login ─────────────────────────────────────
   Future<void> signInWithGoogle() async {
-    isLoading.value = true;
+    isGoogleLoading.value = true;
     errorMessage.value = '';
     try {
       final user = await GoogleSignInService.signInWithGoogle();
@@ -190,7 +191,7 @@ class AuthController extends GetxController {
       errorMessage.value = 'Failed: ${e.toString().split('\n').first}';
       _showError(errorMessage.value);
     } finally {
-      isLoading.value = false;
+      isGoogleLoading.value = false;
     }
   }
 

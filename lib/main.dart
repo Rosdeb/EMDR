@@ -16,7 +16,7 @@ import 'package:jonssony/controller/subscription_controller.dart';
 import 'package:jonssony/controller/support_controller.dart';
 import 'package:jonssony/controller/home_controller.dart';
 import 'package:jonssony/controller/navigation_controller.dart';
-import 'package:jonssony/controller/notification_controller.dart';
+import 'package:jonssony/controller/NotificationController/notification_controller.dart';
 import 'package:jonssony/controller/bilateral_controller.dart';
 import 'package:jonssony/controller/media_controller.dart';
 import 'package:jonssony/controller/category_controller.dart';
@@ -27,7 +27,7 @@ import 'package:jonssony/healper/route.dart';
 import 'package:jonssony/services/notificationService.dart';
 import 'package:jonssony/utils/app_constant.dart';
 
-/// 🔥 Background message handler (Top-level)
+// Background message handler (Top-level)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -75,29 +75,34 @@ Future<void> main() async {
     ),
   );
 
-  // ✅ Firebase initialize
+  // Firebase initialize
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // ✅ Register background handler
+  // Register background handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  // ✅ Load env
+  // Load env
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint("Error loading .env file: $e");
   }
 
-  // ✅ Stripe setup
+  // Stripe setup
   Stripe.publishableKey = AppConstants.Publishable_key;
   await Stripe.instance.applySettings();
 
-  // ✅ Local storage
+  // Local storage
   await GetStorage.init();
 
-  // ✅ Register essential controllers and initialize notifications
+  // Register essential controllers and initialize notifications
   Get.put(NotificationController(), permanent: true);
-  await NotificationService.initialize();
+
+  // don't wait for permission
+  Future.microtask(()async{
+    await NotificationService.initialize();
+  });
+  //await NotificationService.initialize();
 
   runApp(const MyApp());
 }

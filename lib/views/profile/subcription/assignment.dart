@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import 'package:jonssony/controller/onboarding_controller.dart';
 import 'package:jonssony/controller/subscription_controller.dart';
 import 'package:jonssony/services/stripe_service.dart';
-import '../../home/my_homework.dart';
+
+import '../../home/MyHomeWork/my_homework.dart';
 
 class FullAssessmentFlow extends StatefulWidget {
   const FullAssessmentFlow({super.key});

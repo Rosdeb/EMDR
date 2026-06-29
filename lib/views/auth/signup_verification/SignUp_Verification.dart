@@ -5,7 +5,7 @@ import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/utils/app_colors.dart';
 import 'package:jonssony/utils/app_text.dart';
 
-import '../../healper/route.dart';
+import '../../../healper/route.dart';
 
 class SignUpVerification extends StatefulWidget {
   const SignUpVerification({super.key});

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:jonssony/healper/route.dart';
-import 'package:jonssony/views/home/BehaviourScreen.dart';
-import 'package:jonssony/views/home/Thoughts.dart';
-import 'package:jonssony/views/home/emotion_start.dart';
+import 'BehaviourScreen.dart';
+import 'Thoughts.dart';
+import 'emotion_start.dart';
 
 class MyHomeworkPri extends StatelessWidget {
   const MyHomeworkPri({super.key});
