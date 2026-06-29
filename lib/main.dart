@@ -8,6 +8,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
+import 'package:jonssony/core/network/network_controller.dart';
 import 'package:jonssony/controller/auth_controller.dart';
 import 'package:jonssony/controller/onboarding_controller.dart';
 import 'package:jonssony/controller/profile_controller.dart';
@@ -96,6 +97,7 @@ Future<void> main() async {
   await GetStorage.init();
 
   // Register essential controllers and initialize notifications
+  Get.put(NetworkController(), permanent: true);
   Get.put(NotificationController(), permanent: true);
 
   // don't wait for permission

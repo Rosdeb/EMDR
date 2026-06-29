@@ -5,6 +5,7 @@ import 'package:jonssony/views/auth/change_password/ChangePasswordScreen.dart';
 import 'package:jonssony/views/auth/signup_verification/SignUp_Verification.dart';
 import 'package:jonssony/views/home/home_screen.dart';
 import 'package:jonssony/views/main_screen.dart';
+import 'package:jonssony/views/offline/offline_page.dart';
 import '../views/splash_screen.dart';
 import '../views/auth/welcome/welcome_screen.dart';
 import '../views/auth/login/login_screen.dart';
@@ -30,6 +31,7 @@ class RouteHelper {
   static const String changePassword = '/change_password';
   static const String main = '/main';
   static const String notifications = '/notifications';
+  static const String offline = '/offline';
 
 
   static List<GetPage> routes = [
@@ -47,6 +49,7 @@ class RouteHelper {
     GetPage(name: profile, page: () => const ProfilePage()),
     GetPage(name: main, page: () => const MainScreen()),
     GetPage(name: notifications, page: () => const NotificationScreen()),
+    GetPage(name: offline, page: () => const OfflinePage()),
   ];
 
 }
