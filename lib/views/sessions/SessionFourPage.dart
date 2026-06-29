@@ -255,6 +255,7 @@ class _SessionfourpageState extends State<Sessionfourpage> {
   String? _positiveFeeling;
   String? _associatedThoughts;
   String? _visualization;
+  Map<String, dynamic> _completedSessionData = <String, dynamic>{};
 
   // File attachments for target/freeze-frame
   File? _targetFile;
@@ -559,16 +560,106 @@ class _SessionfourpageState extends State<Sessionfourpage> {
   }
 
   void _saveSummary() {
+    final localRoadmapSummaryText = _buildRoadmapSummaryText();
+    final roadmapSummaryText =
+        _completedSessionData['roadmapSummaryText']?.toString().trim() ?? '';
+    final roadmapSummaryAudioUrl =
+        _completedSessionData['roadmapSummaryAudioUrl']?.toString().trim() ??
+        '';
+    final roadmapSummaryAudioProvider =
+        _completedSessionData['roadmapSummaryAudioProvider']
+            ?.toString()
+            .trim() ??
+        '';
+    final resolvedRoadmapSummaryText = roadmapSummaryText.isNotEmpty
+        ? roadmapSummaryText
+        : localRoadmapSummaryText;
     final sessionData = {
       'date': DateTime.now().toIso8601String(),
+      'sessionId': _emdrSessionId ?? '',
+      'sessionType': _sessionType,
       'startingPoint': _responses.isNotEmpty ? _responses[0] : '',
       'beliefPairs': _beliefPairs.map((p) => p.toMap()).toList(),
       'responses': _responses.map((r) => r.toString()).toList(),
+      'roadmapSummaryText': resolvedRoadmapSummaryText,
+      'roadmapSummaryAudioUrl': roadmapSummaryAudioUrl,
+      'roadmapSummaryAudioProvider': roadmapSummaryAudioProvider,
+      'summary': {
+        'startingPoint': _responses.isNotEmpty ? _responses[0] : '',
+        'target': _responses.length > 1 ? _responses[1].toString() : '',
+        'freezeFrame': _responses.length > 2 ? _responses[2].toString() : '',
+        'beliefPairs': _beliefPairs.map((p) => p.toMap()).toList(),
+        'primaryEmotion': _primaryEmotion ?? '',
+        'additionalEmotions': _additionalEmotions ?? '',
+        'bodyLocation': _emdrBodyLocation ?? '',
+        'isAddictionFlow': _isAddictionFlow,
+        'roadmapSummaryText': resolvedRoadmapSummaryText,
+        'roadmapSummaryAudioUrl': roadmapSummaryAudioUrl,
+        'roadmapSummaryAudioProvider': roadmapSummaryAudioProvider,
+      },
     };
     List sessions = box.read('emdrSessions') ?? [];
     sessions.add(sessionData);
     box.write('emdrSessions', sessions);
     box.write('lastEMDRSession', sessionData);
+  }
+
+  String _buildRoadmapSummaryText() {
+    String responseAt(int index) =>
+        index < _responses.length ? _responses[index].toString().trim() : '';
+
+    if (_isAddictionFlow) {
+      final aspect = (_addictionAspect ?? responseAt(1)).trim();
+      final feeling = (_positiveFeeling ?? responseAt(2)).trim();
+      final thoughts = (_associatedThoughts ?? responseAt(4)).trim();
+      final bodyLocation = (_emdrBodyLocation ?? responseAt(5)).trim();
+      final visualization = (_visualization ?? responseAt(6)).trim();
+      return <String>[
+        if (aspect.isNotEmpty) 'You are gently focusing on $aspect.',
+        if (feeling.isNotEmpty) 'You have described the feeling as $feeling.',
+        if (thoughts.isNotEmpty)
+          'The thoughts connected with it are $thoughts.',
+        if (bodyLocation.isNotEmpty) 'You notice it in $bodyLocation.',
+        if (visualization.isNotEmpty)
+          'Hold the image of $visualization lightly in mind.',
+        'There is no need to force anything. When you feel ready, press start and simply notice what comes.',
+      ].join(' ');
+    }
+
+    final normalizedType = _sessionType.toLowerCase();
+    final target = responseAt(2).isNotEmpty ? responseAt(2) : responseAt(1);
+    final targetPrefix = normalizedType.contains('future')
+        ? 'You are imagining'
+        : normalizedType.contains('words')
+        ? 'You are bringing to mind'
+        : normalizedType.contains('difficult emotions')
+        ? 'You are focusing on'
+        : 'You are remembering';
+    final emotions = <String>[
+      _primaryEmotion?.trim() ?? '',
+      _additionalEmotions?.trim() ?? '',
+    ].where((value) => value.isNotEmpty).toList();
+    final bodyLocation = _emdrBodyLocation?.trim() ?? '';
+    final negativeBeliefs = _beliefPairs
+        .map((pair) => pair.negative.trim())
+        .where((value) => value.isNotEmpty)
+        .toList();
+    final positiveBeliefs = _beliefPairs
+        .map((pair) => pair.positive.trim())
+        .where((value) => value.isNotEmpty)
+        .toList();
+
+    return <String>[
+      if (target.isNotEmpty) '$targetPrefix $target.',
+      if (emotions.isNotEmpty)
+        'You described feeling ${emotions.join(', ')}, and it makes sense that this experience still feels important.',
+      if (bodyLocation.isNotEmpty) 'You notice some of this in $bodyLocation.',
+      if (negativeBeliefs.isNotEmpty)
+        'The difficult thought${negativeBeliefs.length > 1 ? 's' : ''} you noticed ${negativeBeliefs.length > 1 ? 'were' : 'was'}: ${negativeBeliefs.join(', ')}.',
+      if (positiveBeliefs.isNotEmpty)
+        'You are moving towards the belief${positiveBeliefs.length > 1 ? 's' : ''}: ${positiveBeliefs.join(', ')}.',
+      'You do not need to force anything. When you feel ready, press start and gently notice what comes.',
+    ].join(' ');
   }
 
   void _showError(String message) {
@@ -733,6 +824,12 @@ class _SessionfourpageState extends State<Sessionfourpage> {
       _showError(
         result['message']?.toString() ?? 'Failed to complete EMDR session.',
       );
+      return;
+    }
+
+    final data = result['data'];
+    if (data is Map) {
+      _completedSessionData = Map<String, dynamic>.from(data);
     }
   }
 

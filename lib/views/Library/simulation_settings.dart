@@ -18,6 +18,8 @@ class SimulationSettings {
   final int totalSets;
   final int maxDurationMinutes;
   final String? roadmapSummary;
+  final String? roadmapSummaryAudioUrl;
+  final String? roadmapSummaryAudioProvider;
 
   SimulationSettings({
     required this.environmentImage,
@@ -37,5 +39,7 @@ class SimulationSettings {
     this.totalSets = 0,
     this.maxDurationMinutes = 0,
     this.roadmapSummary,
+    this.roadmapSummaryAudioUrl,
+    this.roadmapSummaryAudioProvider,
   });
 }

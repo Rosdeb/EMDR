@@ -185,7 +185,9 @@ class _SessionSevenState extends State<SessionSeven> {
     return SimulationSettings(
       environmentImage: _normaliseSceneSource(background),
       visualObject: _normaliseObjectSource(object),
-      speed: BlsSpeedPresets.secondsForKey(_configValue(config, 'speed', 'medium')),
+      speed: BlsSpeedPresets.secondsForKey(
+        _configValue(config, 'speed', 'medium'),
+      ),
       audioAsset: resolvedAudioAsset,
       soundKey: resolvedSoundKey,
       visualMediaType: visualMediaType,
@@ -197,10 +199,22 @@ class _SessionSevenState extends State<SessionSeven> {
       totalSets: showCompletionQuestions ? 34 : 0,
       maxDurationMinutes: showCompletionQuestions ? durationMinutes : 0,
       roadmapSummary: _roadmapSummary(),
+      roadmapSummaryAudioUrl: _roadmapSummaryAudioUrl(),
+      roadmapSummaryAudioProvider: _roadmapSummaryAudioProvider(),
     );
   }
 
   String _roadmapSummary() {
+    final session = _lastEmdrSession();
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    final storedText = _firstText([
+      summary['roadmapSummaryText'],
+      session['roadmapSummaryText'],
+    ]);
+    if (storedText.isNotEmpty) return storedText;
+
     final answers = box.read('cbt_answers') ?? {};
     if (answers is! Map) return '';
     final map = Map<String, dynamic>.from(answers);
@@ -215,6 +229,41 @@ class _SessionSevenState extends State<SessionSeven> {
     add('Feelings', 'My Feelings');
     add('Positive belief', 'Your Superpowers');
     return pieces.join('. ');
+  }
+
+  Map<String, dynamic> _lastEmdrSession() {
+    final raw = box.read('lastEMDRSession');
+    return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+  }
+
+  String _roadmapSummaryAudioUrl() {
+    final session = _lastEmdrSession();
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    return _firstText([
+      summary['roadmapSummaryAudioUrl'],
+      session['roadmapSummaryAudioUrl'],
+    ]);
+  }
+
+  String _roadmapSummaryAudioProvider() {
+    final session = _lastEmdrSession();
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    return _firstText([
+      summary['roadmapSummaryAudioProvider'],
+      session['roadmapSummaryAudioProvider'],
+    ]);
+  }
+
+  String _firstText(List<dynamic> values) {
+    for (final value in values) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   String _configValue(
@@ -566,11 +615,7 @@ class _SessionSevenState extends State<SessionSeven> {
             color: Color(0xFF537E5D),
           ),
           const SizedBox(height: 16),
-          const AppText(
-            'Body Scan',
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          const AppText('Body Scan', fontSize: 22, fontWeight: FontWeight.bold),
           const SizedBox(height: 12),
           const AppText(
             'Close your eyes and scan from the top of your head to the tips of your toes. Notice any tension, sensations, or discomfort.',

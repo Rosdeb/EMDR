@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:jonssony/controller/navigation_controller.dart';
 import '../../controller/journey_controller.dart';
 import '../../controller/NotificationController/notification_controller.dart';
 import '../../controller/profile_controller.dart';
@@ -34,6 +35,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   static const String _firstLoginIntroSeenKey = 'first_login_intro_seen';
   final GetStorage _storage = GetStorage();
+  final controller = Get.find<NavigationController>();
 
   @override
   void initState() {
@@ -53,9 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
         title: const Text('Start your EMDR roadmap'),
-        content: const Text(
-          'To begin your EMDR journey, tap the + button and create your roadmap. Then follow each session from My Space in order.',
-        ),
+        content: const Text('To begin your EMDR journey, tap the + button and create your roadmap. Then follow each session from My Space in order.',),
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Got it')),
         ],
@@ -68,13 +68,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     Get.put(ProfileController());
     Get.put(NotificationController());
-    final journeyController = Get.isRegistered<JourneyController>()
-        ? Get.find<JourneyController>()
-        : Get.put(JourneyController());
-    final sessionProgressController =
-        Get.isRegistered<SessionProgressController>()
-        ? Get.find<SessionProgressController>()
-        : Get.put(SessionProgressController());
+    final journeyController = Get.isRegistered<JourneyController>() ? Get.find<JourneyController>() : Get.put(JourneyController());
+    final sessionProgressController = Get.isRegistered<SessionProgressController>() ? Get.find<SessionProgressController>() : Get.put(SessionProgressController());
     SessionCompletionService.syncFromStorage();
 
     const double appBarImageHeight = 170;
@@ -388,20 +383,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
               return Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF81C784),
-                        width: 2,
+                  GestureDetector(
+                    onTap: (){
+                      controller.selectedIndex.value = 3;
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF81C784),
+                          width: 2,
+                        ),
                       ),
-                    ),
-                    child: CircleAvatar(
-                      radius: 20,
-                      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                          ? NetworkImage(avatarUrl) as ImageProvider
-                          : const AssetImage('assets/images/home_profile.png'),
+                      child: CircleAvatar(
+                        radius: 20,
+                        backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                            ? NetworkImage(avatarUrl) as ImageProvider
+                            : const AssetImage('assets/images/home_profile.png'),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),

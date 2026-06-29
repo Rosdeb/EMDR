@@ -1,4 +1,3 @@
-
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -7,7 +6,6 @@ import 'package:jonssony/views/Library/bls/bilateral_animation_controller.dart';
 import 'package:jonssony/views/Library/bls/bilateral_audio_sync.dart';
 import 'package:jonssony/views/Library/bls/bilateral_session_orchestrator.dart';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:jonssony/models/app_theme.dart';
@@ -62,9 +60,10 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool _guidanceAudioCompleted = false;
   bool _showStuckScreen = false;
   bool _summaryAudioPlaying = false;
+  bool _summaryAudioPaused = false;
+  bool _summaryAudioCompleted = false;
+  bool _summaryAudioFailed = false;
   late AnimationDirection _currentDirection;
-  VoidCallback? _onGuidanceAudioComplete;
-  final AudioPlayer _guidanceAudioPlayer = AudioPlayer();
 
   late AnimationController _turnController;
   Animation<double>? _activeTurn;
@@ -80,23 +79,15 @@ class _SimulationScreenState extends State<SimulationScreen>
   void initState() {
     super.initState();
     _currentDirection = widget.settings.direction;
-    _guidanceAudioPlayer.onPlayerComplete.listen((_) {
-      if (!mounted) return;
-      setState(() {
-        _guidanceAudioPlaying = false;
-        _guidanceAudioCompleted = true;
-      });
-      if (_onGuidanceAudioComplete != null) {
-        _onGuidanceAudioComplete!();
-      }
-    });
 
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
 
-    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90 ? 90 : 60;
+    _selectedDurationMinutes = widget.settings.maxDurationMinutes == 90
+        ? 90
+        : 60;
     _showIntroGuidance = widget.settings.showCompletionQuestions;
 
     _blsAnimation = BilateralAnimationController(
@@ -108,7 +99,9 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     _blsSession = BilateralSessionOrchestrator(
       totalSets: widget.settings.totalSets,
-      sessionLimit: _selectedDurationMinutes > 0 ? Duration(minutes: _selectedDurationMinutes) : Duration.zero,
+      sessionLimit: _selectedDurationMinutes > 0
+          ? Duration(minutes: _selectedDurationMinutes)
+          : Duration.zero,
       setDuration: _resolveSetDuration(),
       animationController: _blsAnimation,
       onSetComplete: _onSetComplete,
@@ -120,7 +113,10 @@ class _SimulationScreenState extends State<SimulationScreen>
     });
 
     _blsAnimation.endpointStream.listen((event) {
-      if (!_blsSession.motionStarted || _blsSession.setComplete || _blsSession.isPaused) return;
+      if (!_blsSession.motionStarted ||
+          _blsSession.setComplete ||
+          _blsSession.isPaused)
+        return;
 
       _blsAudio.playEndpoint(
         isRight: event.endpoint == BlsEndpoint.right,
@@ -153,14 +149,33 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     _setupVisuals();
 
-    _blsAudio.initPlayers(
-      soundKey: _resolvedSoundKey,
-      audioAsset: _resolvedAudioAsset,
-    ).then((_) {
-      if (!widget.settings.showCompletionQuestions) {
-        _startMotion();
+    _blsAudio
+        .initPlayers(
+          soundKey: _resolvedSoundKey,
+          audioAsset: _resolvedAudioAsset,
+        )
+        .then((_) {
+          if (!widget.settings.showCompletionQuestions) {
+            _startMotion();
+          }
+        });
+    if (widget.settings.showCompletionQuestions) {
+      unawaited(_prefetchRoadmapVoice());
+    }
+  }
+
+  Future<void> _prefetchRoadmapVoice() async {
+    const intro =
+        'The bilateral stimulation will start now. Your roadmap is ready. When you start, let your mind wander. Your thoughts may go forward or backwards in time.';
+    try {
+      await _voice.prefetch(intro, cacheNamespace: 'session-intro');
+      final summaryText = widget.settings.roadmapSummary?.trim() ?? '';
+      if (!_hasTrustedRoadmapAudio && summaryText.isNotEmpty) {
+        await _voice.prefetch(summaryText, cacheNamespace: 'roadmap-summary');
       }
-    });
+    } catch (error) {
+      debugPrint('Roadmap voice prefetch failed: $error');
+    }
   }
 
   void _setupVisuals() {
@@ -251,7 +266,9 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   List<SessionVisualCandidate> get _sessionVisualCandidates {
     final configured = widget.settings.visualPlaybackUrl?.trim();
-    final source = configured?.isNotEmpty == true ? configured! : widget.settings.visualObject.trim();
+    final source = configured?.isNotEmpty == true
+        ? configured!
+        : widget.settings.visualObject.trim();
     return buildSessionVisualCandidates(
       source: source,
       transparentUrl: widget.settings.visualTransparentUrl,
@@ -264,7 +281,9 @@ class _SimulationScreenState extends State<SimulationScreen>
     final candidates = _sessionVisualCandidates;
     if (candidates.isNotEmpty) return candidates.first.url;
     final configured = widget.settings.visualPlaybackUrl?.trim();
-    final source = configured?.isNotEmpty == true ? configured! : widget.settings.visualObject.trim();
+    final source = configured?.isNotEmpty == true
+        ? configured!
+        : widget.settings.visualObject.trim();
     return resolveSimulationVisualUrl(
       source,
       label: widget.settings.visualLabel,
@@ -274,22 +293,28 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool _looksLikeVideo(String source) {
     final path = _mediaPath(source);
-    return path.endsWith('.mp4') || path.endsWith('.mov') || path.endsWith('.webm') || path.contains('/video/upload/');
+    return path.endsWith('.mp4') ||
+        path.endsWith('.mov') ||
+        path.endsWith('.webm') ||
+        path.contains('/video/upload/');
   }
 
   bool get _usesAssetAnimatedVisual {
     final source = _resolvedVisualObject;
-    if (isBlsLocalVisualAsset(source) || resolveLocalVisual(source) != null) return true;
+    if (isBlsLocalVisualAsset(source) || resolveLocalVisual(source) != null)
+      return true;
     return source.startsWith('assets/') && isAnimatedAssetVisual(source);
   }
 
   bool get _usesVideoVisual {
     if (_usesAssetAnimatedVisual) return false;
-    if (widget.settings.visualMediaType.toLowerCase() == 'video') return _sessionVisualCandidates.isNotEmpty;
+    if (widget.settings.visualMediaType.toLowerCase() == 'video')
+      return _sessionVisualCandidates.isNotEmpty;
     return _isVideoVisual(_videoPlaybackUrl);
   }
 
-  bool get _needsEffectAnimation => bilateralObjectFromSource(_resolvedVisualObject) != null;
+  bool get _needsEffectAnimation =>
+      bilateralObjectFromSource(_resolvedVisualObject) != null;
 
   void _startMotion() {
     if (!mounted || _setComplete || _isPaused) return;
@@ -315,19 +340,21 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Future<void> _handleIntroStart() async {
-    await _guidanceAudioPlayer.stop();
     await _voice.stop();
     if (!mounted) return;
 
     setState(() {
       _summaryAudioPlaying = false;
+      _summaryAudioPaused = false;
       _showIntroGuidance = false;
       _displayFacingAngle.value = 0;
     });
 
     _turnController.stop();
     _turnController.reset();
-    _effectController..reset()..repeat();
+    _effectController
+      ..reset()
+      ..repeat();
 
     _blsSession.restartSet();
     _startMotion();
@@ -344,7 +371,12 @@ class _SimulationScreenState extends State<SimulationScreen>
       setState(() {
         _showCompletionQuestions = true;
       });
-      _voice.speak('Take a gentle breath. Notice what you experienced. Is it changing and still connected to your original image?');
+      unawaited(
+        _playGuidance(
+          cacheNamespace: 'instruction-changingConnected',
+          fallbackText: 'Is it changing and still connected?',
+        ),
+      );
     }
   }
 
@@ -354,27 +386,32 @@ class _SimulationScreenState extends State<SimulationScreen>
     _effectController.stop();
     _videoPlayingNotifier.value = false;
     _blsAudio.stop();
-    _voice.stop();
 
     setState(() {
       _showCompletionQuestions = false;
       _showClosingGuidance = true;
     });
 
-    _voice.speak('You have reached the session time you chose. Return to your calm place now. Bring up your pincode and spend a minute finding that calm feeling in your body.');
+    unawaited(
+      _voice.speak(
+        "Your session time is ending now. Let's return to calm place and close safely.",
+        cacheNamespace: 'instruction-endSession',
+      ),
+    );
   }
 
   Future<void> _stopSessionAudio() async {
     try {
       _blsAudio.stop();
       await _voice.stop();
-      await _guidanceAudioPlayer.stop();
     } catch (_) {}
   }
 
   bool _isNetworkUrl(String value) {
     final uri = Uri.tryParse(value.trim());
-    return uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty;
+    return uri != null &&
+        (uri.scheme == 'http' || uri.scheme == 'https') &&
+        uri.host.isNotEmpty;
   }
 
   String _mediaPath(String value) {
@@ -385,7 +422,11 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool _isImageVisual(String value) {
     final source = _mediaPath(value);
-    return source.endsWith('.png') || source.endsWith('.jpg') || source.endsWith('.jpeg') || source.endsWith('.webp') || source.endsWith('.gif');
+    return source.endsWith('.png') ||
+        source.endsWith('.jpg') ||
+        source.endsWith('.jpeg') ||
+        source.endsWith('.webp') ||
+        source.endsWith('.gif');
   }
 
   bool _isAnimatedImageVisual(String value) {
@@ -395,7 +436,11 @@ class _SimulationScreenState extends State<SimulationScreen>
   bool _isVideoVisual(String value) {
     if (_isImageVisual(value)) return false;
     final source = _mediaPath(value);
-    return widget.settings.visualMediaType.toLowerCase() == 'video' || source.endsWith('.mp4') || source.endsWith('.mov') || source.endsWith('.webm') || source.contains('video');
+    return widget.settings.visualMediaType.toLowerCase() == 'video' ||
+        source.endsWith('.mp4') ||
+        source.endsWith('.mov') ||
+        source.endsWith('.webm') ||
+        source.contains('video');
   }
 
   Future<void> _restartSet() async {
@@ -412,7 +457,9 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     _turnController.stop();
     _turnController.reset();
-    _effectController..reset()..repeat();
+    _effectController
+      ..reset()
+      ..repeat();
     _videoPlayingNotifier.value = true;
 
     _blsSession.restartSet();
@@ -424,8 +471,8 @@ class _SimulationScreenState extends State<SimulationScreen>
     if (!mounted) return;
     if (answer) {
       await _playGuidance(
-        audioPath: 'assets/audio/changing_guidance.mp3',
-        fallbackText: 'Ok, good. Go with that, or go with where you left off.',
+        cacheNamespace: 'instruction-changing',
+        fallbackText: 'Ok good, go with that or go with where you left off.',
         onDone: () {
           Future.delayed(const Duration(milliseconds: 400), () {
             if (mounted) _restartSet();
@@ -437,7 +484,6 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   Future<void> _handleSudsContinue() async {
     if (_sudsRating <= 1) {
-      await _guidanceAudioPlayer.stop();
       await _voice.stop();
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -491,7 +537,10 @@ class _SimulationScreenState extends State<SimulationScreen>
     _activeTurn = Tween<double>(begin: begin, end: end).animate(
       CurvedAnimation(parent: _turnController, curve: Curves.easeInOutCubic),
     );
-    _turnController..stop()..reset()..forward();
+    _turnController
+      ..stop()
+      ..reset()
+      ..forward();
   }
 
   Matrix4 _facingTransformMatrix() {
@@ -525,7 +574,10 @@ class _SimulationScreenState extends State<SimulationScreen>
     final usableWidth = screenSize.width - padding.left - padding.right;
     final usableHeight = screenSize.height - padding.top - padding.bottom;
     final minX = -horizontalCorrection;
-    final maxX = math.max(minX, usableWidth - _objectSize - horizontalCorrection);
+    final maxX = math.max(
+      minX,
+      usableWidth - _objectSize - horizontalCorrection,
+    );
     final maxY = math.max(0.0, usableHeight - _objectSize);
     final x = minX + (t * (maxX - minX));
 
@@ -533,7 +585,10 @@ class _SimulationScreenState extends State<SimulationScreen>
       case AnimationDirection.horizontal:
         return Offset(padding.left + x, padding.top + maxY / 2);
       case AnimationDirection.vertical:
-        return Offset(padding.left + (usableWidth - _objectSize) / 2, padding.top + t * maxY);
+        return Offset(
+          padding.left + (usableWidth - _objectSize) / 2,
+          padding.top + t * maxY,
+        );
       case AnimationDirection.diagonal:
         return Offset(padding.left + x, padding.top + t * maxY);
       case AnimationDirection.diagonalReverse:
@@ -548,7 +603,8 @@ class _SimulationScreenState extends State<SimulationScreen>
 
   bool get _hasObjectReflection {
     final advancedObject = bilateralObjectFromSource(_resolvedVisualObject);
-    if (advancedObject != null) return bilateralObjectHasReflection(advancedObject);
+    if (advancedObject != null)
+      return bilateralObjectHasReflection(advancedObject);
     return blsObjectHasReflection(widget.settings.visualObject.trim());
   }
 
@@ -567,7 +623,6 @@ class _SimulationScreenState extends State<SimulationScreen>
     _turnController.dispose();
     _wingController.dispose();
     _effectController.dispose();
-    _guidanceAudioPlayer.dispose();
     _videoPlayingNotifier.dispose();
     _voice.dispose();
     super.dispose();
@@ -1063,7 +1118,11 @@ class _SimulationScreenState extends State<SimulationScreen>
                       final positionValue = _motionStarted
                           ? _animation.value
                           : -1.0;
-                      final pos = _objectPosition(positionValue, screenSize, MediaQuery.of(context).padding,);
+                      final pos = _objectPosition(
+                        positionValue,
+                        screenSize,
+                        MediaQuery.of(context).padding,
+                      );
                       return Positioned(
                         left: pos.dx,
                         top: screenSize.height * 0.72,
@@ -1086,7 +1145,11 @@ class _SimulationScreenState extends State<SimulationScreen>
                         final positionValue = _motionStarted
                             ? _animation.value
                             : -1.0;
-                        final pos = _objectPosition(positionValue, screenSize, MediaQuery.of(context).padding,);
+                        final pos = _objectPosition(
+                          positionValue,
+                          screenSize,
+                          MediaQuery.of(context).padding,
+                        );
                         return Positioned(
                           left: pos.dx,
                           top: pos.dy,
@@ -1353,45 +1416,136 @@ class _SimulationScreenState extends State<SimulationScreen>
   }
 
   Future<void> _playGuidance({
-    required String audioPath,
+    required String cacheNamespace,
     required String fallbackText,
     VoidCallback? onDone,
   }) async {
-    await _guidanceAudioPlayer.stop();
     await _voice.stop();
 
     if (!mounted) return;
     setState(() {
       _guidanceAudioPlaying = true;
       _guidanceAudioCompleted = false;
-      _onGuidanceAudioComplete = onDone;
     });
 
-    try {
-      String assetPath = audioPath;
-      if (assetPath.startsWith('assets/')) {
-        assetPath = assetPath.substring(7);
-      }
-      await _guidanceAudioPlayer.setSource(AssetSource(assetPath));
-      await _guidanceAudioPlayer.resume();
-    } catch (e) {
-      debugPrint('Error playing guidance audio: $e. Falling back to TTS.');
-      if (mounted) {
-        await _voice.speak(
-          fallbackText,
-          onDone: () {
-            if (!mounted) return;
-            setState(() {
-              _guidanceAudioPlaying = false;
-              _guidanceAudioCompleted = true;
-            });
-            if (onDone != null) {
-              onDone();
-            }
-          },
-        );
+    final result = await _voice.speak(
+      fallbackText,
+      cacheNamespace: cacheNamespace,
+    );
+    if (!mounted) return;
+    final completed = result == VoicePlaybackResult.completed;
+    setState(() {
+      _guidanceAudioPlaying = false;
+      _guidanceAudioCompleted = completed;
+    });
+    if (completed) onDone?.call();
+  }
+
+  bool get _hasTrustedRoadmapAudio {
+    final provider =
+        widget.settings.roadmapSummaryAudioProvider?.trim().toLowerCase() ?? '';
+    final audioUrl = widget.settings.roadmapSummaryAudioUrl?.trim() ?? '';
+    return provider == 'elevenlabs' &&
+        audioUrl.isNotEmpty &&
+        !_isOldRoadmapSummary(widget.settings.roadmapSummary ?? '');
+  }
+
+  bool _isOldRoadmapSummary(String value) {
+    final text = value.trim();
+    return text == 'Your roadmap summary is ready.' ||
+        text.contains(
+          'The original memory or image you are working with is:',
+        ) ||
+        text.contains('The freeze frame is:') ||
+        text.contains('The negative belief is:');
+  }
+
+  Future<void> _playRoadmapSummary() async {
+    await _voice.stop();
+    if (!mounted) return;
+    setState(() {
+      _summaryAudioPlaying = true;
+      _summaryAudioPaused = false;
+      _summaryAudioCompleted = false;
+      _summaryAudioFailed = false;
+    });
+
+    const intro =
+        'The bilateral stimulation will start now. Your roadmap is ready. When you start, let your mind wander. Your thoughts may go forward or backwards in time.';
+    final introResult = await _voice.speak(
+      intro,
+      cacheNamespace: 'session-intro',
+    );
+    if (introResult != VoicePlaybackResult.completed) {
+      _finishRoadmapSummary(success: false);
+      return;
+    }
+
+    final summaryText = widget.settings.roadmapSummary?.trim() ?? '';
+    VoicePlaybackResult summaryResult = VoicePlaybackResult.completed;
+    if (_hasTrustedRoadmapAudio) {
+      summaryResult = await _voice.playUrl(
+        widget.settings.roadmapSummaryAudioUrl!,
+      );
+    } else if (summaryText.isNotEmpty) {
+      summaryResult = await _voice.speak(
+        summaryText,
+        cacheNamespace: 'roadmap-summary',
+      );
+    }
+    if (summaryResult != VoicePlaybackResult.completed) {
+      _finishRoadmapSummary(success: false);
+      return;
+    }
+
+    if (!_hasTrustedRoadmapAudio &&
+        !summaryText.toLowerCase().contains('when you are ready')) {
+      final readyResult = await _voice.speak(
+        'When you are ready...',
+        cacheNamespace: 'instruction-ready',
+      );
+      if (readyResult != VoicePlaybackResult.completed) {
+        _finishRoadmapSummary(success: false);
+        return;
       }
     }
+
+    _finishRoadmapSummary(success: true);
+  }
+
+  void _finishRoadmapSummary({required bool success}) {
+    if (!mounted) return;
+    setState(() {
+      _summaryAudioPlaying = false;
+      _summaryAudioPaused = false;
+      _summaryAudioCompleted = success;
+      _summaryAudioFailed = !success;
+    });
+  }
+
+  Future<void> _toggleRoadmapSummary() async {
+    if (_summaryAudioPlaying) {
+      if (!_voice.isSpeaking) return;
+      await _voice.pause();
+      if (!mounted) return;
+      setState(() {
+        _summaryAudioPlaying = false;
+        _summaryAudioPaused = true;
+      });
+      return;
+    }
+
+    if (_summaryAudioPaused) {
+      await _voice.resume();
+      if (!mounted) return;
+      setState(() {
+        _summaryAudioPlaying = true;
+        _summaryAudioPaused = false;
+      });
+      return;
+    }
+
+    await _playRoadmapSummary();
   }
 
   Widget _buildIntroOverlay() {
@@ -1452,29 +1606,7 @@ class _SimulationScreenState extends State<SimulationScreen>
                       ),
                       child: Center(
                         child: ElevatedButton(
-                          onPressed: () async {
-                            if (_summaryAudioPlaying) {
-                              await _guidanceAudioPlayer.stop();
-                              await _voice.stop();
-                              setState(() {
-                                _summaryAudioPlaying = false;
-                              });
-                            } else {
-                              setState(() {
-                                _summaryAudioPlaying = true;
-                              });
-                              await _playGuidance(
-                                audioPath: 'assets/audio/summary.mp3',
-                                fallbackText:
-                                    "This EMDR processing session utilizes bilateral stimulation. Focus on your target memory and follow the visual movement while keeping your session duration in mind.",
-                                onDone: () {
-                                  setState(() {
-                                    _summaryAudioPlaying = false;
-                                  });
-                                },
-                              );
-                            }
-                          },
+                          onPressed: _toggleRoadmapSummary,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF151515),
                             foregroundColor: Colors.white,
@@ -1488,7 +1620,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                           ),
                           child: Text(
                             _summaryAudioPlaying
-                                ? 'Stop Summary'
+                                ? 'Pause Summary'
+                                : _summaryAudioPaused
+                                ? 'Resume Summary'
                                 : 'Play Summary',
                             style: const TextStyle(
                               fontSize: 15,
@@ -1499,6 +1633,17 @@ class _SimulationScreenState extends State<SimulationScreen>
                         ),
                       ),
                     ),
+                    if (_summaryAudioFailed) ...[
+                      SizedBox(height: isShort ? 6 : 10),
+                      Text(
+                        'Summary voice could not be played. Check your connection and try again.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: isShort ? 11 : 12,
+                        ),
+                      ),
+                    ],
                     SizedBox(height: isShort ? 14 : 28),
 
                     // Select Session Duration title
@@ -1528,15 +1673,12 @@ class _SimulationScreenState extends State<SimulationScreen>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          // Stop any summary playing
-                          await _guidanceAudioPlayer.stop();
-                          await _voice.stop();
-                          setState(() {
-                            _summaryAudioPlaying = false;
-                          });
-                          _handleIntroStart();
-                        },
+                        onPressed:
+                            _summaryAudioCompleted &&
+                                !_summaryAudioPlaying &&
+                                !_summaryAudioPaused
+                            ? _handleIntroStart
+                            : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF537E5D),
                           foregroundColor: Colors.white,
@@ -1548,9 +1690,11 @@ class _SimulationScreenState extends State<SimulationScreen>
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'I have the image in mind - Start',
-                          style: TextStyle(
+                        child: Text(
+                          _summaryAudioCompleted
+                              ? 'I have the image in mind - Start'
+                              : 'Play Summary to Continue',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -1724,9 +1868,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                     _showStuckScreen = false;
                   });
                   _playGuidance(
-                    audioPath: 'assets/audio/rate_guidance.mp3',
+                    cacheNamespace: 'instruction-notChanging',
                     fallbackText:
-                        'Without any tapping or eye movement, just take a moment to notice what you see and feel. How disturbing is it right now?',
+                        "Ok, let's go back to the original image. Without any tapping or eye movement, just take a moment to notice what you see and feel. Rate your negative emotion on a scale of 0 to 10.",
                   );
                 },
                 style: OutlinedButton.styleFrom(
@@ -1755,9 +1899,9 @@ class _SimulationScreenState extends State<SimulationScreen>
                     _showSudsRating = false;
                   });
                   _playGuidance(
-                    audioPath: 'assets/audio/stuck_guidance.mp3',
+                    cacheNamespace: 'direction-change',
                     fallbackText:
-                        "If you're not getting past a certain thought or feeling, try changing the direction of the bilateral stimulation. Choose a new direction, then continue after the audio finishes.",
+                        'Direction change. You can switch the bilateral stimulation to any of the available directions below: Horizontal, Vertical, Diagonal Up, or Diagonal Down. Choose the direction that feels most comfortable, then continue the session.',
                   );
                 },
                 style: OutlinedButton.styleFrom(
@@ -2231,17 +2375,18 @@ class _SimulationScreenState extends State<SimulationScreen>
 
     if (score <= 1) {
       await _playGuidance(
-        audioPath: 'assets/audio/rate_low_guidance.mp3',
-        fallbackText: "Great, distress is almost gone. Let's move to phase 2.",
+        cacheNamespace: 'phase1-complete',
+        fallbackText:
+            "Great job. This part is complete. Let's strengthen the positive belief.",
         onDone: () {
           if (mounted) _handleSudsContinue();
         },
       );
     } else {
       await _playGuidance(
-        audioPath: 'assets/audio/rate_high_guidance.mp3',
+        cacheNamespace: 'instruction-okContinue',
         fallbackText:
-            "Ok, some distress is still present. Let's continue processing.",
+            "Ok, let's continue with what you noticed about your original image.",
         onDone: () {
           if (mounted) _handleSudsContinue();
         },
@@ -2279,7 +2424,9 @@ class _SimulationScreenState extends State<SimulationScreen>
           Padding(
             padding: const EdgeInsets.only(right: 10),
             child: Text(
-              _setComplete ? 'Set complete' : '${_blsSession.remainingSetTime.inSeconds}s',
+              _setComplete
+                  ? 'Set complete'
+                  : '${_blsSession.remainingSetTime.inSeconds}s',
               style: const TextStyle(
                 color: Colors.black87,
                 fontSize: 13,

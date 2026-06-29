@@ -7,17 +7,15 @@ class SessionProgressService {
   static const String _baseUrl = '${AppUrl.baseUrl}/session-progress';
 
   static Map<String, String> _headers(String token) => {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
 
   static void _logResponse(String method, Uri url, http.Response response) {
     if (!kDebugMode) return;
 
-    debugPrint(
-      'SessionProgressService $method $url -> ${response.statusCode}',
-    );
+    debugPrint('SessionProgressService $method $url -> ${response.statusCode}');
     debugPrint('SessionProgressService response: ${response.body}');
   }
 
@@ -25,24 +23,20 @@ class SessionProgressService {
   static Future<Map<String, dynamic>> getAllProgress(String token) async {
     try {
       final url = Uri.parse(_baseUrl);
-      final response = await http.get(
-        url,
-        headers: _headers(token),
-      );
+      final response = await http.get(url, headers: _headers(token));
       _logResponse('GET', url, response);
       return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
       debugPrint('SessionProgressService getAllProgress Error: $e');
-      return {
-        'success': false,
-        'message': 'Network error. Please try again.'
-      };
+      return {'success': false, 'message': 'Network error. Please try again.'};
     }
   }
 
   // ─── Update Session Progress ──────────────────────────────────────
   static Future<Map<String, dynamic>> updateProgress(
-      String token, Map<String, dynamic> data) async {
+    String token,
+    Map<String, dynamic> data,
+  ) async {
     try {
       final url = Uri.parse('$_baseUrl/update');
       final response = await http.post(
@@ -57,30 +51,45 @@ class SessionProgressService {
       return _handleResponse(response, 'Failed to update session progress');
     } catch (e) {
       debugPrint('SessionProgressService updateProgress Error: $e');
-      return {
-        'success': false,
-        'message': 'Network error. Please try again.'
-      };
+      return {'success': false, 'message': 'Network error. Please try again.'};
     }
   }
 
   // ─── Get Session Progress By ID ───────────────────────────────────
   static Future<Map<String, dynamic>> getProgressById(
-      String token, String id) async {
+    String token,
+    String id,
+  ) async {
     try {
       final url = Uri.parse('$_baseUrl/$id');
-      final response = await http.get(
-        url,
-        headers: _headers(token),
-      );
+      final response = await http.get(url, headers: _headers(token));
       _logResponse('GET', url, response);
       return _handleResponse(response, 'Failed to load session progress');
     } catch (e) {
       debugPrint('SessionProgressService getProgressById Error: $e');
-      return {
-        'success': false,
-        'message': 'Network error. Please try again.'
-      };
+      return {'success': false, 'message': 'Network error. Please try again.'};
+    }
+  }
+
+  // Marks the one-time roadmap intro video as watched.
+  // Mirrors emdr-web: PATCH /session-progress/:journeyId/roadmap-intro-video
+  static Future<Map<String, dynamic>> markRoadmapIntroVideoCompleted(
+    String token,
+    String journeyId,
+  ) async {
+    try {
+      final url = Uri.parse('$_baseUrl/$journeyId/roadmap-intro-video');
+      final response = await http.patch(url, headers: _headers(token));
+      _logResponse('PATCH', url, response);
+      return _handleResponse(
+        response,
+        'Failed to mark roadmap intro video completed',
+      );
+    } catch (e) {
+      debugPrint(
+        'SessionProgressService markRoadmapIntroVideoCompleted Error: $e',
+      );
+      return {'success': false, 'message': 'Network error. Please try again.'};
     }
   }
 
@@ -90,7 +99,9 @@ class SessionProgressService {
   ) {
     try {
       final decoded = jsonDecode(response.body);
-      final body = decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
+      final body = decoded is Map<String, dynamic>
+          ? decoded
+          : <String, dynamic>{};
       final bool isSuccess =
           response.statusCode >= 200 && response.statusCode < 300;
 
@@ -100,7 +111,8 @@ class SessionProgressService {
 
       return {
         'success': false,
-        'message': _errorMessage(body) ?? '$fallbackMessage (${response.statusCode})',
+        'message':
+            _errorMessage(body) ?? '$fallbackMessage (${response.statusCode})',
       };
     } catch (e) {
       return {

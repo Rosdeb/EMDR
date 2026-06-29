@@ -2707,7 +2707,6 @@ import 'package:jonssony/controller/bilateral_controller.dart';
 import 'package:jonssony/models/app_theme.dart';
 import 'package:jonssony/services/session_completion_service.dart';
 import 'package:jonssony/services/session_progress_service.dart';
-import 'package:jonssony/services/voice_service.dart';
 import 'package:jonssony/data/bls_built_in_sounds.dart';
 import 'package:jonssony/data/bls_local_visuals.dart';
 import 'package:jonssony/data/bls_tone_profiles.dart';
@@ -2742,7 +2741,6 @@ class _SessionBilateralSimulationState
   static const _brand = 'The UK InKind Psychology Clinic';
 
   final GetStorage _storage = GetStorage();
-  final VoiceService _voice = VoiceService();
   final AudioPlayer _soundPreviewPlayer = AudioPlayer();
   Timer? _savedTimer;
   BilateralController? _bilateralController;
@@ -2821,7 +2819,6 @@ class _SessionBilateralSimulationState
     _savedTimer?.cancel();
     unawaited(_stopSoundPreview());
     _soundPreviewPlayer.dispose();
-    _voice.dispose();
     super.dispose();
   }
 
@@ -3379,7 +3376,9 @@ class _SessionBilateralSimulationState
       'object': _localStorageValue(_selectedVisual),
       'sound': _selectedSound.url,
       'soundAsset': _selectedSound.audioAsset,
-      'soundKey': _isNetworkUrl(_selectedSound.url) ? _selectedSound.url : BlsBuiltInSounds.normalizeKey(_selectedSound.url),
+      'soundKey': _isNetworkUrl(_selectedSound.url)
+          ? _selectedSound.url
+          : BlsBuiltInSounds.normalizeKey(_selectedSound.url),
       'soundName': _selectedSound.name,
       'visualMediaType': _selectedVisual.mediaType,
       'visualPoster': _selectedVisual.poster,
@@ -3483,7 +3482,9 @@ class _SessionBilateralSimulationState
             visualLabel: _selectedVisual.name,
             speed: _selectedSpeed.seconds,
             audioAsset: _selectedSound.audioAsset,
-            soundKey: _isNetworkUrl(_selectedSound.url) ? _selectedSound.url : BlsBuiltInSounds.normalizeKey(_selectedSound.url),
+            soundKey: _isNetworkUrl(_selectedSound.url)
+                ? _selectedSound.url
+                : BlsBuiltInSounds.normalizeKey(_selectedSound.url),
             visualMediaType: _selectedVisual.mediaType,
             visualPoster: _selectedVisual.poster,
             direction: _selectedDirection.animationDirection,
@@ -3491,6 +3492,8 @@ class _SessionBilateralSimulationState
             totalSets: 34,
             maxDurationMinutes: _selectedDuration.minutes,
             roadmapSummary: _roadmapSummary,
+            roadmapSummaryAudioUrl: _roadmapSummaryAudioUrl,
+            roadmapSummaryAudioProvider: _roadmapSummaryAudioProvider,
           ),
         ),
       ),
@@ -3513,15 +3516,6 @@ class _SessionBilateralSimulationState
 
   Future<bool> _showPreparationDialog() async {
     final roadmapSummary = _roadmapSummary;
-    final script = [
-      'The bilateral stimulation will start now.',
-      if (roadmapSummary.isNotEmpty) 'Your roadmap summary is: $roadmapSummary',
-      'When you have the image and feeling in mind, press start.',
-      'When it starts, let your mind wander. Your thoughts may go forward or backward in time. Simply notice what comes up.',
-    ].join(' ');
-
-    unawaited(_voice.speak(script));
-
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
@@ -3540,14 +3534,12 @@ class _SessionBilateralSimulationState
         actions: [
           TextButton(
             onPressed: () {
-              unawaited(_voice.stop());
               Navigator.pop(context, false);
             },
             child: const Text('Not yet'),
           ),
           ElevatedButton(
             onPressed: () {
-              unawaited(_voice.stop());
               Navigator.pop(context, true);
             },
             style: ElevatedButton.styleFrom(
@@ -3564,6 +3556,16 @@ class _SessionBilateralSimulationState
   }
 
   String get _roadmapSummary {
+    final session = _lastEmdrSession;
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    final storedText = _firstText([
+      summary['roadmapSummaryText'],
+      session['roadmapSummaryText'],
+    ]);
+    if (storedText.isNotEmpty) return storedText;
+
     final raw = _storage.read('cbt_answers');
     if (raw is! Map) return '';
     final answers = Map<String, dynamic>.from(raw);
@@ -3581,6 +3583,41 @@ class _SessionBilateralSimulationState
     addAnswer('Feelings', 'My Feelings');
     addAnswer('Positive belief', 'Your Superpowers');
     return pieces.join('. ');
+  }
+
+  Map<String, dynamic> get _lastEmdrSession {
+    final raw = _storage.read('lastEMDRSession');
+    return raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+  }
+
+  String get _roadmapSummaryAudioUrl {
+    final session = _lastEmdrSession;
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    return _firstText([
+      summary['roadmapSummaryAudioUrl'],
+      session['roadmapSummaryAudioUrl'],
+    ]);
+  }
+
+  String get _roadmapSummaryAudioProvider {
+    final session = _lastEmdrSession;
+    final summary = session['summary'] is Map
+        ? Map<String, dynamic>.from(session['summary'] as Map)
+        : <String, dynamic>{};
+    return _firstText([
+      summary['roadmapSummaryAudioProvider'],
+      session['roadmapSummaryAudioProvider'],
+    ]);
+  }
+
+  String _firstText(List<dynamic> values) {
+    for (final value in values) {
+      final text = value?.toString().trim() ?? '';
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   @override
@@ -5178,7 +5215,7 @@ class _SoundArtworkFallback extends StatelessWidget {
   }
 }
 
-enum _BlsSpeed { slow, medium, fast,}
+enum _BlsSpeed { slow, medium, fast }
 
 extension _BlsSpeedDetails on _BlsSpeed {
   String get key {
